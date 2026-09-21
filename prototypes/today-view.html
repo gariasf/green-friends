@@ -1,0 +1,446 @@
+<!--
+  PROTOTYPE — throwaway. Ticket #6: today view & care logging flow. ROUND 3.
+  Round 1: Garden (card per plant) won. Round 2: checklist rows (B2) won, but
+  backdate/note must NOT hide behind tapping the row. This round: rows with a
+  visible ⋯ options button — ?variant= b2a (⋯ on each row) | b2b (one ⋯ per card).
+  Single self-contained HTML file; in-memory state; reload resets.
+-->
+<meta charset="utf-8">
+<title>Green Friends Today</title>
+<style>
+  :root{
+    --bg:#f2f2f7; --card:#ffffff; --card2:#f7f7fa;
+    --label:#111114; --label2:#6e6e76; --label3:#aeaeb5;
+    --sep:#e4e4e9; --blue:#0a7aff; --green:#2fa14e; --red:#e0342b; --orange:#c96a00;
+    --red-bg:#fdeceb; --orange-bg:#fff3e2; --green-bg:#e8f6ec; --blue-bg:#e8f1fe;
+    --pill:#1c1c22; --pill-text:#fff; --shadow:0 18px 50px rgba(20,24,30,.25);
+    --stage:#e7e9ee; --btn-shadow:0 1px 2px rgba(20,24,30,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#000; --card:#1c1c1e; --card2:#26262a;
+      --label:#f4f4f6; --label2:#9d9da6; --label3:#5c5c64;
+      --sep:#2e2e33; --blue:#409cff; --green:#4cc268; --red:#ff5f57; --orange:#ffa235;
+      --red-bg:#3a1512; --orange-bg:#38250c; --green-bg:#12301b; --blue-bg:#122a44;
+      --pill:#f2f2f6; --pill-text:#111; --shadow:0 18px 50px rgba(0,0,0,.6);
+      --stage:#101013; --btn-shadow:0 1px 2px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#000; --card:#1c1c1e; --card2:#26262a;
+    --label:#f4f4f6; --label2:#9d9da6; --label3:#5c5c64;
+    --sep:#2e2e33; --blue:#409cff; --green:#4cc268; --red:#ff5f57; --orange:#ffa235;
+    --red-bg:#3a1512; --orange-bg:#38250c; --green-bg:#12301b; --blue-bg:#122a44;
+    --pill:#f2f2f6; --pill-text:#111; --shadow:0 18px 50px rgba(0,0,0,.6);
+    --stage:#101013; --btn-shadow:0 1px 2px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{
+    margin:0; background:var(--stage); color:var(--label);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    font-size:16px; line-height:1.35;
+  }
+  button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; text-align:inherit}
+  button:active{opacity:.85}
+  input{font:inherit}
+
+  /* ---- phone frame ---- */
+  #stage{min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 16px 96px}
+  #phone{
+    position:relative; width:390px; height:780px; background:var(--bg);
+    border-radius:44px; box-shadow:var(--shadow), 0 0 0 10px #0e0e11, 0 0 0 12px #3a3a40;
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  #app{flex:1; overflow-y:auto; overscroll-behavior:contain; position:relative}
+  @media (max-width:560px){
+    #stage{padding:0 0 84px; align-items:stretch}
+    #phone{width:100%; height:100dvh; border-radius:0; box-shadow:none}
+  }
+
+  /* ---- shared ---- */
+  .nav{position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 86%, transparent);
+       backdrop-filter:blur(14px); padding:18px 20px 8px; display:flex; align-items:flex-end; justify-content:space-between}
+  .nav h1{margin:0; font-size:32px; font-weight:800; letter-spacing:-.02em}
+  .nav .date{color:var(--label2); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px}
+  .addbtn{width:36px; height:36px; border-radius:50%; background:var(--card); color:var(--blue);
+          font-size:24px; font-weight:600; display:flex; align-items:center; justify-content:center;
+          box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  .thumb{border-radius:12px; display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden}
+  .caught{padding:64px 32px; text-align:center; color:var(--label2)}
+  .caught .big{font-size:56px; margin-bottom:12px}
+  .caught h2{color:var(--label); margin:0 0 6px; font-size:22px}
+  .caught p{margin:0; font-size:15px}
+  .summary{margin:2px 20px 0; color:var(--label2); font-size:14px; font-weight:600}
+
+  /* card shell (all treatments) */
+  .b-card{background:var(--card); border-radius:18px; margin:12px 16px 0; padding:12px; display:flex; gap:12px; position:relative}
+  .b-card.over{box-shadow:inset 4px 0 0 var(--red)}
+  .b-card .thumb{width:64px; height:64px; font-size:36px; border-radius:14px}
+  .b-main{flex:1; min-width:0}
+  .b-main .name{font-size:17px; font-weight:700}
+  .b-main .sci{font-size:12px; color:var(--label2); font-style:italic; margin-bottom:8px}
+  .b-rest-head{margin:22px 20px 4px; font-size:14px; font-weight:700; color:var(--label2); text-transform:uppercase; letter-spacing:.05em}
+  .b-rest{display:flex; gap:10px; padding:6px 16px 20px; overflow-x:auto}
+  .b-mini{flex:none; width:86px; text-align:center; opacity:.75}
+  .b-mini .thumb{width:64px; height:64px; font-size:34px; margin:0 auto 4px}
+  .b-mini div{font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .b-mini span{font-size:11px; color:var(--label2)}
+  /* checklist rows */
+  .b2-list{border:1px solid var(--sep); border-radius:12px; overflow:hidden}
+  .b2-row{display:flex; align-items:center; gap:10px; padding:9px 10px; width:100%; position:relative; background:var(--card2)}
+  .b2-row + .b2-row{border-top:1px solid var(--sep)}
+  .b2-row .txt{flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:1px}
+  .b2-row .txt b{font-size:15px; font-weight:700; white-space:nowrap}
+  .b2-row .txt span{font-size:12.5px; font-weight:700; white-space:nowrap}
+  .b2-row .txt span.over{color:var(--red)} .b2-row .txt span.due{color:var(--orange)}
+  .b2-check{width:30px; height:30px; border-radius:50%; border:2px solid var(--label3); flex:none;
+            display:flex; align-items:center; justify-content:center; color:transparent; font-size:16px; font-weight:800;
+            background:var(--card)}
+  .b2-check:active{transform:scale(.9); opacity:1}
+  .b2-check.done{background:var(--green); border-color:var(--green); color:#fff}
+  .b2-dots{width:30px; height:30px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+           color:var(--label2); font-size:17px; font-weight:800; background:var(--card); border:1px solid var(--sep)}
+  .b2-dots:active{transform:scale(.9); opacity:1}
+  .b2-corner{position:absolute; top:10px; right:12px; display:flex; align-items:center; gap:4px}
+  .b2-corner .all{color:var(--blue); font-weight:700; font-size:13.5px; padding:4px 6px}
+  .b2-corner .b2-dots{width:26px; height:26px; font-size:15px}
+  .b-main .name{padding-right:56px}
+
+  /* ---- sheets / toast / switcher ---- */
+  .scrim{position:absolute; inset:0; background:rgba(0,0,0,.42); z-index:20; display:flex; align-items:flex-end}
+  .sheet{background:var(--bg); width:100%; max-height:88%; border-radius:20px 20px 0 0; padding:8px 18px calc(18px + env(safe-area-inset-bottom,0px)); overflow-y:auto}
+  .sheet .grab{width:38px; height:5px; border-radius:3px; background:var(--label3); margin:4px auto 12px}
+  .sheet h3{margin:0 0 2px; font-size:20px; font-weight:800}
+  .sheet .sub{color:var(--label2); font-size:14px; margin:0 0 14px}
+  .srow{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0}
+  .opt{background:var(--card); border:1.5px solid var(--sep); border-radius:12px; padding:9px 14px; font-weight:600; font-size:15px; box-shadow:var(--btn-shadow)}
+  .opt.sel{border-color:var(--blue); color:var(--blue); background:var(--blue-bg)}
+  .field{width:100%; background:var(--card); border:1.5px solid var(--sep); border-radius:12px; padding:11px 13px; color:var(--label); margin:6px 0}
+  .field::placeholder{color:var(--label3)}
+  .primary{display:block; width:100%; background:var(--blue); color:#fff; font-weight:700; font-size:17px; padding:14px; border-radius:14px; text-align:center; margin-top:14px}
+  .primary:active{transform:scale(.98); opacity:1}
+  .ghost{display:block; width:100%; color:var(--blue); font-weight:600; font-size:15px; padding:12px; text-align:center}
+  .slabel{font-size:13px; font-weight:700; color:var(--label2); text-transform:uppercase; letter-spacing:.05em; margin:14px 0 2px}
+  .spec-item{display:flex; align-items:center; gap:10px; width:100%; padding:10px 6px; border-bottom:1px solid var(--sep)}
+  .spec-item .thumb{width:36px; height:36px; font-size:20px}
+  .spec-item b{display:block; font-size:15px}
+  .spec-item span{font-size:12.5px; color:var(--label2); font-style:italic}
+  #toast{position:absolute; left:16px; right:16px; bottom:18px; z-index:30; background:var(--pill); color:var(--pill-text);
+         border-radius:14px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+         font-weight:600; font-size:15px; box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  #toast button{color:#6db2ff; font-weight:800}
+
+  #switcher{position:fixed; left:50%; transform:translateX(-50%); bottom:20px; z-index:50;
+            background:var(--pill); color:var(--pill-text); border-radius:99px; padding:8px 10px;
+            display:flex; align-items:center; gap:6px; box-shadow:0 10px 30px rgba(0,0,0,.35); font-weight:700}
+  #switcher .arr{width:34px; height:34px; border-radius:50%; color:var(--pill-text); font-size:17px; display:flex; align-items:center; justify-content:center}
+  #switcher .arr:hover{background:rgba(128,128,128,.25)}
+  #switcher .lbl{min-width:130px; text-align:center; font-size:14px}
+  #switcher .lbl small{display:block; font-weight:500; opacity:.65; font-size:11px}
+</style>
+
+<div id="stage"><div id="phone"><div id="app"></div><div id="overlay"></div></div></div>
+<div id="switcher">
+  <button class="arr" id="prev" aria-label="Previous variant">←</button>
+  <div class="lbl" id="vlabel"></div>
+  <button class="arr" id="next" aria-label="Next variant">→</button>
+</div>
+
+<script>
+/* ================= data ================= */
+const SPECIES = [
+  {id:'monstera',  em:'🌿', hue:'#dcefe0', colloquial:'Monstera',        sci:'Monstera deliciosa',      water:7,  fert:30},
+  {id:'ficus',     em:'🌳', hue:'#e6efd9', colloquial:'Fiddle-leaf fig', sci:'Ficus lyrata',            water:7,  fert:30},
+  {id:'pothos',    em:'🍃', hue:'#def0e8', colloquial:'Pothos',          sci:'Epipremnum aureum',       water:8,  fert:45},
+  {id:'sansevieria',em:'🪴',hue:'#e9ecd8', colloquial:'Snake plant',     sci:'Sansevieria trifasciata', water:14, fert:60},
+  {id:'calathea',  em:'🌱', hue:'#d9ede4', colloquial:'Calathea',        sci:'Calathea orbifolia',      water:5,  fert:30},
+  {id:'spath',     em:'☘️', hue:'#e3f0da', colloquial:'Peace lily',      sci:'Spathiphyllum wallisii',  water:6,  fert:30},
+  {id:'zz',        em:'🎋', hue:'#e0edda', colloquial:'ZZ plant',        sci:'Zamioculcas zamiifolia',  water:14, fert:60},
+  {id:'spider',    em:'🌾', hue:'#eaf0d8', colloquial:'Spider plant',    sci:'Chlorophytum comosum',    water:7,  fert:30},
+  {id:'alocasia',  em:'🌺', hue:'#f0e4d8', colloquial:'Alocasia',        sci:'Alocasia polly',          water:6,  fert:30},
+  {id:'hoya',      em:'💮', hue:'#f0dee4', colloquial:'Hoya',            sci:'Hoya carnosa',            water:10, fert:45},
+];
+const sp = id => SPECIES.find(s=>s.id===id);
+
+let seq = 0;
+const P = (speciesId, nickname, waterAgoDelta, fertAgoDelta, repotDueNow) => {
+  const s = sp(speciesId);
+  return { id:'p'+(++seq), speciesId, nickname,
+    care:{
+      water:{interval:s.water, lastAgo:s.water + waterAgoDelta},
+      fert:{interval:s.fert,  lastAgo:s.fert + fertAgoDelta},
+      repot:{intervalMo:18, lastAgoMo: repotDueNow ? 19 : 6},
+    }};
+};
+let plants = [
+  P('monstera','Monsti', 3, -12, false),
+  P('ficus', null, 0, 0, false),
+  P('pothos','Pothy', 0, -20, false),
+  P('sansevieria', null, -6, 5, false),
+  P('calathea', null, 1, -10, false),
+  P('spath', null, -3, -9, true),
+  P('zz', null, -9, -30, false),
+  P('spider', null, -4, -12, false),
+];
+const CARE_LABEL = {water:'Water', fert:'Fertilize', repot:'Repot'};
+const CARE_VERB  = {water:'Watered', fert:'Fertilized', repot:'Repotted'};
+const CARE_ICON  = {water:'💧', fert:'✨', repot:'🪨'};
+let noteLog = [];
+
+const displayName = p => p.nickname || (p.speciesId ? sp(p.speciesId).colloquial : 'Unnamed');
+const sciName = p => p.speciesId ? sp(p.speciesId).sci : '';
+
+function dueItems(p){
+  const out = [];
+  for(const t of ['water','fert']){
+    const c = p.care[t];
+    const over = c.lastAgo - c.interval;
+    if(over >= 0) out.push({type:t, over});
+  }
+  const r = p.care.repot;
+  if(r.lastAgoMo >= r.intervalMo) out.push({type:'repot', over:0});
+  return out;
+}
+const needsAttention = () => plants.map(p=>({p, items:dueItems(p)})).filter(x=>x.items.length)
+  .sort((a,b)=>Math.max(...b.items.map(i=>i.over)) - Math.max(...a.items.map(i=>i.over)));
+
+function overText(it){
+  if(it.type==='repot') return 'repot due';
+  return it.over===0 ? 'due today' : `${it.over}d overdue`;
+}
+
+let undoStack = [];
+function snapshot(){ undoStack.push(JSON.stringify(plants)); if(undoStack.length>20) undoStack.shift(); }
+function logCare(p, type, daysAgo=0){
+  snapshot();
+  if(type==='repot') p.care.repot.lastAgoMo = 0;
+  else p.care[type].lastAgo = daysAgo;
+  render();
+}
+function logAllFor(p){
+  snapshot();
+  for(const it of dueItems(p)){ if(it.type==='repot') p.care.repot.lastAgoMo=0; else p.care[it.type].lastAgo=0; }
+  render();
+}
+function undo(){ const s = undoStack.pop(); if(s){ plants = JSON.parse(s); } hideToast(); render(); }
+
+/* ================= dom helpers ================= */
+const app = document.getElementById('app');
+const overlay = document.getElementById('overlay');
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const thumb = (p) => { const s = p.speciesId ? sp(p.speciesId) : {em:'🌵', hue:'#e4e4e9'};
+  return `<div class="thumb" style="background:${s.hue}">${s.em}</div>`; };
+const todayStr = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+
+let toastTimer;
+function toast(msg, withUndo=true){
+  hideToast();
+  const el = document.createElement('div'); el.id='toast';
+  el.innerHTML = `<span>${esc(msg)}</span>` + (withUndo?`<button id="undo">Undo</button>`:'');
+  overlay.appendChild(el);
+  if(withUndo) el.querySelector('#undo').onclick = undo;
+  toastTimer = setTimeout(hideToast, 3200);
+}
+function hideToast(){ clearTimeout(toastTimer); document.getElementById('toast')?.remove(); }
+
+function sheet(html){
+  const scrim = document.createElement('div'); scrim.className='scrim';
+  scrim.innerHTML = `<div class="sheet"><div class="grab"></div>${html}</div>`;
+  scrim.addEventListener('click', e=>{ if(e.target===scrim) scrim.remove(); });
+  overlay.appendChild(scrim);
+  return scrim;
+}
+const closeSheets = () => overlay.querySelectorAll('.scrim').forEach(s=>s.remove());
+
+/* ================= sheets ================= */
+function openLogSheet(p, type){
+  let daysAgo = 0;
+  const isRepot = type==='repot';
+  const s = sheet(`
+    <h3>${CARE_LABEL[type]} · ${esc(displayName(p))}</h3>
+    <p class="sub">When did it happen?</p>
+    <div class="srow" id="when">
+      <button class="opt sel" data-d="0">Today</button>
+      <button class="opt" data-d="1">Yesterday</button>
+      <button class="opt" data-d="2">2 days ago</button>
+      <button class="opt" data-d="3">3 days ago</button>
+    </div>
+    ${isRepot?`<div class="slabel">Repot details (optional)</div>
+      <input class="field" id="pot" placeholder="New pot size, e.g. 21 cm">
+      <input class="field" id="soil" placeholder="Soil mix">`:''}
+    <button class="primary" id="go">Log ${CARE_LABEL[type].toLowerCase()}</button>
+  `);
+  s.querySelectorAll('#when .opt').forEach(b=>b.onclick=()=>{
+    s.querySelectorAll('#when .opt').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel'); daysAgo = +b.dataset.d;
+  });
+  s.querySelector('#go').onclick = ()=>{
+    closeSheets(); logCare(p, type, daysAgo);
+    toast(`${CARE_VERB[type]} ${displayName(p)}${daysAgo?` · ${daysAgo}d ago`:''}`);
+  };
+}
+function openNoteSheet(p){
+  const s = sheet(`
+    <h3>Note · ${esc(displayName(p))}</h3>
+    <p class="sub">Anything you observed — pests, new leaf, drooping…</p>
+    <input class="field" id="ntext" placeholder="e.g. Spider mites on lower leaves" autofocus>
+    <button class="primary" id="go">Add note</button>
+  `);
+  s.querySelector('#go').onclick = ()=>{
+    const t = s.querySelector('#ntext').value.trim();
+    closeSheets();
+    if(t){ noteLog.push({plantId:p.id, text:t}); toast(`Note added to ${displayName(p)}`, false); }
+  };
+}
+/* per-care options: backdate this care, or note */
+function careOptions(p, type){
+  const s = sheet(`<h3>${CARE_ICON[type]} ${CARE_LABEL[type]} · ${esc(displayName(p))}</h3>
+    <p class="sub">${overText(dueItems(p).find(i=>i.type===type)||{type,over:0})}</p>
+    <button class="ghost" id="bk" style="text-align:left">🗓️ Log ${CARE_LABEL[type].toLowerCase()} on an earlier day…</button>
+    <button class="ghost" id="nt" style="text-align:left">📝 Add a note</button>`);
+  s.querySelector('#bk').onclick=()=>{ closeSheets(); openLogSheet(p, type); };
+  s.querySelector('#nt').onclick=()=>{ closeSheets(); openNoteSheet(p); };
+}
+/* plant sheet: everything secondary lives here — backdate any care, note */
+function openPlantSheet(p){
+  const its = dueItems(p);
+  const s = sheet(`<h3>${esc(displayName(p))}</h3><p class="sub">${esc(sciName(p))}</p>
+    ${its.map(it=>`<button class="ghost" data-bk="${it.type}" style="text-align:left">${CARE_ICON[it.type]} Log ${CARE_LABEL[it.type].toLowerCase()} on an earlier day…</button>`).join('')}
+    <button class="ghost" id="nt" style="text-align:left">📝 Add a note</button>`);
+  s.querySelectorAll('[data-bk]').forEach(x=>x.onclick=()=>{ closeSheets(); openLogSheet(p, x.dataset.bk); });
+  s.querySelector('#nt').onclick=()=>{ closeSheets(); openNoteSheet(p); };
+}
+
+/* creation: B's single scrolling form (kept from round 1 verdict) */
+function speciesListHTML(filter){
+  const f = filter.trim().toLowerCase();
+  return SPECIES.filter(x=>!f || x.colloquial.toLowerCase().includes(f) || x.sci.toLowerCase().includes(f))
+    .map(x=>`<button class="spec-item" data-id="${x.id}">
+       <div class="thumb" style="background:${x.hue}">${x.em}</div>
+       <div><b>${x.colloquial}</b><span>${x.sci}</span></div></button>`).join('')
+    || `<p class="sub" style="padding:12px 4px">No match.</p><button class="ghost" data-id="">Add without species (needs a nickname)</button>`;
+}
+function addPlant({speciesId, nickname, waterAgo, fertAgo}){
+  snapshot();
+  const s = speciesId ? sp(speciesId) : {water:7, fert:30};
+  plants.push({id:'p'+(++seq), speciesId, nickname: nickname||undefined,
+    care:{ water:{interval:s.water, lastAgo: waterAgo ?? 0},
+           fert:{interval:s.fert, lastAgo: fertAgo ?? 0},
+           repot:{intervalMo:18, lastAgoMo:0} }});
+  render();
+}
+function createFlow(){
+  let chosen=null;
+  const s = sheet(`<h3>New plant</h3><p class="sub">Species is the only required pick — everything else can wait.</p>
+    <input class="field" id="q" placeholder="Search species…">
+    <div id="list" style="max-height:180px; overflow-y:auto">${speciesListHTML('')}</div>
+    <div id="chosen" class="sub" style="font-weight:700"></div>
+    <div class="slabel">Optional</div>
+    <input class="field" id="nick" placeholder="Nickname">
+    <div class="srow"><button class="opt" id="photo">📷 Photo</button>
+      <button class="opt" data-w="0">Watered today</button><button class="opt" data-w="7">Watered ~1w ago</button></div>
+    <button class="primary" id="save">Add plant</button>`);
+  let waterAgo=null;
+  const wire=()=>s.querySelectorAll('#list [data-id]').forEach(b=>b.onclick=()=>{
+    chosen=b.dataset.id||null;
+    s.querySelector('#chosen').textContent = chosen?`✓ ${sp(chosen).colloquial} — ${sp(chosen).sci}`:'No species — nickname required';
+  });
+  wire();
+  s.querySelector('#q').oninput=e=>{ s.querySelector('#list').innerHTML=speciesListHTML(e.target.value); wire(); };
+  s.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{ s.querySelectorAll('[data-w]').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); waterAgo=+b.dataset.w; });
+  s.querySelector('#photo').onclick=()=>s.querySelector('#photo').classList.toggle('sel');
+  s.querySelector('#save').onclick=()=>{
+    const nick=s.querySelector('#nick').value.trim();
+    if(!chosen && !nick){ s.querySelector('#nick').style.borderColor='var(--red)'; return; }
+    closeSheets(); addPlant({speciesId:chosen, nickname:nick, waterAgo, fertAgo:null});
+    toast(`Added ${nick || sp(chosen).colloquial}`, false);
+  };
+}
+
+/* ================= shared shell ================= */
+const caughtUp = `<div class="caught"><div class="big">🌿</div><h2>All caught up</h2>
+  <p>Nothing needs you today. The plants say thanks.</p></div>`;
+
+function shell(cardsHTML){
+  const na = needsAttention();
+  const rest = plants.filter(p=>!dueItems(p).length);
+  const summary = na.length ? `<div class="summary">${na.length} plant${na.length>1?'s':''} need${na.length>1?'':'s'} you</div>` : '';
+  const restHTML = rest.length ? `<div class="b-rest-head">Rest of the garden · ${rest.length}</div>
+    <div class="b-rest">${rest.map(p=>`<div class="b-mini">${thumb(p)}<div>${esc(displayName(p))}</div><span>all good</span></div>`).join('')}</div>` : '';
+  app.innerHTML = `<div class="nav"><div><div class="date">${todayStr}</div><h1>Today</h1></div>
+      <button class="addbtn" id="add" aria-label="Add plant">+</button></div>`
+    + summary + (na.length ? cardsHTML : caughtUp) + restHTML + `<div style="height:80px"></div>`;
+  document.getElementById('add').onclick = createFlow;
+  /* shared wiring: instant log, log-all, open plant sheet */
+  app.querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>{
+    const p = plants.find(x=>x.id===b.dataset.log);
+    const done = ()=>{ logCare(p, b.dataset.t); toast(`${CARE_VERB[b.dataset.t]} ${displayName(p)}`); };
+    if(b.classList.contains('b2-check')){ b.classList.add('done'); setTimeout(done, 200); } else done();
+  });
+  app.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{
+    const p = plants.find(x=>x.id===b.dataset.all);
+    logAllFor(p); toast(`Logged everything for ${displayName(p)}`);
+  });
+  app.querySelectorAll('[data-plant]').forEach(b=>b.onclick=()=>openPlantSheet(plants.find(x=>x.id===b.dataset.plant)));
+  app.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
+    const p = plants.find(x=>x.id===b.dataset.opt);
+    if(b.dataset.t) careOptions(p, b.dataset.t); else openPlantSheet(p);
+  });
+}
+const cardShell = (p, worst, inner, corner='') => `<div class="b-card ${worst>0?'over':''}">
+    ${thumb(p)}
+    <div class="b-main">
+      <button data-plant="${p.id}" style="display:block; width:100%">
+        <div class="name">${esc(displayName(p))}</div>
+        <div class="sci">${esc(sciName(p))}</div>
+      </button>
+      ${inner}
+    </div>
+    ${corner?`<div class="b2-corner">${corner}</div>`:''}
+  </div>`;
+
+/* ================= treatments ================= */
+/* checklist rows per due item; ⋯ options either on each row or once per card */
+function rowsHTML(p, items, perRowDots){
+  return `<div class="b2-list">${items.map(it=>`
+    <div class="b2-row">
+      <span class="txt">
+        <b>${CARE_ICON[it.type]} ${CARE_LABEL[it.type]}</b>
+        <span class="${it.over>0?'over':'due'}">${overText(it)}</span>
+      </span>
+      ${perRowDots?`<button class="b2-dots" data-opt="${p.id}" data-t="${it.type}" aria-label="Options for ${CARE_LABEL[it.type]}">⋯</button>`:''}
+      <button class="b2-check" data-log="${p.id}" data-t="${it.type}" aria-label="Done">✓</button>
+    </div>`).join('')}</div>`;
+}
+function renderRows(perRowDots){
+  shell(needsAttention().map(({p, items})=>{
+    const worst = Math.max(...items.map(i=>i.over));
+    const corner =
+      (items.length>1?`<button class="all" data-all="${p.id}">✓ All</button>`:'') +
+      (!perRowDots?`<button class="b2-dots" data-opt="${p.id}" aria-label="Options">⋯</button>`:'');
+    return cardShell(p, worst, rowsHTML(p, items, perRowDots), corner);
+  }).join(''));
+}
+
+/* ================= switcher ================= */
+const VARIANTS = [
+  {key:'b2a', name:'Row ⋯',  hint:'options on each row',   fn:()=>renderRows(true)},
+  {key:'b2b', name:'Card ⋯', hint:'options once per card', fn:()=>renderRows(false)},
+];
+let vi = Math.max(0, VARIANTS.findIndex(v=>v.key===new URLSearchParams(location.search).get('variant')));
+function render(){
+  closeSheets(); hideToast();
+  const v = VARIANTS[vi];
+  document.getElementById('vlabel').innerHTML = `${v.key.toUpperCase()} · ${v.name}<small>${v.hint}</small>`;
+  try{ history.replaceState(null,'', '?variant='+v.key); }catch(e){}
+  v.fn();
+}
+function cycle(d){ vi = (vi + d + VARIANTS.length) % VARIANTS.length; render(); }
+document.getElementById('prev').onclick=()=>cycle(-1);
+document.getElementById('next').onclick=()=>cycle(1);
+document.addEventListener('keydown', e=>{
+  if(/INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable) return;
+  if(e.key==='ArrowLeft') cycle(-1); if(e.key==='ArrowRight') cycle(1);
+});
+render();
+</script>
