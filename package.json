@@ -19,6 +19,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "globalSetup": "<rootDir>/src/test/timezone.js",
     "testMatch": [
       "<rootDir>/src/**/*.test.ts"
     ]

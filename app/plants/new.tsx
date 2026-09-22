@@ -1,6 +1,15 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
 
 import { localDay, shiftDays } from '@/src/core/dates';
 import { CARE_TYPES, createPlant, type CareSchedule, type CareType } from '@/src/core/plants';
@@ -20,6 +29,7 @@ const DAYS_AGO: Ago[] = [
   { label: '2 weeks ago', value: 14 },
   { label: '1 month ago', value: 30 },
 ];
+// Approximate day counts: a repot "about a year ago" needs no calendar-month arithmetic.
 const MONTHS_AGO: Ago[] = [
   NOT_SURE,
   { label: 'This month', value: 0 },
@@ -41,6 +51,13 @@ const EMPTY_SCHEDULE: ScheduleForm = {
   fertilizingDormantDays: '',
   repottingMonths: '',
 };
+const INTERVAL_FIELDS: { key: keyof CareSchedule; label: string }[] = [
+  { key: 'wateringGrowingDays', label: 'Watering, Growing season (days)' },
+  { key: 'wateringDormantDays', label: 'Watering, Dormant season (days)' },
+  { key: 'fertilizingGrowingDays', label: 'Fertilizing, Growing season (days)' },
+  { key: 'fertilizingDormantDays', label: 'Fertilizing, Dormant season (days)' },
+  { key: 'repottingMonths', label: 'Repotting (months)' },
+];
 
 /** New plant: one scrolling sheet where the Species pick is the only required input (spec #8). */
 export default function NewPlantScreen() {
@@ -70,9 +87,7 @@ export default function NewPlantScreen() {
       .slice(0, 8);
   }, [catalog, query]);
 
-  const picked = species !== null || ownSchedule;
-  const setIntervalField = (key: keyof CareSchedule) => (value: string) =>
-    setSchedule((form) => ({ ...form, [key]: value }));
+  const canSave = species !== null || (ownSchedule && nickname.trim() !== '');
 
   const save = () => {
     const today = localDay(new Date());
@@ -89,11 +104,11 @@ export default function NewPlantScreen() {
         soil,
         schedule: ownSchedule
           ? {
-              wateringGrowingDays: Number(schedule.wateringGrowingDays),
+              wateringGrowingDays: optionalNumber(schedule.wateringGrowingDays),
               wateringDormantDays: optionalNumber(schedule.wateringDormantDays),
-              fertilizingGrowingDays: Number(schedule.fertilizingGrowingDays),
+              fertilizingGrowingDays: optionalNumber(schedule.fertilizingGrowingDays),
               fertilizingDormantDays: optionalNumber(schedule.fertilizingDormantDays),
-              repottingMonths: Number(schedule.repottingMonths),
+              repottingMonths: optionalNumber(schedule.repottingMonths),
             }
           : undefined,
         lastDone: lastDoneDays,
@@ -130,8 +145,7 @@ export default function NewPlantScreen() {
         />
       ) : (
         <>
-          <TextInput
-            style={styles.field}
+          <Field
             placeholder="Search by name, e.g. monstera"
             value={query}
             onChangeText={setQuery}
@@ -162,58 +176,37 @@ export default function NewPlantScreen() {
       )}
 
       <Text style={styles.heading}>About this plant</Text>
-      <TextInput
-        style={styles.field}
+      <Field
         placeholder={ownSchedule ? 'Nickname (required)' : 'Nickname (optional)'}
         value={nickname}
         onChangeText={setNickname}
       />
-      <TextInput
-        style={styles.field}
+      <Field
         placeholder="Pot size in cm (optional)"
         value={potSizeCm}
         onChangeText={setPotSizeCm}
         keyboardType="decimal-pad"
       />
-      <TextInput
-        style={styles.field}
-        placeholder="Soil (optional)"
-        value={soil}
-        onChangeText={setSoil}
-      />
+      <Field placeholder="Soil (optional)" value={soil} onChangeText={setSoil} />
 
       {ownSchedule && (
         <>
           <Text style={styles.heading}>Care schedule</Text>
           <Text style={styles.hint}>
-            Days between waterings and feedings in the Growing and Dormant seasons. Leave a Dormant
-            field blank to pause that care for the winter.
+            Days between waterings and feedings in the Growing and Dormant seasons, months between
+            repots. Leave a care type blank if this plant never needs it, and a Dormant field blank
+            to pause that care for the winter.
           </Text>
-          <IntervalField
-            label="Watering, Growing season (days)"
-            value={schedule.wateringGrowingDays}
-            onChange={setIntervalField('wateringGrowingDays')}
-          />
-          <IntervalField
-            label="Watering, Dormant season (days)"
-            value={schedule.wateringDormantDays}
-            onChange={setIntervalField('wateringDormantDays')}
-          />
-          <IntervalField
-            label="Fertilizing, Growing season (days)"
-            value={schedule.fertilizingGrowingDays}
-            onChange={setIntervalField('fertilizingGrowingDays')}
-          />
-          <IntervalField
-            label="Fertilizing, Dormant season (days)"
-            value={schedule.fertilizingDormantDays}
-            onChange={setIntervalField('fertilizingDormantDays')}
-          />
-          <IntervalField
-            label="Repotting (months)"
-            value={schedule.repottingMonths}
-            onChange={setIntervalField('repottingMonths')}
-          />
+          {INTERVAL_FIELDS.map(({ key, label }) => (
+            <View key={key} style={styles.row}>
+              <Text style={styles.label}>{label}</Text>
+              <Field
+                value={schedule[key]}
+                onChangeText={(value) => setSchedule((form) => ({ ...form, [key]: value }))}
+                keyboardType="number-pad"
+              />
+            </View>
+          ))}
         </>
       )}
 
@@ -234,15 +227,19 @@ export default function NewPlantScreen() {
 
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: !picked }}
-        disabled={!picked}
+        accessibilityState={{ disabled: !canSave }}
+        disabled={!canSave}
         onPress={save}
-        style={[styles.save, !picked && styles.saveDisabled]}
+        style={[styles.save, !canSave && styles.saveDisabled]}
       >
         <Text style={styles.saveText}>Add plant</Text>
       </Pressable>
     </ScrollView>
   );
+}
+
+function Field(props: TextInputProps) {
+  return <TextInput style={styles.field} placeholderTextColor="#8e8e93" {...props} />;
 }
 
 function Picked({
@@ -269,31 +266,10 @@ function Picked({
   );
 }
 
-function IntervalField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.field}
-        value={value}
-        onChangeText={onChange}
-        keyboardType="number-pad"
-      />
-    </View>
-  );
-}
-
-/** Blank means not given; anything else is handed to the core as a number for it to validate. */
+/** Blank means not given; anything else goes to the core as a number for it to validate. */
 function optionalNumber(text: string): number | null {
-  return text.trim() === '' ? null : Number(text);
+  const trimmed = text.trim();
+  return trimmed === '' ? null : Number(trimmed.replace(',', '.'));
 }
 
 const styles = StyleSheet.create({

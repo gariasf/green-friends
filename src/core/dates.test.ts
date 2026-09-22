@@ -2,7 +2,10 @@ import { localDay, shiftDays } from './dates';
 
 describe('calendar days', () => {
   test('localDay is the calendar day where the device is, not the UTC day', () => {
+    // Just after local midnight and just before the next one: a day computed through UTC gets at
+    // least one of these wrong in any timezone off UTC (tests run in Pacific/Auckland).
     expect(localDay(new Date(2026, 8, 22, 0, 30))).toBe('2026-09-22');
+    expect(localDay(new Date(2026, 8, 22, 23, 30))).toBe('2026-09-22');
   });
 
   test('shiftDays crosses month and year boundaries', () => {

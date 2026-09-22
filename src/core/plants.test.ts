@@ -1,7 +1,7 @@
 import bundled from '../../assets/species.json';
 import { openTestDb } from '../test/db';
 import { listCareEvents } from './careLog';
-import { createPlant, listPlants, type CareSchedule } from './plants';
+import { createPlant, getPlant, listPlants, type CareSchedule } from './plants';
 import { seedSpecies } from './species';
 
 const MONSTERA = 'Q161077';
@@ -15,6 +15,18 @@ const FERN_SCHEDULE: CareSchedule = {
   fertilizingDormantDays: null,
   repottingMonths: 18,
 };
+
+/** Only ever watered; never fed or repotted. */
+const AIR_PLANT_SCHEDULE: CareSchedule = {
+  wateringGrowingDays: 7,
+  wateringDormantDays: null,
+  fertilizingGrowingDays: null,
+  fertilizingDormantDays: null,
+  repottingMonths: null,
+};
+
+/** Local noon, so the calendar day is the same in every timezone the tests run in. */
+const NOON_SEP_22 = new Date(2026, 8, 22, 12);
 
 /** A migrated database with the bundled Species catalog seeded, as after first launch. */
 function gardenDb() {
@@ -44,6 +56,14 @@ describe('creating plants', () => {
     ]);
   });
 
+  test('a blank nickname leaves the species colloquial name as the Display Name', () => {
+    const db = gardenDb();
+
+    createPlant(db, { speciesId: MONSTERA, nickname: '   ' });
+
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Monstera' }]);
+  });
+
   test('the Garden lists plants by Display Name, ignoring case', () => {
     const db = gardenDb();
 
@@ -56,7 +76,7 @@ describe('creating plants', () => {
   test('a plant without a species needs a nickname', () => {
     const db = gardenDb();
 
-    expect(() => createPlant(db, { nickname: '  ' })).toThrow(/nickname/i);
+    expect(() => createPlant(db, { speciesId: '', nickname: '  ' })).toThrow(/nickname/i);
 
     expect(listPlants(db)).toEqual([]);
   });
@@ -75,7 +95,34 @@ describe('creating plants', () => {
     const plant = createPlant(db, { nickname: 'Mystery fern', schedule: FERN_SCHEDULE });
 
     expect(listPlants(db)).toMatchObject([{ displayName: 'Mystery fern', scientificName: null }]);
-    expect(plant).toMatchObject({ speciesId: null, ...FERN_SCHEDULE });
+    expect(getPlant(db, plant.id)).toMatchObject({ speciesId: null, ...FERN_SCHEDULE });
+  });
+
+  test('a plant without a species may leave care types it never needs unscheduled', () => {
+    const db = gardenDb();
+
+    const plant = createPlant(db, { nickname: 'Air plant', schedule: AIR_PLANT_SCHEDULE });
+
+    expect(getPlant(db, plant.id)).toMatchObject(AIR_PLANT_SCHEDULE);
+  });
+
+  test('a Dormant-season interval needs a Growing-season one', () => {
+    const db = gardenDb();
+    const schedule = { ...AIR_PLANT_SCHEDULE, fertilizingDormantDays: 60 };
+
+    expect(() => createPlant(db, { nickname: 'Air plant', schedule })).toThrow(/Growing-season/);
+
+    expect(listPlants(db)).toEqual([]);
+  });
+
+  test('a plant with a species inherits its schedule rather than taking one at creation', () => {
+    const db = gardenDb();
+
+    expect(() => createPlant(db, { speciesId: MONSTERA, schedule: FERN_SCHEDULE })).toThrow(
+      /inherits/,
+    );
+
+    expect(listPlants(db)).toEqual([]);
   });
 
   test('a species the catalog does not know is refused', () => {
@@ -89,14 +136,14 @@ describe('creating plants', () => {
   test('creation stamps created_at and updated_at from the core clock, with no tombstone', () => {
     const db = gardenDb();
 
-    const plant = createPlant(db, { speciesId: MONSTERA }, new Date('2026-09-22T07:30:00.000Z'));
+    const { id } = createPlant(db, { speciesId: MONSTERA }, new Date('2026-09-22T07:30:00.000Z'));
 
-    expect(plant).toMatchObject({
+    expect(getPlant(db, id)).toMatchObject({
       createdAt: '2026-09-22T07:30:00.000Z',
       updatedAt: '2026-09-22T07:30:00.000Z',
       deletedAt: null,
     });
-    expect(plant.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   test('"when did you last…" answers seed backdated Care Events, unanswered care types none', () => {
@@ -105,12 +152,34 @@ describe('creating plants', () => {
     const plant = createPlant(
       db,
       { speciesId: MONSTERA, lastDone: { water: '2026-09-20', fertilize: '2026-09-01' } },
-      new Date(2026, 8, 22, 12),
+      NOON_SEP_22,
     );
 
     expect(listCareEvents(db, plant.id)).toMatchObject([
       { type: 'water', occurredOn: '2026-09-20' },
       { type: 'fertilize', occurredOn: '2026-09-01' },
+    ]);
+    for (const event of listCareEvents(db, plant.id)) {
+      expect(event).toMatchObject({
+        plantId: plant.id,
+        createdAt: NOON_SEP_22.toISOString(),
+        updatedAt: NOON_SEP_22.toISOString(),
+        deletedAt: null,
+      });
+    }
+  });
+
+  test('a seeded repot records the Current Pot the plant was entered with', () => {
+    const db = gardenDb();
+
+    const plant = createPlant(
+      db,
+      { speciesId: MONSTERA, potSizeCm: 21, soil: 'Aroid mix', lastDone: { repot: '2026-03-01' } },
+      NOON_SEP_22,
+    );
+
+    expect(listCareEvents(db, plant.id)).toMatchObject([
+      { type: 'repot', occurredOn: '2026-03-01', potSizeCm: 21, soil: 'Aroid mix' },
     ]);
   });
 
@@ -118,12 +187,18 @@ describe('creating plants', () => {
     const db = gardenDb();
 
     expect(() =>
-      createPlant(
-        db,
-        { speciesId: MONSTERA, lastDone: { water: '2026-09-23' } },
-        new Date(2026, 8, 22, 12),
-      ),
+      createPlant(db, { speciesId: MONSTERA, lastDone: { water: '2026-09-23' } }, NOON_SEP_22),
     ).toThrow(/future/i);
+
+    expect(listPlants(db)).toEqual([]);
+  });
+
+  test('a "last done" answer must be a real calendar day', () => {
+    const db = gardenDb();
+
+    expect(() =>
+      createPlant(db, { speciesId: MONSTERA, lastDone: { water: '2026-02-30' } }, NOON_SEP_22),
+    ).toThrow(/calendar day/i);
 
     expect(listPlants(db)).toEqual([]);
   });
@@ -142,9 +217,9 @@ describe('creating plants', () => {
   test('the Current Pot can be recorded at creation', () => {
     const db = gardenDb();
 
-    const plant = createPlant(db, { speciesId: MONSTERA, potSizeCm: 21, soil: ' Aroid mix ' });
+    const { id } = createPlant(db, { speciesId: MONSTERA, potSizeCm: 21, soil: ' Aroid mix ' });
 
-    expect(plant).toMatchObject({ potSizeCm: 21, soil: 'Aroid mix' });
+    expect(getPlant(db, id)).toMatchObject({ potSizeCm: 21, soil: 'Aroid mix' });
   });
 
   test('a pot size must be positive', () => {

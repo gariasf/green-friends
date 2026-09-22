@@ -48,7 +48,7 @@ export const speciesDataset = sqliteTable('species_dataset', {
   version: integer('version').notNull(),
 });
 
-/** A Plant (CONTEXT.md): one specimen the user cares for. */
+/** A Plant (CONTEXT.md): one individual plant the user owns and cares for. */
 export const plants = sqliteTable('plants', {
   id: text('id').primaryKey(),
   /** Species ID (ADR-0004); an app-layer reference kept verbatim even when unknown (ADR-0002). */
@@ -73,7 +73,10 @@ export const plants = sqliteTable('plants', {
   deletedAt: text('deleted_at'),
 });
 
-export const CARE_EVENT_TYPES = ['water', 'fertilize', 'repot', 'note'] as const;
+/** The schedulable kinds of care (CONTEXT.md, Care Type) ... */
+export const CARE_TYPES = ['water', 'fertilize', 'repot'] as const;
+/** ... plus Notes, which are Care Events but not a care type. */
+export const CARE_EVENT_TYPES = [...CARE_TYPES, 'note'] as const;
 
 /** A Care Event (CONTEXT.md) in a plant's Care Log; all derived state comes from these rows. */
 export const careEvents = sqliteTable('care_events', {
