@@ -3,14 +3,19 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "expo start",
     "ios": "expo run:ios",
     "test": "jest",
-    "lint": "expo lint",
+    "lint": "expo lint app src scripts",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "species:build": "node scripts/species/build.ts",
+    "species:coverage": "node scripts/species/openplantbook-coverage.ts"
   },
   "jest": {
     "preset": "jest-expo",

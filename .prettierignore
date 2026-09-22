@@ -1,2 +1,5 @@
 drizzle/
 *.md
+# Species data tables: one row per taxon, kept that way for readable diffs
+scripts/species/curated.json
+assets/species.json

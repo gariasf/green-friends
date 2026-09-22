@@ -1,6 +1,6 @@
 # Expo / React Native
 
-Green Friends is an Expo (CNG) app: `app/` holds expo-router routes, `src/core` the plain-TypeScript domain, `src/db` the Drizzle schema, migrations and the expo-sqlite handle. See ADR-0001.
+Green Friends is an Expo (CNG) app: `app/` holds expo-router routes, `src/core` the plain-TypeScript domain, `src/db` the Drizzle schema, migrations and the expo-sqlite handle, `scripts/` build-time tooling, TypeScript run directly by Node 24 or later (`engines` in `package.json`). See ADR-0001.
 
 ## Expo has changed — do not trust your training data
 
@@ -18,6 +18,8 @@ npm test                     # jest-expo: core seam tests against in-memory SQLi
 npm run lint                 # eslint (expo config) + prettier
 npm run typecheck            # tsc --noEmit
 npm run db:generate          # drizzle-kit: regenerate drizzle/ after editing src/db/schema.ts
+npm run species:build        # regenerate assets/species.json from scripts/species/curated.json (queries Wikidata)
+npm run species:coverage     # Open Plantbook coverage spot-check; needs OPENPLANTBOOK_CLIENT_ID / _SECRET
 npm run ios                  # local dev build on the simulator (npx expo run:ios)
 npx expo-doctor              # diagnose dependency and config issues
 ```
@@ -28,7 +30,8 @@ Run test, lint and typecheck before declaring any task done.
 
 - `src/core` never imports React, React Native, Expo, or `src/db/client` (enforced by eslint). Core functions take the `Db` handle as their first argument; tests hand them an in-memory database via `src/test/db.ts`.
 - Every write goes through a `src/core` mutation function; components never call `db.insert/update/delete`.
-- Schema changes: edit `src/db/schema.ts`, run `npm run db:generate`, review the new SQL in `drizzle/`. Migrations are forward-only; the schema version is SQLite's `PRAGMA user_version`.
+- Schema changes: edit `src/db/schema.ts`, run `npm run db:generate`, review the new SQL in `drizzle/`. Migrations are forward-only; the schema version is SQLite's `PRAGMA user_version`. Then `npx jest --clearCache`: the SQL is inlined into `drizzle/migrations.js` at transform time and jest caches the result, so an edited or regenerated migration otherwise runs stale in tests ("no such table").
+- Species catalog changes: edit `scripts/species/curated.json` (IDs are Wikidata QIDs, append-only, ADR-0004), bump its `version` whenever species content changes, run `npm run species:build`. Never hand-edit `assets/species.json`; the app reseeds the read-only `species` table when the bundled version is newer.
 - `ios/` and `android/` are generated (CNG). Never edit them; configure native behaviour in `app.json` and config plugins.
 - Native modules (sqlite, notifications) need a dev build, not Expo Go: `npm run ios`.
 - `react-dom` is pinned to the same version as `react` only so npm can resolve expo-router's transitive web peers (there is no web target, ADR-0001). Removing it reintroduces an `ERESOLVE` on install; bump it together with `react`.
