@@ -63,3 +63,11 @@ _Avoid_: late, missed
 **Needs Attention**:
 A plant with at least one care type Due or Overdue today. Defines the daily view.
 _Avoid_: todo, urgent
+
+**Export**:
+A complete, portable snapshot of the user's data — plants, Care Log, photos, settings — as one shareable file. Species are referenced by ID with a name snapshot; the catalog itself is never included.
+_Avoid_: backup dump, sync file
+
+**Import**:
+Merging an Export into the local data: the newer edit wins per record, deletions are preserved, and nothing is wiped. Importing into an empty install restores the Export. Either everything imports or nothing does.
+_Avoid_: load, restore mode
