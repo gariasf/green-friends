@@ -1,7 +1,14 @@
 import bundled from '../../assets/species.json';
 import { openTestDb } from '../test/db';
 import { listCareEvents } from './careLog';
-import { createPlant, getPlant, listPlants, type CareSchedule } from './plants';
+import {
+  archivePlant,
+  createPlant,
+  getPlant,
+  listPlants,
+  updatePlant,
+  type CareSchedule,
+} from './plants';
 import { seedSpecies } from './species';
 
 const MONSTERA = 'Q161077';
@@ -228,5 +235,99 @@ describe('creating plants', () => {
     expect(() => createPlant(db, { speciesId: MONSTERA, potSizeCm: -3 })).toThrow(/pot size/i);
 
     expect(listPlants(db)).toEqual([]);
+  });
+});
+
+describe('editing plants', () => {
+  test('nickname and Current Pot are editable; only updated_at moves', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA }, new Date('2026-09-22T07:30:00.000Z'));
+
+    updatePlant(
+      db,
+      id,
+      { nickname: ' Big Monty ', potSizeCm: 21, soil: 'Aroid mix' },
+      new Date('2026-09-23T08:00:00.000Z'),
+    );
+
+    expect(getPlant(db, id)).toMatchObject({
+      nickname: 'Big Monty',
+      potSizeCm: 21,
+      soil: 'Aroid mix',
+      createdAt: '2026-09-22T07:30:00.000Z',
+      updatedAt: '2026-09-23T08:00:00.000Z',
+    });
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Big Monty' }]);
+  });
+
+  test('a plant with a species may take, change and clear an Override per care type', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA });
+
+    updatePlant(db, id, { wateringGrowingDays: 3, wateringDormantDays: null, repottingMonths: 12 });
+    expect(getPlant(db, id)).toMatchObject({
+      wateringGrowingDays: 3,
+      wateringDormantDays: null,
+      fertilizingGrowingDays: null,
+      repottingMonths: 12,
+    });
+
+    updatePlant(db, id, { wateringGrowingDays: null, repottingMonths: null });
+    expect(getPlant(db, id)).toMatchObject({ wateringGrowingDays: null, repottingMonths: null });
+  });
+
+  test('an Override keeps the schedule rules: whole positive intervals, Dormant only under Growing', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA });
+
+    expect(() => updatePlant(db, id, { wateringDormantDays: 14 })).toThrow(/Growing-season/);
+    expect(() => updatePlant(db, id, { wateringGrowingDays: 0 })).toThrow(/interval/i);
+    expect(() => updatePlant(db, id, { potSizeCm: -1 })).toThrow(/pot size/i);
+
+    expect(getPlant(db, id)).toMatchObject({
+      wateringGrowingDays: null,
+      wateringDormantDays: null,
+    });
+  });
+
+  test('a plant without a species keeps a nickname and at least one care type', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { nickname: 'Air plant', schedule: AIR_PLANT_SCHEDULE });
+
+    expect(() => updatePlant(db, id, { nickname: '' })).toThrow(/nickname/i);
+    expect(() => updatePlant(db, id, { wateringGrowingDays: null })).toThrow(/schedule/i);
+
+    expect(getPlant(db, id)).toMatchObject({ nickname: 'Air plant', wateringGrowingDays: 7 });
+  });
+
+  test('an undefined patch entry leaves the field as it is', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA, nickname: 'Big Monty', potSizeCm: 21 });
+
+    updatePlant(db, id, { nickname: undefined, potSizeCm: undefined, soil: 'Bark' });
+
+    expect(getPlant(db, id)).toMatchObject({ nickname: 'Big Monty', potSizeCm: 21, soil: 'Bark' });
+  });
+
+  test('editing a Deleted or unknown plant is refused', () => {
+    const db = gardenDb();
+
+    expect(() => updatePlant(db, 'nope', { nickname: 'Ghost' })).toThrow(/plant/i);
+  });
+});
+
+describe('archiving plants', () => {
+  test('an Archived plant is stamped, still found by id and keeps its Care Log', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA, lastDone: { water: '2026-09-20' } });
+
+    archivePlant(db, id, new Date('2026-09-23T08:00:00.000Z'));
+
+    expect(getPlant(db, id)).toMatchObject({
+      archivedAt: '2026-09-23T08:00:00.000Z',
+      updatedAt: '2026-09-23T08:00:00.000Z',
+      deletedAt: null,
+    });
+    expect(listCareEvents(db, id)).toMatchObject([{ type: 'water', occurredOn: '2026-09-20' }]);
   });
 });

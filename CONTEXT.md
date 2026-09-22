@@ -65,7 +65,7 @@ A free-text, dated Care Event for observations — diseases, pests, anything. Th
 _Avoid_: comment, disease record
 
 **Due**:
-A care type on a plant whose next due date has been reached. Next due is the last matching Care Event (or the plant's creation, if never logged) plus the interval for today's Season, but never earlier than the first day of today's Season.
+A care type on a plant whose next due date has been reached. Next due is the last matching Care Event (or the plant's creation, if never logged) plus the interval for today's Season, but never earlier than the first day of today's Season. Repotting has no Season and is never held back to one.
 _Avoid_: pending
 
 **Overdue**:

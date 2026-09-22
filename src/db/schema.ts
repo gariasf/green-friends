@@ -70,6 +70,8 @@ export const plants = sqliteTable('plants', {
   repottingMonths: integer('repotting_months'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
+  /** Archived (CONTEXT.md): no longer cared for, out of Needs Attention, Care Log kept; reversible. */
+  archivedAt: text('archived_at'),
   deletedAt: text('deleted_at'),
 });
 

@@ -1,0 +1,1 @@
+ALTER TABLE `plants` ADD `archived_at` text;

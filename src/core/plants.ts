@@ -3,7 +3,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { CARE_TYPES, careEvents, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
 import type { CareEvent } from './careLog';
-import { isCalendarDay, localDay } from './dates';
+import { checkPastOrToday, localDay } from './dates';
 
 export { CARE_TYPES };
 
@@ -69,27 +69,21 @@ export function createPlant(db: Db, input: NewPlant, now: Date = new Date()): Pl
     ...input.schedule,
     createdAt: stamp,
     updatedAt: stamp,
+    archivedAt: null,
     deletedAt: null,
   };
-  if (!speciesId && !plant.nickname) {
-    throw new Error('A plant without a species needs a nickname');
-  }
   if (speciesId && input.schedule) {
     throw new Error('A plant with a species inherits its care schedule from the species');
   }
   if (speciesId && !speciesExists(db, speciesId)) {
     throw new Error(`Unknown species ${speciesId}`);
   }
-  if (!speciesId) validateOwnSchedule(plant);
-  if (plant.potSizeCm !== null && !(Number.isFinite(plant.potSizeCm) && plant.potSizeCm > 0)) {
-    throw new Error(`Pot size must be positive, got ${plant.potSizeCm}`);
-  }
+  validatePlant(plant);
   const today = localDay(now);
   const seeded: CareEvent[] = CARE_TYPES.flatMap((type) => {
     const occurredOn = input.lastDone?.[type];
     if (!occurredOn) return [];
-    if (!isCalendarDay(occurredOn)) throw new Error(`Not a calendar day: ${occurredOn}`);
-    if (occurredOn > today) throw new Error(`Last ${type} day ${occurredOn} is in the future`);
+    checkPastOrToday(occurredOn, today);
     // A repot event records the pot it left the plant in (CONTEXT.md, Current Pot).
     const repot = type === 'repot';
     return {
@@ -112,7 +106,7 @@ export function createPlant(db: Db, input: NewPlant, now: Date = new Date()): Pl
   return getPlant(db, plant.id);
 }
 
-/** A live Plant by id; throws for an unknown or Deleted one. */
+/** A live Plant by id, Archived or not; throws for an unknown or Deleted one. */
 export function getPlant(db: Db, id: string): Plant {
   const plant = db
     .select()
@@ -121,6 +115,38 @@ export function getPlant(db: Db, id: string): Plant {
     .get();
   if (!plant) throw new Error(`No plant ${id}`);
   return plant;
+}
+
+export type PlantPatch = Partial<
+  Pick<Plant, 'nickname' | 'potSizeCm' | 'soil' | keyof CareSchedule>
+>;
+
+/**
+ * Edits a live Plant: nickname, Current Pot, and its Override columns (ADR-0003: set a care type's
+ * Growing or repotting interval to shadow the Species default, null it to fall back; a null
+ * Dormant interval inside a set Override is Paused). Due-ness re-derives from the Care Log on the
+ * next evaluation, so a schedule edit takes effect at once. Undefined patch entries leave the
+ * field as it is.
+ */
+export function updatePlant(db: Db, id: string, patch: PlantPatch, now: Date = new Date()): Plant {
+  const current = getPlant(db, id);
+  const next: Plant = { ...current, ...defined(patch), updatedAt: now.toISOString() };
+  next.nickname = trimToNull(next.nickname);
+  next.soil = trimToNull(next.soil);
+  validatePlant(next);
+  db.update(plants).set(next).where(eq(plants.id, id)).run();
+  return getPlant(db, id);
+}
+
+/**
+ * Archives a live Plant (CONTEXT.md): it leaves Needs Attention, its Care Log and Current Pot are
+ * kept, and getPlant still finds it.
+ */
+export function archivePlant(db: Db, id: string, now: Date = new Date()): Plant {
+  getPlant(db, id);
+  const stamp = now.toISOString();
+  db.update(plants).set({ archivedAt: stamp, updatedAt: stamp }).where(eq(plants.id, id)).run();
+  return getPlant(db, id);
 }
 
 const displayName = sql<string>`coalesce(${plants.nickname}, ${species.colloquialName})`;
@@ -148,21 +174,38 @@ export function listPlants(db: Db): PlantListItem[] {
   return plantListQuery(db).all();
 }
 
-const SEASONAL = [
-  { care: 'watering', growing: 'wateringGrowingDays', dormant: 'wateringDormantDays' },
-  { care: 'fertilizing', growing: 'fertilizingGrowingDays', dormant: 'fertilizingDormantDays' },
-] as const satisfies readonly {
-  care: string;
-  growing: keyof CareSchedule;
-  dormant: keyof CareSchedule;
-}[];
+/** The schedule columns of the two seasonal care types (CONTEXT.md, Season). */
+export const SEASONAL = {
+  water: { care: 'watering', growing: 'wateringGrowingDays', dormant: 'wateringDormantDays' },
+  fertilize: {
+    care: 'fertilizing',
+    growing: 'fertilizingGrowingDays',
+    dormant: 'fertilizingDormantDays',
+  },
+} as const satisfies Record<
+  Exclude<CareType, 'repot'>,
+  { care: string; growing: keyof CareSchedule; dormant: keyof CareSchedule }
+>;
 
 /**
- * A species-less plant's schedule: whole positive intervals, a Dormant interval only under a
- * Growing one (ADR-0003), and at least one care type scheduled.
+ * What every stored Plant row satisfies: the Display Name rule (a nickname when there is no
+ * species), a positive pot size, and valid Override columns, which for a species-less plant are
+ * its whole schedule and must cover at least one care type.
  */
-function validateOwnSchedule(schedule: CareSchedule): void {
-  for (const { care, growing, dormant } of SEASONAL) {
+function validatePlant(plant: Plant): void {
+  if (!plant.speciesId && !plant.nickname) {
+    throw new Error('A plant without a species needs a nickname');
+  }
+  checkPotSize(plant.potSizeCm);
+  validateSchedule(plant, plant.speciesId === null);
+}
+
+/**
+ * Whole positive intervals, and a Dormant interval only under a Growing one (ADR-0003: clearing
+ * an Override clears the whole care type).
+ */
+function validateSchedule(schedule: CareSchedule, requireOne: boolean): void {
+  for (const { care, growing, dormant } of Object.values(SEASONAL)) {
     checkInterval(`Growing-season ${care} interval`, schedule[growing]);
     checkInterval(`Dormant-season ${care} interval`, schedule[dormant]);
     if (schedule[dormant] !== null && schedule[growing] === null) {
@@ -171,12 +214,20 @@ function validateOwnSchedule(schedule: CareSchedule): void {
   }
   checkInterval('Repotting interval', schedule.repottingMonths);
   if (
+    requireOne &&
     schedule.wateringGrowingDays === null &&
     schedule.fertilizingGrowingDays === null &&
     schedule.repottingMonths === null
   ) {
     throw new Error('A plant without a species needs its own care schedule');
   }
+}
+
+/** The patch without its undefined entries, which mean "leave as it is". */
+function defined<T extends object>(patch: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
 }
 
 /** Null is unset; anything else is a whole positive number of days or months. */
@@ -186,11 +237,19 @@ function checkInterval(label: string, value: number | null): void {
   }
 }
 
+/** Null is unset; anything else is a positive size in cm. */
+export function checkPotSize(value: number | null): void {
+  if (value !== null && !(Number.isFinite(value) && value > 0)) {
+    throw new Error(`Pot size must be positive, got ${value}`);
+  }
+}
+
 function speciesExists(db: Db, id: string): boolean {
   return !!db.select({ id: species.id }).from(species).where(eq(species.id, id)).get();
 }
 
-function trimToNull(value: string | null | undefined): string | null {
+/** Free text as stored: trimmed, and null when blank or missing. */
+export function trimToNull(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
 }
