@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
   getSettings,
@@ -8,8 +8,22 @@ import {
   type SettingsPatch,
 } from '@/src/core/settings';
 import { db } from '@/src/db/client';
+import { ChipGroup } from '@/src/ui/Chip';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+].map((label, index) => ({ label, value: index + 1 }));
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
@@ -48,23 +62,7 @@ function MonthRow({
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.chips}>
-        {MONTHS.map((name, index) => {
-          const month = index + 1;
-          const selected = month === value;
-          return (
-            <Pressable
-              key={name}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => onChange(month)}
-              style={[styles.chip, selected && styles.chipSelected]}
-            >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{name}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <ChipGroup options={MONTHS} value={value} onChange={onChange} />
     </View>
   );
 }
@@ -75,15 +73,4 @@ const styles = StyleSheet.create({
   hint: { fontSize: 14, color: '#666' },
   row: { gap: 8 },
   label: { fontSize: 16, fontWeight: '500' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#bbb',
-  },
-  chipSelected: { backgroundColor: '#2e7d32', borderColor: '#2e7d32' },
-  chipText: { fontSize: 15 },
-  chipTextSelected: { color: '#fff', fontWeight: '600' },
 });

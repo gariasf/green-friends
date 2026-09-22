@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
  * Every user-data table follows the sync disciplines from research #5 / spec #8:
@@ -46,4 +46,49 @@ export const species = sqliteTable('species', {
 export const speciesDataset = sqliteTable('species_dataset', {
   id: integer('id').primaryKey(),
   version: integer('version').notNull(),
+});
+
+/** A Plant (CONTEXT.md): one specimen the user cares for. */
+export const plants = sqliteTable('plants', {
+  id: text('id').primaryKey(),
+  /** Species ID (ADR-0004); an app-layer reference kept verbatim even when unknown (ADR-0002). */
+  speciesId: text('species_id'),
+  /** Display Name = nickname, else the species colloquial name; required without a species. */
+  nickname: text('nickname'),
+  /** Current Pot (CONTEXT.md): directly editable, also set by the newest repot event. */
+  potSizeCm: real('pot_size_cm'),
+  soil: text('soil'),
+  /**
+   * Overrides (ADR-0003): a set Growing (or repotting) interval shadows the Species default for
+   * that whole care type, null Dormant inside it meaning Paused; an unset interval means the
+   * default applies. A species-less plant's schedule is Overrides only.
+   */
+  wateringGrowingDays: integer('watering_growing_days'),
+  wateringDormantDays: integer('watering_dormant_days'),
+  fertilizingGrowingDays: integer('fertilizing_growing_days'),
+  fertilizingDormantDays: integer('fertilizing_dormant_days'),
+  repottingMonths: integer('repotting_months'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  deletedAt: text('deleted_at'),
+});
+
+export const CARE_EVENT_TYPES = ['water', 'fertilize', 'repot', 'note'] as const;
+
+/** A Care Event (CONTEXT.md) in a plant's Care Log; all derived state comes from these rows. */
+export const careEvents = sqliteTable('care_events', {
+  id: text('id').primaryKey(),
+  /** App-layer reference to plants.id (no FK, spec #8). */
+  plantId: text('plant_id').notNull(),
+  type: text('type', { enum: CARE_EVENT_TYPES }).notNull(),
+  /** The local calendar day it happened, 'YYYY-MM-DD' (ADR-0005). */
+  occurredOn: text('occurred_on').notNull(),
+  /** Free text; the whole content of a Note. */
+  note: text('note'),
+  /** Repot payload: the new pot size and soil. */
+  potSizeCm: real('pot_size_cm'),
+  soil: text('soil'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  deletedAt: text('deleted_at'),
 });

@@ -49,7 +49,7 @@ A care type with no Dormant interval during the Dormant season: nothing is due a
 _Avoid_: disabled, skipped
 
 **Care Event**:
-A dated record that care happened (or, for a Note, that something was observed) on a plant. May be backdated, edited, or deleted. A repot event also records the new pot size and soil.
+A dated record that care happened (or, for a Note, that something was observed) on a plant. Dated by calendar day, never by time of day (ADR-0005). May be backdated, edited, or deleted. A repot event also records the new pot size and soil.
 _Avoid_: task completion, check-in
 
 **Care Log**:

@@ -15,7 +15,7 @@ describe('migrate', () => {
 
     migrate(db);
 
-    expect(getSchemaVersion(db)).toBe(2);
+    expect(getSchemaVersion(db)).toBe(3);
   });
 
   test('is a no-op on an up-to-date database', () => {
@@ -24,6 +24,6 @@ describe('migrate', () => {
 
     migrate(db);
 
-    expect(getSchemaVersion(db)).toBe(2);
+    expect(getSchemaVersion(db)).toBe(3);
   });
 });
