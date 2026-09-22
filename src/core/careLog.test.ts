@@ -1,21 +1,18 @@
-import bundled from '../../assets/species.json';
-import { openTestDb } from '../test/db';
+import { MONSTERA, NOON_SEP_22, gardenDb, noon } from '../test/garden';
 import { listCareEvents, logCareEvent } from './careLog';
 import { createPlant, getPlant } from './plants';
-import { seedSpecies } from './species';
-
-const MONSTERA = 'Q161077';
-
-/** Local noon, so the calendar day is the same in every timezone the tests run in. */
-const NOON_SEP_22 = new Date(2026, 8, 22, 12);
-
-function gardenDb() {
-  const db = openTestDb();
-  seedSpecies(db, bundled);
-  return db;
-}
 
 describe('logging care', () => {
+  test('an event logged with no day is dated the local day, not the UTC one', () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 20));
+
+    // 23:30 UTC on the 21st is already the 22nd where the tests run (Pacific/Auckland).
+    logCareEvent(db, { plantId: plant.id, type: 'water' }, new Date('2026-09-21T23:30:00.000Z'));
+
+    expect(listCareEvents(db, plant.id)).toMatchObject([{ occurredOn: '2026-09-22' }]);
+  });
+
   test('a Care Event lands in the Care Log dated today, stamped by the core clock', () => {
     const db = gardenDb();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);

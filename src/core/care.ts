@@ -2,8 +2,15 @@ import { and, eq, isNull, max } from 'drizzle-orm';
 
 import { careEvents, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
-import { daysBetween, localDay, shiftDays, shiftMonths } from './dates';
-import { CARE_TYPES, SEASONAL, type CareSchedule, type CareType } from './plants';
+import { daysBetween, isCalendarDay, localDay, shiftDays, shiftMonths } from './dates';
+import {
+  CARE_TYPES,
+  NO_SCHEDULE,
+  SEASONAL,
+  displayNameSql,
+  type CareSchedule,
+  type CareType,
+} from './plants';
 import { getSettings, type Settings } from './settings';
 
 /**
@@ -35,32 +42,12 @@ type SeasonOn =
   | { season: 'growing'; startsOn: string | null }
   | { season: 'dormant'; startsOn: string; resumesOn: string };
 
-/** Effective Care Schedule per care type (ADR-0003): the Override where its Growing (or repotting) interval is set, else the Species default, else none. */
-export function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): CareSchedule {
-  const fallback: CareSchedule = species ?? {
-    wateringGrowingDays: null,
-    wateringDormantDays: null,
-    fertilizingGrowingDays: null,
-    fertilizingDormantDays: null,
-    repottingMonths: null,
-  };
-  const source = (growing: keyof CareSchedule) => (plant[growing] !== null ? plant : fallback);
-  const water = source('wateringGrowingDays');
-  const fertilize = source('fertilizingGrowingDays');
-  return {
-    wateringGrowingDays: water.wateringGrowingDays,
-    wateringDormantDays: water.wateringDormantDays,
-    fertilizingGrowingDays: fertilize.fertilizingGrowingDays,
-    fertilizingDormantDays: fertilize.fertilizingDormantDays,
-    repottingMonths: source('repottingMonths').repottingMonths,
-  };
-}
-
 /**
  * Every live, non-Archived plant with the status of each care type on `today` (a local calendar
  * day), plants with the most Overdue care first, then by Display Name.
  */
 export function evaluateCare(db: Db, today: string = localDay(new Date())): PlantCare[] {
+  if (!isCalendarDay(today)) throw new Error(`Not a calendar day: ${today}`);
   const season = seasonOn(today, getSettings(db));
   const lastDone = new Map<string, string>();
   const latest = db
@@ -72,14 +59,14 @@ export function evaluateCare(db: Db, today: string = localDay(new Date())): Plan
   for (const row of latest) if (row.on) lastDone.set(`${row.plantId}/${row.type}`, row.on);
 
   const rows = db
-    .select({ plant: plants, species })
+    .select({ plant: plants, species, displayName: displayNameSql })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
     .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
     .all();
 
   return rows
-    .map(({ plant, species }): PlantCare => {
+    .map(({ plant, species, displayName }): PlantCare => {
       const schedule = effectiveSchedule(plant, species);
       // A care type never logged anchors to the local day of creation (ADR-0005).
       const anchor = localDay(new Date(plant.createdAt));
@@ -88,12 +75,7 @@ export function evaluateCare(db: Db, today: string = localDay(new Date())): Plan
         const last = lastDone.get(`${plant.id}/${type}`) ?? anchor;
         care[type] = statusOn(type, schedule, last, today, season);
       }
-      return {
-        id: plant.id,
-        displayName: plant.nickname ?? species?.colloquialName ?? plant.id,
-        scientificName: species?.scientificName ?? null,
-        care,
-      };
+      return { id: plant.id, displayName, scientificName: species?.scientificName ?? null, care };
     })
     .sort(
       (a, b) => worstOverdue(b) - worstOverdue(a) || a.displayName.localeCompare(b.displayName),
@@ -105,7 +87,7 @@ export function listNeedsAttention(db: Db, today: string = localDay(new Date()))
   return evaluateCare(db, today).filter(needsAttention);
 }
 
-export function needsAttention(plant: PlantCare): boolean {
+function needsAttention(plant: PlantCare): boolean {
   return CARE_TYPES.some((type) => plant.care[type].state === 'due');
 }
 
@@ -118,6 +100,24 @@ function worstOverdue(plant: PlantCare): number {
       return status.state === 'due' ? status.daysOverdue : -1;
     }),
   );
+}
+
+/**
+ * Effective Care Schedule per care type (ADR-0003): the Override where its Growing (or repotting)
+ * interval is set, else the Species default, else none.
+ */
+function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): CareSchedule {
+  const fallback = species ?? NO_SCHEDULE;
+  const source = (growing: keyof CareSchedule) => (plant[growing] !== null ? plant : fallback);
+  const water = source('wateringGrowingDays');
+  const fertilize = source('fertilizingGrowingDays');
+  return {
+    wateringGrowingDays: water.wateringGrowingDays,
+    wateringDormantDays: water.wateringDormantDays,
+    fertilizingGrowingDays: fertilize.fertilizingGrowingDays,
+    fertilizingDormantDays: fertilize.fertilizingDormantDays,
+    repottingMonths: source('repottingMonths').repottingMonths,
+  };
 }
 
 /**

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, max, ne } from 'drizzle-orm';
+import { and, desc, eq, isNull, max } from 'drizzle-orm';
 
 import { CARE_EVENT_TYPES, careEvents, plants } from '../db/schema';
 import type { Db } from '../db/types';
@@ -61,10 +61,13 @@ export function logCareEvent(db: Db, input: NewCareEvent, now: Date = new Date()
     updatedAt: stamp,
     deletedAt: null,
   };
+  const setsCurrentPot =
+    event.type === 'repot' &&
+    (potSizeCm !== null || soil !== null) &&
+    occurredOn >= newestRepotDay(db, plant.id);
   db.transaction((tx) => {
     tx.insert(careEvents).values(event).run();
-    const newPot = potSizeCm !== null || soil !== null;
-    if (event.type === 'repot' && newPot && occurredOn >= newestRepotDay(tx, plant.id, event.id)) {
+    if (setsCurrentPot) {
       tx.update(plants)
         .set({
           potSizeCm: potSizeCm ?? plant.potSizeCm,
@@ -78,8 +81,8 @@ export function logCareEvent(db: Db, input: NewCareEvent, now: Date = new Date()
   return event;
 }
 
-/** The day of the plant's latest live repot other than `except`; '' when there is none. */
-function newestRepotDay(db: Db, plantId: string, except: string): string {
+/** The day of the plant's newest live repot Care Event; '' when there is none. */
+function newestRepotDay(db: Db, plantId: string): string {
   const row = db
     .select({ on: max(careEvents.occurredOn) })
     .from(careEvents)
@@ -87,7 +90,6 @@ function newestRepotDay(db: Db, plantId: string, except: string): string {
       and(
         eq(careEvents.plantId, plantId),
         eq(careEvents.type, 'repot'),
-        ne(careEvents.id, except),
         isNull(careEvents.deletedAt),
       ),
     )

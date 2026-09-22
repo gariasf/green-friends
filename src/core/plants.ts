@@ -44,7 +44,8 @@ export type NewPlant = {
   lastDone?: Partial<Record<CareType, string>>;
 };
 
-const NO_SCHEDULE: CareSchedule = {
+/** No schedule for any care type: what a plant starts from, and what one without a species falls back to. */
+export const NO_SCHEDULE: CareSchedule = {
   wateringGrowingDays: null,
   wateringDormantDays: null,
   fertilizingGrowingDays: null,
@@ -117,20 +118,36 @@ export function getPlant(db: Db, id: string): Plant {
   return plant;
 }
 
-export type PlantPatch = Partial<
-  Pick<Plant, 'nickname' | 'potSizeCm' | 'soil' | keyof CareSchedule>
->;
+/** The columns updatePlant may change; anything else on a patch object is ignored. */
+const PATCHABLE = [
+  'nickname',
+  'potSizeCm',
+  'soil',
+  'wateringGrowingDays',
+  'wateringDormantDays',
+  'fertilizingGrowingDays',
+  'fertilizingDormantDays',
+  'repottingMonths',
+] as const satisfies readonly (keyof Plant)[];
+
+export type PlantPatch = Partial<Pick<Plant, (typeof PATCHABLE)[number]>>;
 
 /**
  * Edits a live Plant: nickname, Current Pot, and its Override columns (ADR-0003: set a care type's
- * Growing or repotting interval to shadow the Species default, null it to fall back; a null
- * Dormant interval inside a set Override is Paused). Due-ness re-derives from the Care Log on the
- * next evaluation, so a schedule edit takes effect at once. Undefined patch entries leave the
- * field as it is.
+ * Growing or repotting interval to shadow the Species default; null the Growing interval to clear
+ * the Override, Dormant included; a null Dormant interval inside a set Override is Paused).
+ * Due-ness re-derives from the Care Log on the next evaluation, so a schedule edit takes effect at
+ * once. Undefined entries leave the field as it is; timestamps and tombstones are never patchable.
  */
 export function updatePlant(db: Db, id: string, patch: PlantPatch, now: Date = new Date()): Plant {
-  const current = getPlant(db, id);
-  const next: Plant = { ...current, ...defined(patch), updatedAt: now.toISOString() };
+  const next: Plant = { ...getPlant(db, id), updatedAt: now.toISOString() };
+  for (const key of PATCHABLE) {
+    if (patch[key] !== undefined) Object.assign(next, { [key]: patch[key] });
+  }
+  for (const { growing, dormant } of Object.values(SEASONAL)) {
+    // Clearing an Override clears every value for that care type (ADR-0003).
+    if (patch[growing] === null && patch[dormant] === undefined) next[dormant] = null;
+  }
   next.nickname = trimToNull(next.nickname);
   next.soil = trimToNull(next.soil);
   validatePlant(next);
@@ -149,23 +166,24 @@ export function archivePlant(db: Db, id: string, now: Date = new Date()): Plant 
   return getPlant(db, id);
 }
 
-const displayName = sql<string>`coalesce(${plants.nickname}, ${species.colloquialName})`;
+/** The Display Name rule (CONTEXT.md) in SQL, for queries joining plants to species. */
+export const displayNameSql = sql<string>`coalesce(${plants.nickname}, ${species.colloquialName})`;
 
 /**
- * Live plants by Display Name (CONTEXT.md), as a query so the UI can subscribe with
- * useLiveQuery; listPlants runs it.
+ * Live, non-Archived plants by Display Name (CONTEXT.md: the default Garden view), as a query so
+ * the UI can subscribe with useLiveQuery; listPlants runs it.
  */
 export function plantListQuery(db: Db) {
   return db
     .select({
       id: plants.id,
-      displayName: displayName.as('display_name'),
+      displayName: displayNameSql.as('display_name'),
       scientificName: species.scientificName,
     })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
-    .where(isNull(plants.deletedAt))
-    .orderBy(sql`${displayName} COLLATE NOCASE`);
+    .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
+    .orderBy(sql`${displayNameSql} COLLATE NOCASE`);
 }
 
 export type PlantListItem = Awaited<ReturnType<typeof plantListQuery>>[number];
@@ -221,13 +239,6 @@ function validateSchedule(schedule: CareSchedule, requireOne: boolean): void {
   ) {
     throw new Error('A plant without a species needs its own care schedule');
   }
-}
-
-/** The patch without its undefined entries, which mean "leave as it is". */
-function defined<T extends object>(patch: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(patch).filter(([, value]) => value !== undefined),
-  ) as Partial<T>;
 }
 
 /** Null is unset; anything else is a whole positive number of days or months. */

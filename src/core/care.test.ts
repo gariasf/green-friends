@@ -1,26 +1,13 @@
-import bundled from '../../assets/species.json';
-import { openTestDb } from '../test/db';
+import type { Db } from '../db/types';
+import { MONSTERA, catalog, gardenDb, noon } from '../test/garden';
 import { evaluateCare, listNeedsAttention } from './care';
 import { logCareEvent } from './careLog';
 import { archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
 import { updateSettings } from './settings';
-import { seedSpecies, type Species } from './species';
-
-/** Watered every 7 days (14 in the Dormant season), fed monthly and never in winter, repotted every 24 months. */
-const MONSTERA = 'Q161077';
-
-/** Local noon, so the calendar day is the same in every timezone the tests run in. */
-const noon = (year: number, month: number, day: number) => new Date(year, month - 1, day, 12);
-
-/** A migrated database with the bundled Species catalog seeded, as after first launch. */
-function gardenDb() {
-  const db = openTestDb();
-  seedSpecies(db, bundled);
-  return db;
-}
+import { seedSpecies } from './species';
 
 /** The care statuses of the one plant in the garden on `today`. */
-function careOn(db: ReturnType<typeof gardenDb>, today: string) {
+function careOn(db: Db, today: string) {
   const [plant, ...rest] = evaluateCare(db, today);
   expect(rest).toEqual([]);
   return plant.care;
@@ -66,7 +53,7 @@ describe('due-ness from the Care Log', () => {
     expect(careOn(db, '2026-09-28').water).toEqual({ state: 'upcoming', dueOn: '2026-09-29' });
   });
 
-  test('the newest Care Event by day counts, however late it was logged', () => {
+  test('the newest Care Event by day counts, whenever it was logged', () => {
     const db = gardenDb();
     const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 22));
     logCareEvent(
@@ -232,7 +219,7 @@ describe('seasons', () => {
 });
 
 describe('repotting', () => {
-  test('repotting is due a number of months after the last repot, whatever the season', () => {
+  test('repotting is due a number of months after the newest repot Care Event, whatever the season', () => {
     const db = gardenDb();
     const schedule: CareSchedule = {
       wateringGrowingDays: 4,
@@ -285,18 +272,9 @@ describe('effective schedule', () => {
     const db = gardenDb();
     const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 22));
     updatePlant(db, plant.id, { fertilizingGrowingDays: 14 });
-    const thirstier: Species = {
-      id: MONSTERA,
-      scientificName: 'Monstera deliciosa',
-      colloquialName: 'Monstera',
-      wateringGrowingDays: 5,
-      wateringDormantDays: 14,
-      fertilizingGrowingDays: 30,
-      fertilizingDormantDays: null,
-      repottingMonths: 24,
-    };
+    const thirstier = { ...catalog.monstera, wateringGrowingDays: 5 };
 
-    seedSpecies(db, { version: bundled.version + 1, species: [thirstier] });
+    seedSpecies(db, { version: 2, species: [thirstier] });
 
     expect(careOn(db, '2026-09-27').water).toMatchObject({ state: 'due', dueOn: '2026-09-27' });
     expect(careOn(db, '2026-10-06').fertilize).toMatchObject({ state: 'due', dueOn: '2026-10-06' });

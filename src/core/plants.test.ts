@@ -1,5 +1,4 @@
-import bundled from '../../assets/species.json';
-import { openTestDb } from '../test/db';
+import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb } from '../test/garden';
 import { listCareEvents } from './careLog';
 import {
   archivePlant,
@@ -8,11 +7,8 @@ import {
   listPlants,
   updatePlant,
   type CareSchedule,
+  type PlantPatch,
 } from './plants';
-import { seedSpecies } from './species';
-
-const MONSTERA = 'Q161077';
-const POTHOS = 'Q161809';
 
 /** Watered every 4 days (7 in the Dormant season), fed monthly, never in winter; repotted every 18 months. */
 const FERN_SCHEDULE: CareSchedule = {
@@ -31,16 +27,6 @@ const AIR_PLANT_SCHEDULE: CareSchedule = {
   fertilizingDormantDays: null,
   repottingMonths: null,
 };
-
-/** Local noon, so the calendar day is the same in every timezone the tests run in. */
-const NOON_SEP_22 = new Date(2026, 8, 22, 12);
-
-/** A migrated database with the bundled Species catalog seeded, as after first launch. */
-function gardenDb() {
-  const db = openTestDb();
-  seedSpecies(db, bundled);
-  return db;
-}
 
 describe('creating plants', () => {
   test('a plant created from a species is listed under the species colloquial name', () => {
@@ -309,7 +295,39 @@ describe('editing plants', () => {
     expect(getPlant(db, id)).toMatchObject({ nickname: 'Big Monty', potSizeCm: 21, soil: 'Bark' });
   });
 
-  test('editing a Deleted or unknown plant is refused', () => {
+  test('clearing an Override clears its Dormant interval too', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA });
+    updatePlant(db, id, { wateringGrowingDays: 3, wateringDormantDays: 10 });
+
+    updatePlant(db, id, { wateringGrowingDays: null });
+
+    expect(getPlant(db, id)).toMatchObject({
+      wateringGrowingDays: null,
+      wateringDormantDays: null,
+    });
+  });
+
+  test('a patch cannot touch timestamps or tombstones, whatever else it carries', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA }, new Date('2026-09-22T07:30:00.000Z'));
+    const formState = {
+      nickname: 'Big Monty',
+      createdAt: '1999-01-01T00:00:00.000Z',
+      deletedAt: '2000-01-01T00:00:00.000Z',
+    };
+
+    updatePlant(db, id, formState as PlantPatch, new Date('2026-09-23T08:00:00.000Z'));
+
+    expect(getPlant(db, id)).toMatchObject({
+      nickname: 'Big Monty',
+      createdAt: '2026-09-22T07:30:00.000Z',
+      updatedAt: '2026-09-23T08:00:00.000Z',
+      deletedAt: null,
+    });
+  });
+
+  test('editing an unknown plant is refused', () => {
     const db = gardenDb();
 
     expect(() => updatePlant(db, 'nope', { nickname: 'Ghost' })).toThrow(/plant/i);
@@ -319,7 +337,11 @@ describe('editing plants', () => {
 describe('archiving plants', () => {
   test('an Archived plant is stamped, still found by id and keeps its Care Log', () => {
     const db = gardenDb();
-    const { id } = createPlant(db, { speciesId: MONSTERA, lastDone: { water: '2026-09-20' } });
+    const { id } = createPlant(
+      db,
+      { speciesId: MONSTERA, lastDone: { water: '2026-09-20' } },
+      NOON_SEP_22,
+    );
 
     archivePlant(db, id, new Date('2026-09-23T08:00:00.000Z'));
 
@@ -329,5 +351,15 @@ describe('archiving plants', () => {
       deletedAt: null,
     });
     expect(listCareEvents(db, id)).toMatchObject([{ type: 'water', occurredOn: '2026-09-20' }]);
+  });
+
+  test('an Archived plant leaves the Garden list', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA, nickname: 'Window' });
+    createPlant(db, { speciesId: POTHOS });
+
+    archivePlant(db, id);
+
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Pothos' }]);
   });
 });
