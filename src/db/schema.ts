@@ -11,7 +11,10 @@ export const settings = sqliteTable('settings', {
   id: text('id').primaryKey(),
   /** Growing season runs from this month (1-12) ... */
   growingStartMonth: integer('growing_start_month').notNull(),
-  /** ... through this month (1-12) inclusive; may wrap past December (southern hemisphere). */
+  /**
+   * ... through this month (1-12) inclusive; may wrap past December (southern hemisphere).
+   * Equal to growingStartMonth means Growing all year, never Dormant (CONTEXT.md, Season).
+   */
   growingEndMonth: integer('growing_end_month').notNull(),
   /** Daily digest notification time, local, 'HH:MM'. */
   digestTime: text('digest_time').notNull(),
