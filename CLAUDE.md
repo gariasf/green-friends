@@ -13,3 +13,7 @@ Default label vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `read
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Expo / React Native
+
+Versioned-docs-first rules, commands, and house rules for the app code. See `docs/agents/expo.md`.
