@@ -19,7 +19,7 @@ npm run lint                 # eslint (expo config) + prettier
 npm run typecheck            # tsc --noEmit
 npm run db:generate          # drizzle-kit: regenerate drizzle/ after editing src/db/schema.ts
 npm run species:build        # regenerate assets/species.json from scripts/species/curated.json (queries Wikidata)
-npm run species:coverage     # Open Plantbook coverage spot-check; needs OPENPLANTBOOK_CLIENT_ID / _SECRET
+npm run species:coverage     # Open Plantbook coverage spot-check; reads OPENPLANTBOOK_CLIENT_ID / _SECRET from .env.local (git-ignored)
 npm run ios                  # local dev build on the simulator (npx expo run:ios)
 npx expo-doctor              # diagnose dependency and config issues
 ```

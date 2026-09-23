@@ -15,7 +15,7 @@
     "format": "prettier --write .",
     "db:generate": "drizzle-kit generate",
     "species:build": "node scripts/species/build.ts",
-    "species:coverage": "node scripts/species/openplantbook-coverage.ts"
+    "species:coverage": "node --env-file-if-exists=.env.local scripts/species/openplantbook-coverage.ts"
   },
   "jest": {
     "preset": "jest-expo",

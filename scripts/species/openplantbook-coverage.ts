@@ -2,9 +2,11 @@
 /**
  * Spot-checks Open Plantbook coverage of the curated Species list (ticket #10; caveat 1 of the
  * species research, #4). Open Plantbook only answers with registered API credentials, generated
- * in its web UI under API keys (https://open.plantbook.io/apikey/), so this runs by hand:
+ * in its web UI under API keys (https://open.plantbook.io/apikey/), so this runs by hand with
+ * OPENPLANTBOOK_CLIENT_ID and OPENPLANTBOOK_CLIENT_SECRET in the git-ignored .env.local (Node
+ * loads it through --env-file-if-exists in the npm script) or in the environment:
  *
- *   OPENPLANTBOOK_CLIENT_ID=… OPENPLANTBOOK_CLIENT_SECRET=… npm run species:coverage
+ *   npm run species:coverage
  *
  * Prints one line per species and a coverage total to paste into the ticket. Nothing from
  * Open Plantbook is written anywhere: v1 has no consumer for its thresholds.
