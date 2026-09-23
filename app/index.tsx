@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { addDatabaseChangeListener } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -16,13 +17,7 @@ import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/cor
 import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-
-/** How each care type reads on a checklist row and in the undo toast. */
-const CARE_COPY: Record<CareType, { icon: string; label: string; done: string }> = {
-  water: { icon: '💧', label: 'Water', done: 'Watered' },
-  fertilize: { icon: '✨', label: 'Fertilize', done: 'Fertilized' },
-  repot: { icon: '🪨', label: 'Repot', done: 'Repotted' },
-};
+import { CARE_COPY } from '@/src/ui/care';
 
 const UNDO_MS = 4000;
 
@@ -31,7 +26,7 @@ type Undo = { message: string; eventIds: string[] };
 /**
  * Today (spec #8, prototype #6): one card per plant that Needs Attention, most Overdue first, with
  * a checklist row per Due care type that logs it as done today in one tap; the rest of the garden
- * dimmed below.
+ * dimmed below. A card's ⋯, or any plant's name or photo, opens its plant sheet.
  */
 export default function TodayScreen() {
   const [plants, refresh] = usePlantCare();
@@ -127,6 +122,10 @@ function usePlantCare() {
   return [plants, refresh] as const;
 }
 
+function openSheet(plant: PlantCare) {
+  router.push({ pathname: '/plants/[id]', params: { id: plant.id } });
+}
+
 function CareCard({
   plant,
   onLog,
@@ -140,13 +139,19 @@ function CareCard({
   return (
     <View style={styles.card}>
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
-      <PhotoSlot size={64} />
+      <Pressable accessible={false} onPress={() => openSheet(plant)}>
+        <PhotoSlot size={64} />
+      </Pressable>
       <View style={styles.cardBody}>
         <View style={styles.cardHead}>
-          <View style={styles.grow}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => openSheet(plant)}
+            style={styles.grow}
+          >
             <Text style={styles.name}>{plant.displayName}</Text>
             {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
-          </View>
+          </Pressable>
           {due.length > 1 && (
             <Pressable
               accessibilityRole="button"
@@ -157,11 +162,11 @@ function CareCard({
               <Text style={styles.all}>✓ All</Text>
             </Pressable>
           )}
-          {/* Opens the plant sheet once that lands (#14); shown, inert, until then. */}
           <Pressable
-            disabled
             accessibilityRole="button"
             accessibilityLabel={`More for ${plant.displayName}`}
+            hitSlop={8}
+            onPress={() => openSheet(plant)}
             style={styles.more}
           >
             <Text style={styles.moreText}>⋯</Text>
@@ -210,10 +215,11 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
         contentContainerStyle={styles.restStrip}
       >
         {plants.map((plant) => (
-          <View
+          <Pressable
             key={plant.id}
-            accessible
+            accessibilityRole="button"
             accessibilityLabel={`${plant.displayName}, all good`}
+            onPress={() => openSheet(plant)}
             style={styles.restPlant}
           >
             <PhotoSlot size={56} />
@@ -221,7 +227,7 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
               {plant.displayName}
             </Text>
             <Text style={styles.hintSmall}>all good</Text>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
     </>

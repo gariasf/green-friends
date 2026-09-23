@@ -169,6 +169,18 @@ export function archivePlant(db: Db, id: string, now: Date = new Date()): Plant 
 /** The Display Name rule (CONTEXT.md) in SQL, for queries joining plants to species. */
 export const displayNameSql = sql<string>`coalesce(${plants.nickname}, ${species.colloquialName})`;
 
+/** A live plant's Display Name, Archived or not; throws for an unknown or Deleted one. */
+export function getDisplayName(db: Db, id: string): string {
+  const row = db
+    .select({ displayName: displayNameSql })
+    .from(plants)
+    .leftJoin(species, eq(plants.speciesId, species.id))
+    .where(and(eq(plants.id, id), isNull(plants.deletedAt)))
+    .get();
+  if (!row) throw new Error(`No plant ${id}`);
+  return row.displayName;
+}
+
 /**
  * Live, non-Archived plants by Display Name (CONTEXT.md: the default Garden view), as a query so
  * the UI can subscribe with useLiveQuery; listPlants runs it.

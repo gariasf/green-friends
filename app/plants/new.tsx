@@ -1,21 +1,13 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type TextInputProps,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localDay, shiftDays } from '@/src/core/dates';
 import { CARE_TYPES, createPlant, type CareSchedule, type CareType } from '@/src/core/plants';
 import { listSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
+import { Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
 
 /** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
 type Ago = { label: string; value: number | null };
@@ -225,21 +217,9 @@ export default function NewPlantScreen() {
         </View>
       ))}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !canSave }}
-        disabled={!canSave}
-        onPress={save}
-        style={[styles.save, !canSave && styles.saveDisabled]}
-      >
-        <Text style={styles.saveText}>Add plant</Text>
-      </Pressable>
+      <PrimaryButton label="Add plant" disabled={!canSave} onPress={save} />
     </ScrollView>
   );
-}
-
-function Field(props: TextInputProps) {
-  return <TextInput style={styles.field} placeholderTextColor="#8e8e93" {...props} />;
 }
 
 function Picked({
@@ -266,12 +246,6 @@ function Picked({
   );
 }
 
-/** Blank means not given; anything else goes to the core as a number for it to validate. */
-function optionalNumber(text: string): number | null {
-  const trimmed = text.trim();
-  return trimmed === '' ? null : Number(trimmed.replace(',', '.'));
-}
-
 const styles = StyleSheet.create({
   screen: { padding: 16, gap: 12, paddingBottom: 48 },
   heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
@@ -280,15 +254,6 @@ const styles = StyleSheet.create({
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
   row: { gap: 8 },
   grow: { flex: 1, gap: 2 },
-  field: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
   match: { paddingVertical: 8, gap: 2, borderBottomWidth: 1, borderColor: '#eee' },
   matchName: { fontSize: 16, fontWeight: '500' },
   picked: {
@@ -299,13 +264,4 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#e8f5e9',
   },
-  save: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    backgroundColor: '#2e7d32',
-  },
-  saveDisabled: { backgroundColor: '#bbb' },
-  saveText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 });

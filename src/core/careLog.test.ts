@@ -1,6 +1,13 @@
 import { MONSTERA, NOON_SEP_22, gardenDb, noon } from '../test/garden';
 import { listNeedsAttention } from './care';
-import { deleteCareEvent, listCareEvents, logCareEvent } from './careLog';
+import {
+  deleteCareEvent,
+  editCareEvent,
+  getCareEvent,
+  listCareEvents,
+  logCareEvent,
+  type CareEventPatch,
+} from './careLog';
 import { createPlant, getPlant } from './plants';
 
 describe('logging care', () => {
@@ -150,6 +157,122 @@ describe('logging care', () => {
 
     logCareEvent(db, { plantId: plant.id, type: 'repot' }, NOON_SEP_22);
     expect(getPlant(db, plant.id)).toMatchObject({ potSizeCm: 21, soil: 'Peat' });
+  });
+});
+
+describe('editing care', () => {
+  test('moving a Care Event to another day re-derives due-ness at once', () => {
+    const db = gardenDb();
+    // Watered every 7 days: the watering logged on the 22nd is next Due on the 29th.
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, NOON_SEP_22);
+    expect(listNeedsAttention(db, '2026-09-27')).toEqual([]);
+
+    editCareEvent(db, watered.id, { occurredOn: '2026-09-19' }, NOON_SEP_22);
+
+    expect(listNeedsAttention(db, '2026-09-27')).toMatchObject([
+      { id: plant.id, care: { water: { state: 'due', dueOn: '2026-09-26', daysOverdue: 1 } } },
+    ]);
+  });
+
+  test("a Note's text and a repot's pot are editable, stored trimmed; only updated_at moves", () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 21));
+    const note = logCareEvent(
+      db,
+      { plantId: plant.id, type: 'note', note: 'Thrips?' },
+      noon(2026, 9, 21),
+    );
+    const repot = logCareEvent(
+      db,
+      { plantId: plant.id, type: 'repot', potSizeCm: 21, soil: 'Peat' },
+      NOON_SEP_22,
+    );
+    const later = noon(2026, 9, 23);
+
+    editCareEvent(db, note.id, { note: ' Thrips on two leaves ' }, later);
+    editCareEvent(db, repot.id, { potSizeCm: 24, soil: ' Aroid mix ' }, later);
+
+    expect(listCareEvents(db, plant.id)).toEqual([
+      { ...repot, potSizeCm: 24, soil: 'Aroid mix', updatedAt: later.toISOString() },
+      { ...note, note: 'Thrips on two leaves', updatedAt: later.toISOString() },
+    ]);
+  });
+
+  test('an edit keeps the rules the Care Event was logged under; a refused edit changes nothing', () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 20));
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, noon(2026, 9, 20));
+    const note = logCareEvent(
+      db,
+      { plantId: plant.id, type: 'note', note: 'Thrips?' },
+      noon(2026, 9, 21),
+    );
+    const repot = logCareEvent(db, { plantId: plant.id, type: 'repot' }, NOON_SEP_22);
+    const edit = (id: string, patch: CareEventPatch) => () =>
+      editCareEvent(db, id, patch, NOON_SEP_22);
+
+    expect(edit(watered.id, { occurredOn: '2026-09-23' })).toThrow(/future/i);
+    expect(edit(watered.id, { occurredOn: '2026-02-30' })).toThrow(/calendar day/i);
+    expect(edit(note.id, { note: '  ' })).toThrow(/text/i);
+    expect(edit(watered.id, { soil: 'Peat' })).toThrow(/repot/i);
+    expect(edit(repot.id, { potSizeCm: 0 })).toThrow(/pot size/i);
+
+    expect(listCareEvents(db, plant.id)).toEqual([repot, note, watered]);
+  });
+
+  test('editing a repot, even the newest, leaves the Current Pot as it is', () => {
+    const db = gardenDb();
+    const plant = createPlant(
+      db,
+      { speciesId: MONSTERA, potSizeCm: 17, soil: 'Peat' },
+      NOON_SEP_22,
+    );
+    const repot = logCareEvent(
+      db,
+      { plantId: plant.id, type: 'repot', potSizeCm: 21, soil: 'Aroid mix' },
+      NOON_SEP_22,
+    );
+
+    editCareEvent(db, repot.id, { potSizeCm: 24, soil: 'Bark' }, NOON_SEP_22);
+
+    expect(getPlant(db, plant.id)).toMatchObject({ potSizeCm: 21, soil: 'Aroid mix' });
+  });
+
+  test('an edit cannot change the type, plant, timestamps or tombstone, whatever else it carries', () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, NOON_SEP_22);
+    const formState = {
+      occurredOn: '2026-09-21',
+      type: 'fertilize',
+      plantId: 'another plant',
+      createdAt: '1999-01-01T00:00:00.000Z',
+      deletedAt: '2000-01-01T00:00:00.000Z',
+    };
+    const later = noon(2026, 9, 23);
+
+    editCareEvent(db, watered.id, formState as CareEventPatch, later);
+
+    expect(listCareEvents(db, plant.id)).toEqual([
+      { ...watered, occurredOn: '2026-09-21', updatedAt: later.toISOString() },
+    ]);
+  });
+
+  test('only a live Care Event can be read by id or edited', () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, NOON_SEP_22);
+    expect(getCareEvent(db, watered.id)).toEqual(watered);
+
+    deleteCareEvent(db, watered.id, NOON_SEP_22);
+
+    expect(() => getCareEvent(db, watered.id)).toThrow(/care event/i);
+    expect(() => editCareEvent(db, watered.id, { occurredOn: '2026-09-21' })).toThrow(
+      /care event/i,
+    );
+    expect(() => editCareEvent(db, 'nope', { occurredOn: '2026-09-21' })).toThrow(/care event/i);
+    expect(listCareEvents(db, plant.id)).toEqual([]);
   });
 });
 

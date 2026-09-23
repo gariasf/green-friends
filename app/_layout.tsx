@@ -17,6 +17,17 @@ globalThis.crypto.randomUUID ??= uuid.v4 as Crypto['randomUUID'];
 migrate(db);
 seedSpecies(db, bundledSpecies);
 
+/**
+ * A native bottom sheet as tall as what it holds (the prototype #6 plant sheet). Opaque: the iOS 26
+ * glass default turns dark over the dimmed screen, under text drawn for a light background.
+ */
+const SHEET = {
+  presentation: 'formSheet',
+  sheetAllowedDetents: 'fitToContents',
+  headerShown: false,
+  contentStyle: { backgroundColor: '#fff' },
+} as const;
+
 export default function RootLayout() {
   return (
     <Stack>
@@ -59,6 +70,9 @@ export default function RootLayout() {
           ),
         }}
       />
+      <Stack.Screen name="plants/[id]/index" options={SHEET} />
+      <Stack.Screen name="plants/[id]/log" options={{ title: 'Care Log' }} />
+      <Stack.Screen name="care-events/[id]" options={SHEET} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );

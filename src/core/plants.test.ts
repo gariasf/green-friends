@@ -3,6 +3,7 @@ import { listCareEvents } from './careLog';
 import {
   archivePlant,
   createPlant,
+  getDisplayName,
   getPlant,
   listPlants,
   updatePlant,
@@ -351,6 +352,18 @@ describe('archiving plants', () => {
       deletedAt: null,
     });
     expect(listCareEvents(db, id)).toMatchObject([{ type: 'water', occurredOn: '2026-09-20' }]);
+  });
+
+  test('an Archived plant still has its Display Name', () => {
+    const db = gardenDb();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Big Monty' });
+    const { id } = createPlant(db, { speciesId: POTHOS });
+
+    archivePlant(db, id);
+
+    expect(getDisplayName(db, id)).toBe('Pothos');
+    expect(getDisplayName(db, monty.id)).toBe('Big Monty');
+    expect(() => getDisplayName(db, 'nope')).toThrow(/plant/i);
   });
 
   test('an Archived plant leaves the Garden list', () => {
