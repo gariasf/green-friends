@@ -17,7 +17,7 @@ import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/cor
 import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY } from '@/src/ui/care';
+import { CARE_COPY } from '@/src/ui/CareEvent';
 
 const UNDO_MS = 4000;
 
@@ -122,7 +122,7 @@ function usePlantCare() {
   return [plants, refresh] as const;
 }
 
-function openSheet(plant: PlantCare) {
+function openPlantSheet(plant: PlantCare) {
   router.push({ pathname: '/plants/[id]', params: { id: plant.id } });
 }
 
@@ -139,14 +139,14 @@ function CareCard({
   return (
     <View style={styles.card}>
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
-      <Pressable accessible={false} onPress={() => openSheet(plant)}>
+      <Pressable accessible={false} onPress={() => openPlantSheet(plant)}>
         <PhotoSlot size={64} />
       </Pressable>
       <View style={styles.cardBody}>
         <View style={styles.cardHead}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => openSheet(plant)}
+            onPress={() => openPlantSheet(plant)}
             style={styles.grow}
           >
             <Text style={styles.name}>{plant.displayName}</Text>
@@ -166,7 +166,7 @@ function CareCard({
             accessibilityRole="button"
             accessibilityLabel={`More for ${plant.displayName}`}
             hitSlop={8}
-            onPress={() => openSheet(plant)}
+            onPress={() => openPlantSheet(plant)}
             style={styles.more}
           >
             <Text style={styles.moreText}>⋯</Text>
@@ -219,7 +219,7 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
             key={plant.id}
             accessibilityRole="button"
             accessibilityLabel={`${plant.displayName}, all good`}
-            onPress={() => openSheet(plant)}
+            onPress={() => openPlantSheet(plant)}
             style={styles.restPlant}
           >
             <PhotoSlot size={56} />

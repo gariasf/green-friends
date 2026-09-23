@@ -7,7 +7,7 @@ import { careLogQuery, type CareEvent } from '@/src/core/careLog';
 import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, dayLabel } from '@/src/ui/care';
+import { CARE_COPY, dayLabel } from '@/src/ui/CareEvent';
 
 /** A plant's Care Log (spec #8): every Care Event, newest first; each opens to be edited or deleted. */
 export default function CareLogScreen() {

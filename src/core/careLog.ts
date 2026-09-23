@@ -127,8 +127,8 @@ export function editCareEvent(
 }
 
 /**
- * What every stored Care Event satisfies: a real day no later than today, text on a Note, and a
- * pot size or soil only on a repot, the size positive.
+ * The rules a Care Event is logged and edited under: a real day no later than today, text on a
+ * Note, and a pot size or soil only on a repot, the size positive.
  */
 function validateCareEvent(event: CareEvent, today: string): void {
   checkPastOrToday(event.occurredOn, today);

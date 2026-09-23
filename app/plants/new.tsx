@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localDay, shiftDays } from '@/src/core/dates';
 import { CARE_TYPES, createPlant, type CareSchedule, type CareType } from '@/src/core/plants';
 import { listSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
-import { Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
+import { alertError, Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
 
 /** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
 type Ago = { label: string; value: number | null };
@@ -107,10 +107,7 @@ export default function NewPlantScreen() {
       });
       router.back();
     } catch (error) {
-      Alert.alert(
-        'Could not add the plant',
-        error instanceof Error ? error.message : String(error),
-      );
+      alertError('Could not add the plant', error);
     }
   };
 

@@ -1,14 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { dueCare, evaluateCare } from '@/src/core/care';
 import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
 import { localDay, shiftDays } from '@/src/core/dates';
 import { db } from '@/src/db/client';
-import { CARE_COPY } from '@/src/ui/care';
+import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
-import { Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
+import { alertError, PrimaryButton } from '@/src/ui/Form';
 
 const KINDS = CARE_EVENT_TYPES.map((type) => ({
   label: `${CARE_COPY[type].icon} ${CARE_COPY[type].label}`,
@@ -29,15 +29,15 @@ const WHEN = [
  */
 export default function PlantSheet() {
   const { id } = useLocalSearchParams<'/plants/[id]'>();
+  // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants.
   const [plant] = useState(() => evaluateCare(db).find((candidate) => candidate.id === id));
   // Opened from a Today card, the sheet is most likely there to backdate the care it shows Due.
   const [type, setType] = useState<CareEventType>(
     () => (plant && dueCare(plant)[0]?.type) ?? 'water',
   );
   const [daysAgo, setDaysAgo] = useState(0);
-  const [note, setNote] = useState('');
-  const [potSizeCm, setPotSizeCm] = useState('');
-  const [soil, setSoil] = useState('');
+  const details = useCareEventDetails(type);
+  // Only a plant in care, live and not Archived, has a sheet.
   if (!plant) return null;
 
   const log = () => {
@@ -46,13 +46,11 @@ export default function PlantSheet() {
         plantId: plant.id,
         type,
         occurredOn: shiftDays(localDay(new Date()), -daysAgo),
-        note: type === 'note' ? note : null,
-        potSizeCm: type === 'repot' ? optionalNumber(potSizeCm) : null,
-        soil: type === 'repot' ? soil : null,
+        ...details.values,
       });
       router.back();
     } catch (error) {
-      Alert.alert('Could not log it', error instanceof Error ? error.message : String(error));
+      alertError('Could not log it', error);
     }
   };
 
@@ -65,29 +63,10 @@ export default function PlantSheet() {
       <ChipGroup options={KINDS} value={type} onChange={setType} />
       <Text style={styles.hint}>When did it happen?</Text>
       <ChipGroup options={WHEN} value={daysAgo} onChange={setDaysAgo} />
-      {type === 'note' && (
-        <Field
-          placeholder="What did you notice? Pests, a new leaf…"
-          value={note}
-          onChangeText={setNote}
-          multiline
-          autoFocus
-        />
-      )}
-      {type === 'repot' && (
-        <>
-          <Field
-            placeholder="New pot size in cm (optional)"
-            value={potSizeCm}
-            onChangeText={setPotSizeCm}
-            keyboardType="decimal-pad"
-          />
-          <Field placeholder="Soil (optional)" value={soil} onChangeText={setSoil} />
-        </>
-      )}
+      {details.fields}
       <PrimaryButton
         label={type === 'note' ? 'Add note' : `Log ${CARE_COPY[type].label.toLowerCase()}`}
-        disabled={type === 'note' && note.trim() === ''}
+        disabled={!details.complete}
         onPress={log}
       />
       <Pressable

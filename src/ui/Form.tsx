@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, TextInput, type TextInputProps } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, type TextInputProps } from 'react-native';
 
 export function Field(props: TextInputProps) {
   return <TextInput style={styles.field} placeholderTextColor="#8e8e93" {...props} />;
@@ -25,6 +25,11 @@ export function PrimaryButton({
       <Text style={styles.buttonText}>{label}</Text>
     </Pressable>
   );
+}
+
+/** Tells the user why a core mutation refused a form, in the core's own words. */
+export function alertError(title: string, error: unknown): void {
+  Alert.alert(title, error instanceof Error ? error.message : String(error));
 }
 
 /** Blank means not given; anything else goes to the core as a number for it to validate. */

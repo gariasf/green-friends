@@ -5,8 +5,8 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { deleteCareEvent, editCareEvent, getCareEvent } from '@/src/core/careLog';
 import { localDay, shiftDays } from '@/src/core/dates';
 import { db } from '@/src/db/client';
-import { CARE_COPY, dayLabel } from '@/src/ui/care';
-import { Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
+import { CARE_COPY, dayLabel, useCareEventDetails } from '@/src/ui/CareEvent';
+import { alertError, PrimaryButton } from '@/src/ui/Form';
 
 /**
  * One Care Event from the Care Log, to edit (its day, a Note's text, a repot's pot size and soil)
@@ -16,23 +16,16 @@ export default function CareEventSheet() {
   const { id } = useLocalSearchParams<'/care-events/[id]'>();
   const [event] = useState(() => getCareEvent(db, id));
   const [occurredOn, setOccurredOn] = useState(event.occurredOn);
-  const [note, setNote] = useState(event.note ?? '');
-  const [potSizeCm, setPotSizeCm] = useState(event.potSizeCm?.toString() ?? '');
-  const [soil, setSoil] = useState(event.soil ?? '');
+  const details = useCareEventDetails(event.type, event);
   const today = localDay(new Date());
   const copy = CARE_COPY[event.type];
 
   const save = () => {
     try {
-      editCareEvent(db, event.id, {
-        occurredOn,
-        note: event.type === 'note' ? note : undefined,
-        potSizeCm: event.type === 'repot' ? optionalNumber(potSizeCm) : undefined,
-        soil: event.type === 'repot' ? soil : undefined,
-      });
+      editCareEvent(db, event.id, { occurredOn, ...details.values });
       router.back();
     } catch (error) {
-      Alert.alert('Could not save it', error instanceof Error ? error.message : String(error));
+      alertError('Could not save it', error);
     }
   };
 
@@ -69,25 +62,8 @@ export default function CareEventSheet() {
           onPress={() => setOccurredOn(shiftDays(occurredOn, 1))}
         />
       </View>
-      {event.type === 'note' && (
-        <Field placeholder="What did you notice?" value={note} onChangeText={setNote} multiline />
-      )}
-      {event.type === 'repot' && (
-        <>
-          <Field
-            placeholder="New pot size in cm (optional)"
-            value={potSizeCm}
-            onChangeText={setPotSizeCm}
-            keyboardType="decimal-pad"
-          />
-          <Field placeholder="Soil (optional)" value={soil} onChangeText={setSoil} />
-        </>
-      )}
-      <PrimaryButton
-        label="Save"
-        disabled={event.type === 'note' && note.trim() === ''}
-        onPress={save}
-      />
+      {details.fields}
+      <PrimaryButton label="Save" disabled={!details.complete} onPress={save} />
       <Pressable accessibilityRole="button" hitSlop={8} onPress={remove}>
         <Text style={styles.delete}>Delete</Text>
       </Pressable>
