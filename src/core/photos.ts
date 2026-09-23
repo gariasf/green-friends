@@ -20,8 +20,8 @@ export type PhotoFiles = {
 
 /**
  * Makes the prepared JPEG at `source` (resized and compressed by the caller) a live plant's one
- * photo, filed under the new row's UUID. Replacing a photo tombstones its row, so the deletion
- * survives Export and Import (ADR-0002), and removes its file.
+ * photo, filed under the new row's UUID. The photo it replaces is Deleted, its row kept as a
+ * tombstone so the deletion survives Export and Import (ADR-0002), and its file removed.
  */
 export function setPlantPhoto(
   db: Db,
@@ -50,7 +50,13 @@ export function setPlantPhoto(
     tx.update(photos).set({ updatedAt: stamp, deletedAt: stamp }).where(live).run();
     tx.insert(photos).values(photo).run();
   });
-  for (const { filename } of replaced) files.remove(filename);
+  for (const { filename } of replaced) {
+    try {
+      files.remove(filename);
+    } catch {
+      // The new photo is in; an old file left behind only takes space.
+    }
+  }
   return photo;
 }
 

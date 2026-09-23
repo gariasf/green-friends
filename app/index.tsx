@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { addDatabaseChangeListener } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -19,6 +18,7 @@ import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
+import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 const UNDO_MS = 4000;
 
@@ -101,24 +101,14 @@ function usePlantCare() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPlants(evaluateCare(db));
   }, []);
+  useAfterWrites(refresh);
   useEffect(() => {
-    // expo-sqlite reports every changed row; one evaluation per burst of writes (an Import, a
-    // deleted plant's Care Log) is enough.
-    let burst: ReturnType<typeof setTimeout> | undefined;
-    const writes = addDatabaseChangeListener(() => {
-      clearTimeout(burst);
-      burst = setTimeout(refresh, 50);
-    });
     // ponytail: left open across midnight, Today shows yesterday until the next write or
     // foregrounding; add a timer for the next local midnight if that ever matters.
     const foreground = AppState.addEventListener('change', (state) => {
       if (state === 'active') refresh();
     });
-    return () => {
-      clearTimeout(burst);
-      writes.remove();
-      foreground.remove();
-    };
+    return () => foreground.remove();
   }, [refresh]);
   return [plants, refresh] as const;
 }

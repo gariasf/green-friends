@@ -1,9 +1,10 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSheetIOS, Image, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { PhotoFiles } from '@/src/core/photos';
+import { alertError } from '@/src/ui/Form';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -28,11 +29,36 @@ export function photoUri(filename: string | null): string | null {
 const LONG_EDGE = 1600;
 
 /**
- * Asks for a photo from the camera or the library and prepares it for setPlantPhoto: a JPEG at
- * most LONG_EDGE pixels on its long edge. Resolves to the prepared file, or null when the user
- * backs out.
+ * "Add photo", or "Replace photo" once there is one: asks for a photo, prepares it for
+ * setPlantPhoto and hands the prepared file to `onPick`, telling the user when either fails.
  */
-export async function pickPhoto(): Promise<string | null> {
+export function PhotoButton({
+  hasPhoto,
+  onPick,
+}: {
+  hasPhoto: boolean;
+  onPick: (prepared: string) => void;
+}) {
+  const choose = async () => {
+    try {
+      const prepared = await pickPhoto();
+      if (prepared) onPick(prepared);
+    } catch (error) {
+      alertError('Could not add the photo', error);
+    }
+  };
+  return (
+    <Pressable accessibilityRole="button" hitSlop={8} onPress={choose}>
+      <Text style={styles.link}>{hasPhoto ? 'Replace photo' : 'Add photo'}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Asks for a photo from the camera or the library and prepares it. Resolves to the prepared
+ * file, or null when the user backs out.
+ */
+async function pickPhoto(): Promise<string | null> {
   const source = await chooseSource();
   if (source === null) return null;
   if (source === 'camera' && !(await ImagePicker.requestCameraPermissionsAsync()).granted) {
@@ -43,6 +69,16 @@ export async function pickPhoto(): Promise<string | null> {
     : ImagePicker.launchImageLibraryAsync());
   if (picked.canceled) return null;
   const { uri } = picked.assets[0];
+  try {
+    return await prepare(uri);
+  } finally {
+    // The picker's full-size copy, prepared or not: no original is kept.
+    deleteIfThere(new File(uri));
+  }
+}
+
+/** The image at `uri` as a JPEG at most LONG_EDGE pixels on its long edge. */
+async function prepare(uri: string): Promise<string> {
   // Decoded first, EXIF orientation applied, so the long edge is the one the photo shows with.
   const loading = ImageManipulator.manipulate(uri);
   const original = await loading.renderAsync();
@@ -54,9 +90,7 @@ export async function pickPhoto(): Promise<string | null> {
   const resized = await resizing.renderAsync();
   const prepared = await resized.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
   // Native images hold megabytes each; free them now rather than at the next garbage collection.
-  for (const shared of [loading, original, resizing, resized]) shared.release();
-  // The picker's full-size copy: no original is kept.
-  deleteIfThere(new File(uri));
+  for (const native of [loading, original, resizing, resized]) native.release();
   return prepared.uri;
 }
 
@@ -87,6 +121,7 @@ export function PlantPhoto({ uri, size }: { uri: string | null; size: number }) 
 }
 
 const styles = StyleSheet.create({
+  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
   photo: {
     borderRadius: 14,
     backgroundColor: '#e8f5e9',

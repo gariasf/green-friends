@@ -184,11 +184,8 @@ export function getDisplayName(db: Db, id: string): string {
   return row.displayName;
 }
 
-/**
- * Live, non-Archived plants by Display Name (CONTEXT.md: the default Garden view), as a query so
- * the UI can subscribe with useLiveQuery; listPlants runs it.
- */
-export function plantListQuery(db: Db) {
+/** Live, non-Archived plants by Display Name, with their photo (CONTEXT.md: the default Garden view). */
+export function listPlants(db: Db) {
   return db
     .select({
       id: plants.id,
@@ -200,13 +197,8 @@ export function plantListQuery(db: Db) {
     .leftJoin(species, eq(plants.speciesId, species.id))
     .leftJoin(photos, livePhotoJoin)
     .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
-    .orderBy(sql`${displayNameSql} COLLATE NOCASE`);
-}
-
-export type PlantListItem = Awaited<ReturnType<typeof plantListQuery>>[number];
-
-export function listPlants(db: Db): PlantListItem[] {
-  return plantListQuery(db).all();
+    .orderBy(sql`${displayNameSql} COLLATE NOCASE`)
+    .all();
 }
 
 /** The schedule columns of the two seasonal care types (CONTEXT.md, Season). */

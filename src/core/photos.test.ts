@@ -50,7 +50,7 @@ describe('plant photos', () => {
     ]);
   });
 
-  test('replacing the photo tombstones the old row and removes its file', () => {
+  test('a replaced photo is Deleted as a tombstone and its file removed', () => {
     const db = gardenDb();
     const store = photoStore();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
@@ -65,6 +65,26 @@ describe('plant photos', () => {
     ]);
     expect(store.stored()).toEqual({ [second.filename]: 'file:///cache/second.jpg' });
     expect(listPlants(db)).toMatchObject([{ id: plant.id, photo: second.filename }]);
+  });
+
+  test("replacing one plant's photo leaves every other plant's photo alone", () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+    const pothos = createPlant(db, { speciesId: POTHOS }, NOON_SEP_22);
+    setPlantPhoto(db, store.files, monty.id, 'file:///cache/monty.jpg', NOON_SEP_22);
+    const kept = setPlantPhoto(db, store.files, pothos.id, 'file:///cache/pothos.jpg', NOON_SEP_22);
+
+    const replaced = setPlantPhoto(db, store.files, monty.id, 'file:///cache/monty-2.jpg');
+
+    expect(listPlants(db)).toMatchObject([
+      { displayName: 'Monty', photo: replaced.filename },
+      { displayName: 'Pothos', photo: kept.filename },
+    ]);
+    expect(store.stored()).toEqual({
+      [kept.filename]: 'file:///cache/pothos.jpg',
+      [replaced.filename]: 'file:///cache/monty-2.jpg',
+    });
   });
 
   test('a photo for an unknown plant is refused and nothing is stored', () => {
@@ -97,5 +117,26 @@ describe('plant photos', () => {
 
     expect(listPhotoRows(db)).toEqual([photo]);
     expect(store.stored()).toEqual({ [photo.filename]: 'file:///cache/first.jpg' });
+  });
+
+  test('an old file the store cannot remove still leaves the new photo in place', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
+    const first = setPlantPhoto(db, store.files, plant.id, 'file:///cache/first.jpg', NOON_SEP_22);
+    const stuck: PhotoFiles = {
+      ...store.files,
+      remove: () => {
+        throw new Error('Permission denied');
+      },
+    };
+
+    const second = setPlantPhoto(db, stuck, plant.id, 'file:///cache/second.jpg');
+
+    expect(listPlants(db)).toMatchObject([{ id: plant.id, photo: second.filename }]);
+    expect(store.stored()).toEqual({
+      [first.filename]: 'file:///cache/first.jpg',
+      [second.filename]: 'file:///cache/second.jpg',
+    });
   });
 });

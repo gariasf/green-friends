@@ -99,8 +99,8 @@ export const careEvents = sqliteTable('care_events', {
 });
 
 /**
- * A plant's photo: at most one live row per plant; replacing it tombstones the old row. The image
- * itself is a file, never a blob (ADR-0001).
+ * A plant's photo: at most one live row per plant; a replaced photo is Deleted, its row kept as a
+ * tombstone. The image itself is a file, never a blob (ADR-0001).
  */
 export const photos = sqliteTable('photos', {
   id: text('id').primaryKey(),

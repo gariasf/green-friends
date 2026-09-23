@@ -10,7 +10,7 @@ import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, PrimaryButton } from '@/src/ui/Form';
-import { PlantPhoto, photoFiles, photoUri, pickPhoto } from '@/src/ui/Photo';
+import { PhotoButton, PlantPhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 
 const KINDS = CARE_EVENT_TYPES.map((type) => ({
   label: `${CARE_COPY[type].icon} ${CARE_COPY[type].label}`,
@@ -58,15 +58,6 @@ export default function PlantSheet() {
     }
   };
 
-  const changePhoto = async () => {
-    try {
-      const prepared = await pickPhoto();
-      if (prepared) setPhoto(setPlantPhoto(db, photoFiles, plant.id, prepared).filename);
-    } catch (error) {
-      alertError('Could not save the photo', error);
-    }
-  };
-
   return (
     <View style={styles.sheet}>
       <View style={styles.header}>
@@ -74,9 +65,12 @@ export default function PlantSheet() {
         <View style={styles.grow}>
           <Text style={styles.name}>{plant.displayName}</Text>
           {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
-          <Pressable accessibilityRole="button" hitSlop={8} onPress={changePhoto}>
-            <Text style={styles.photoLink}>{photo ? 'Replace photo' : 'Add photo'}</Text>
-          </Pressable>
+          <PhotoButton
+            hasPhoto={photo !== null}
+            onPick={(prepared) =>
+              setPhoto(setPlantPhoto(db, photoFiles, plant.id, prepared).filename)
+            }
+          />
         </View>
       </View>
       <ChipGroup options={KINDS} value={type} onChange={setType} />
@@ -103,10 +97,9 @@ export default function PlantSheet() {
 const styles = StyleSheet.create({
   sheet: { gap: 12, padding: 20, paddingTop: 28 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  grow: { flex: 1 },
+  grow: { flex: 1, gap: 4 },
   name: { fontSize: 20, fontWeight: '800' },
   scientific: { fontSize: 14, fontStyle: 'italic', color: '#666' },
   hint: { fontSize: 14, color: '#666' },
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
-  photoLink: { fontSize: 15, color: '#2e7d32', fontWeight: '600', marginTop: 4 },
 });

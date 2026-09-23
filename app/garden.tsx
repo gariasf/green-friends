@@ -1,17 +1,18 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { plantListQuery } from '@/src/core/plants';
+import { listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
+import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 /**
- * Garden: every live plant by Display Name, with its photo. Re-renders on every plants write; a
- * photo lands in the same burst of writes as the plant it is added with.
+ * Garden: every live plant by Display Name, with its photo, read again after writes: a photo is a
+ * row of its own, which a live query over plants would miss.
  */
 export default function GardenScreen() {
-  const { data: plants, updatedAt } = useLiveQuery(plantListQuery(db));
-  if (!updatedAt) return null;
+  const [plants, setPlants] = useState(() => listPlants(db));
+  useAfterWrites(useCallback(() => setPlants(listPlants(db)), []));
 
   return (
     <FlatList
