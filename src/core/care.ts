@@ -87,20 +87,27 @@ export function listNeedsAttention(db: Db, today: string = localDay(new Date()))
   return evaluateCare(db, today).filter(needsAttention);
 }
 
+/** A care type Due on the evaluated day; Overdue when daysOverdue is above 0. */
+export type DueCare = { type: CareType; dueOn: string; daysOverdue: number };
+
+/** An evaluated plant's Due care types, in care-type order. */
+export function dueCare(plant: PlantCare): DueCare[] {
+  return CARE_TYPES.flatMap((type) => {
+    const status = plant.care[type];
+    return status.state === 'due'
+      ? [{ type, dueOn: status.dueOn, daysOverdue: status.daysOverdue }]
+      : [];
+  });
+}
+
 /** Whether an evaluated plant Needs Attention (CONTEXT.md): at least one care type Due or Overdue. */
 export function needsAttention(plant: PlantCare): boolean {
-  return CARE_TYPES.some((type) => plant.care[type].state === 'due');
+  return dueCare(plant).length > 0;
 }
 
 /** Days Overdue of the plant's most Overdue care type; -1 when nothing is Due. */
 function worstOverdue(plant: PlantCare): number {
-  return Math.max(
-    -1,
-    ...CARE_TYPES.map((type) => {
-      const status = plant.care[type];
-      return status.state === 'due' ? status.daysOverdue : -1;
-    }),
-  );
+  return Math.max(-1, ...dueCare(plant).map((due) => due.daysOverdue));
 }
 
 /**

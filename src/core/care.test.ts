@@ -1,6 +1,6 @@
 import type { Db } from '../db/types';
 import { MONSTERA, catalog, gardenDb, noon } from '../test/garden';
-import { evaluateCare, listNeedsAttention } from './care';
+import { dueCare, evaluateCare, listNeedsAttention } from './care';
 import { logCareEvent } from './careLog';
 import { archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
 import { updateSettings } from './settings';
@@ -296,6 +296,23 @@ describe('Needs Attention', () => {
       'Window',
       'Shelf',
       'Desk',
+    ]);
+  });
+
+  test("a plant's Due care types come in care-type order, each with its days Overdue", () => {
+    const db = gardenDb();
+    // Watered every 7 days from creation (Due Sep 8), fed every 30 days from Aug 20 (Due Sep 19).
+    createPlant(
+      db,
+      { speciesId: MONSTERA, lastDone: { fertilize: '2026-08-20' } },
+      noon(2026, 9, 1),
+    );
+
+    const [plant] = evaluateCare(db, '2026-09-22');
+
+    expect(dueCare(plant)).toEqual([
+      { type: 'water', dueOn: '2026-09-08', daysOverdue: 14 },
+      { type: 'fertilize', dueOn: '2026-09-19', daysOverdue: 3 },
     ]);
   });
 

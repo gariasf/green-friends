@@ -12,13 +12,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { evaluateCare, needsAttention, type PlantCare } from '@/src/core/care';
+import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/core/care';
 import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
-import { CARE_TYPES, type CareType } from '@/src/core/plants';
+import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 
 /** How each care type reads on a checklist row and in the undo toast. */
-const CARE: Record<CareType, { icon: string; label: string; done: string }> = {
+const CARE_COPY: Record<CareType, { icon: string; label: string; done: string }> = {
   water: { icon: '💧', label: 'Water', done: 'Watered' },
   fertilize: { icon: '✨', label: 'Fertilize', done: 'Fertilized' },
   repot: { icon: '🪨', label: 'Repot', done: 'Repotted' },
@@ -34,7 +34,7 @@ type Undo = { message: string; eventIds: string[] };
  * dimmed below.
  */
 export default function TodayScreen() {
-  const [garden, refresh] = useGardenCare();
+  const [plants, refresh] = usePlantCare();
   const [undo, setUndo] = useState<Undo | null>(null);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function TodayScreen() {
     setUndo({
       message:
         types.length === 1
-          ? `${CARE[types[0]].done} ${plant.displayName}`
+          ? `${CARE_COPY[types[0]].done} ${plant.displayName}`
           : `Logged everything for ${plant.displayName}`,
       eventIds,
     });
@@ -62,18 +62,20 @@ export default function TodayScreen() {
     setUndo(null);
   };
 
-  const due = garden.filter(needsAttention);
-  const rest = garden.filter((plant) => !needsAttention(plant));
+  const needingAttention = plants.filter(needsAttention);
+  const rest = plants.filter((plant) => !needsAttention(plant));
 
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        {due.length > 0 ? (
+        {needingAttention.length > 0 ? (
           <>
             <Text style={styles.summary}>
-              {due.length === 1 ? '1 plant needs you' : `${due.length} plants need you`}
+              {needingAttention.length === 1
+                ? '1 plant needs you'
+                : `${needingAttention.length} plants need you`}
             </Text>
-            {due.map((plant) => (
+            {needingAttention.map((plant) => (
               <CareCard key={plant.id} plant={plant} onLog={log} />
             ))}
           </>
@@ -81,11 +83,7 @@ export default function TodayScreen() {
           <View style={styles.caughtUp}>
             <Text style={styles.caughtUpIcon}>🌿</Text>
             <Text style={styles.title}>All caught up</Text>
-            <Text style={styles.hint}>
-              {garden.length > 0
-                ? 'Nothing needs you today.'
-                : 'Add your first plant from the Garden.'}
-            </Text>
+            <Text style={styles.hint}>Nothing needs you today.</Text>
           </View>
         )}
         {rest.length > 0 && <RestOfGarden plants={rest} />}
@@ -96,29 +94,37 @@ export default function TodayScreen() {
 }
 
 /**
- * Every plant's care state for today, re-evaluated on each write (due-ness derives from several
- * tables, and useLiveQuery re-runs on one) and on returning to the foreground, where the day may
- * have turned. `refresh` animates the change, so a logged row folds away instead of jumping.
+ * Every plant's care state for today (evaluateCare), re-evaluated after writes (due-ness derives
+ * from several tables, and useLiveQuery re-runs on one) and on returning to the foreground, where
+ * the day may have turned. `refresh` animates the change, so a logged row folds away instead of
+ * jumping.
  */
-function useGardenCare() {
-  const [garden, setGarden] = useState(() => evaluateCare(db));
+function usePlantCare() {
+  const [plants, setPlants] = useState(() => evaluateCare(db));
   const refresh = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setGarden(evaluateCare(db));
+    setPlants(evaluateCare(db));
   }, []);
   useEffect(() => {
+    // expo-sqlite reports every changed row; one evaluation per burst of writes (an Import, a
+    // deleted plant's Care Log) is enough.
+    let burst: ReturnType<typeof setTimeout> | undefined;
+    const writes = addDatabaseChangeListener(() => {
+      clearTimeout(burst);
+      burst = setTimeout(refresh, 50);
+    });
     // ponytail: left open across midnight, Today shows yesterday until the next write or
     // foregrounding; add a timer for the next local midnight if that ever matters.
-    const writes = addDatabaseChangeListener(refresh);
     const foreground = AppState.addEventListener('change', (state) => {
       if (state === 'active') refresh();
     });
     return () => {
+      clearTimeout(burst);
       writes.remove();
       foreground.remove();
     };
   }, [refresh]);
-  return [garden, refresh] as const;
+  return [plants, refresh] as const;
 }
 
 function CareCard({
@@ -128,10 +134,7 @@ function CareCard({
   plant: PlantCare;
   onLog: (plant: PlantCare, types: CareType[]) => void;
 }) {
-  const due = CARE_TYPES.flatMap((type) => {
-    const status = plant.care[type];
-    return status.state === 'due' ? [{ type, daysOverdue: status.daysOverdue }] : [];
-  });
+  const due = dueCare(plant);
   const dueTypes = due.map((item) => item.type);
 
   return (
@@ -165,29 +168,32 @@ function CareCard({
           </Pressable>
         </View>
         <View style={styles.checklist}>
-          {due.map(({ type, daysOverdue }, index) => (
-            <View key={type} style={[styles.row, index > 0 && styles.rowDivider]}>
-              <View style={styles.grow}>
-                <Text style={styles.rowLabel}>
-                  {CARE[type].icon} {CARE[type].label}
-                </Text>
-                <Text style={[styles.status, daysOverdue > 0 ? styles.overdue : styles.dueToday]}>
-                  {daysOverdue > 0 ? `${daysOverdue}d overdue` : 'due today'}
-                </Text>
+          {due.map(({ type, daysOverdue }, index) => {
+            const overdue = daysOverdue > 0;
+            return (
+              <View key={type} style={[styles.row, index > 0 && styles.rowDivider]}>
+                <View style={styles.grow}>
+                  <Text style={styles.rowLabel}>
+                    {CARE_COPY[type].icon} {CARE_COPY[type].label}
+                  </Text>
+                  <Text style={[styles.status, overdue ? styles.overdue : styles.dueToday]}>
+                    {overdue ? `${daysOverdue}d overdue` : 'due today'}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
+                  hitSlop={8}
+                  onPress={() => onLog(plant, [type])}
+                  style={({ pressed }) => [styles.check, pressed && styles.checkPressed]}
+                >
+                  {({ pressed }) => (
+                    <Text style={[styles.checkMark, pressed && styles.checkMarkPressed]}>✓</Text>
+                  )}
+                </Pressable>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${CARE[type].label} ${plant.displayName}`}
-                hitSlop={8}
-                onPress={() => onLog(plant, [type])}
-                style={({ pressed }) => [styles.check, pressed && styles.checkPressed]}
-              >
-                {({ pressed }) => (
-                  <Text style={[styles.checkMark, pressed && styles.checkMarkPressed]}>✓</Text>
-                )}
-              </Pressable>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </View>
     </View>
