@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
-import { CARE_TYPES, careEvents, plants, species } from '../db/schema';
+import { CARE_TYPES, careEvents, photos, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
 import type { CareEvent } from './careLog';
 import { checkPastOrToday, localDay } from './dates';
@@ -169,6 +169,9 @@ export function archivePlant(db: Db, id: string, now: Date = new Date()): Plant 
 /** The Display Name rule (CONTEXT.md) in SQL, for queries joining plants to species. */
 export const displayNameSql = sql<string>`coalesce(${plants.nickname}, ${species.colloquialName})`;
 
+/** Joins a plant to its live photo, of which it has at most one (src/core/photos.ts). */
+export const livePhotoJoin = and(eq(photos.plantId, plants.id), isNull(photos.deletedAt));
+
 /** A live plant's Display Name, Archived or not; throws for an unknown or Deleted one. */
 export function getDisplayName(db: Db, id: string): string {
   const row = db
@@ -191,9 +194,11 @@ export function plantListQuery(db: Db) {
       id: plants.id,
       displayName: displayNameSql.as('display_name'),
       scientificName: species.scientificName,
+      photo: photos.filename,
     })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
+    .leftJoin(photos, livePhotoJoin)
     .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
     .orderBy(sql`${displayNameSql} COLLATE NOCASE`);
 }

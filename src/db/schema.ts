@@ -97,3 +97,21 @@ export const careEvents = sqliteTable('care_events', {
   updatedAt: text('updated_at').notNull(),
   deletedAt: text('deleted_at'),
 });
+
+/**
+ * A plant's photo: at most one live row per plant; replacing it tombstones the old row. The image
+ * itself is a file, never a blob (ADR-0001).
+ */
+export const photos = sqliteTable('photos', {
+  id: text('id').primaryKey(),
+  /** App-layer reference to plants.id (no FK, spec #8). */
+  plantId: text('plant_id').notNull(),
+  /**
+   * The JPEG's name in the app's photo folder, `<id>.jpg`: relative, since the app container's
+   * absolute path moves between installs, and unchanged by Export and Import (spec #8).
+   */
+  filename: text('filename').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  deletedAt: text('deleted_at'),
+});

@@ -3,11 +3,19 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localDay, shiftDays } from '@/src/core/dates';
-import { CARE_TYPES, createPlant, type CareSchedule, type CareType } from '@/src/core/plants';
+import { setPlantPhoto } from '@/src/core/photos';
+import {
+  CARE_TYPES,
+  createPlant,
+  type CareSchedule,
+  type CareType,
+  type Plant,
+} from '@/src/core/plants';
 import { listSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
+import { PlantPhoto, photoFiles, pickPhoto } from '@/src/ui/Photo';
 
 /** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
 type Ago = { label: string; value: number | null };
@@ -60,6 +68,8 @@ export default function NewPlantScreen() {
   const [nickname, setNickname] = useState('');
   const [potSizeCm, setPotSizeCm] = useState('');
   const [soil, setSoil] = useState('');
+  /** The prepared photo, filed with the plant once it is added. */
+  const [photo, setPhoto] = useState<string | null>(null);
   const [schedule, setSchedule] = useState(EMPTY_SCHEDULE);
   const [lastDone, setLastDone] = useState<Record<CareType, number | null>>({
     water: null,
@@ -88,8 +98,9 @@ export default function NewPlantScreen() {
       const ago = lastDone[type];
       if (ago !== null) lastDoneDays[type] = shiftDays(today, -ago);
     }
+    let plant: Plant;
     try {
-      createPlant(db, {
+      plant = createPlant(db, {
         speciesId: species?.id ?? null,
         nickname,
         potSizeCm: optionalNumber(potSizeCm),
@@ -105,9 +116,26 @@ export default function NewPlantScreen() {
           : undefined,
         lastDone: lastDoneDays,
       });
-      router.back();
     } catch (error) {
       alertError('Could not add the plant', error);
+      return;
+    }
+    try {
+      if (photo) setPlantPhoto(db, photoFiles, plant.id, photo);
+    } catch (error) {
+      // The plant is in: leave rather than offer to add it twice.
+      alertError('Plant added without its photo', error, () => router.back());
+      return;
+    }
+    router.back();
+  };
+
+  const choosePhoto = async () => {
+    try {
+      const prepared = await pickPhoto();
+      if (prepared) setPhoto(prepared);
+    } catch (error) {
+      alertError('Could not get the photo', error);
     }
   };
 
@@ -165,6 +193,12 @@ export default function NewPlantScreen() {
       )}
 
       <Text style={styles.heading}>About this plant</Text>
+      <View style={styles.photoRow}>
+        <PlantPhoto uri={photo} size={64} />
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={choosePhoto}>
+          <Text style={styles.link}>{photo ? 'Replace photo' : 'Add photo'}</Text>
+        </Pressable>
+      </View>
       <Field
         placeholder={ownSchedule ? 'Nickname (required)' : 'Nickname (optional)'}
         value={nickname}
@@ -250,6 +284,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, fontWeight: '500' },
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
   row: { gap: 8 },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   grow: { flex: 1, gap: 2 },
   match: { paddingVertical: 8, gap: 2, borderBottomWidth: 1, borderColor: '#eee' },
   matchName: { fontSize: 16, fontWeight: '500' },

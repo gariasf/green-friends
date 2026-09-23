@@ -1,6 +1,6 @@
 import { and, eq, isNull, max } from 'drizzle-orm';
 
-import { careEvents, plants, species } from '../db/schema';
+import { careEvents, photos, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
 import { daysBetween, isCalendarDay, localDay, shiftDays, shiftMonths } from './dates';
 import {
@@ -8,6 +8,7 @@ import {
   NO_SCHEDULE,
   SEASONAL,
   displayNameSql,
+  livePhotoJoin,
   type CareSchedule,
   type CareType,
 } from './plants';
@@ -32,6 +33,8 @@ export type PlantCare = {
   id: string;
   displayName: string;
   scientificName: string | null;
+  /** The live photo's filename (src/core/photos.ts); null when the plant has none. */
+  photo: string | null;
   care: Record<CareType, CareStatus>;
 };
 
@@ -59,14 +62,15 @@ export function evaluateCare(db: Db, today: string = localDay(new Date())): Plan
   for (const row of latest) if (row.on) lastDone.set(`${row.plantId}/${row.type}`, row.on);
 
   const rows = db
-    .select({ plant: plants, species, displayName: displayNameSql })
+    .select({ plant: plants, species, displayName: displayNameSql, photo: photos.filename })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
+    .leftJoin(photos, livePhotoJoin)
     .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
     .all();
 
   return rows
-    .map(({ plant, species, displayName }): PlantCare => {
+    .map(({ plant, species, displayName, photo }): PlantCare => {
       const schedule = effectiveSchedule(plant, species);
       // A care type never logged anchors to the local day of creation (ADR-0005).
       const anchor = localDay(new Date(plant.createdAt));
@@ -75,7 +79,13 @@ export function evaluateCare(db: Db, today: string = localDay(new Date())): Plan
         const last = lastDone.get(`${plant.id}/${type}`) ?? anchor;
         care[type] = statusOn(type, schedule, last, today, season);
       }
-      return { id: plant.id, displayName, scientificName: species?.scientificName ?? null, care };
+      return {
+        id: plant.id,
+        displayName,
+        scientificName: species?.scientificName ?? null,
+        photo,
+        care,
+      };
     })
     .sort(
       (a, b) => worstOverdue(b) - worstOverdue(a) || a.displayName.localeCompare(b.displayName),

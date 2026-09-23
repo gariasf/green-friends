@@ -5,10 +5,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { dueCare, evaluateCare } from '@/src/core/care';
 import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
 import { localDay, shiftDays } from '@/src/core/dates';
+import { setPlantPhoto } from '@/src/core/photos';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, PrimaryButton } from '@/src/ui/Form';
+import { PlantPhoto, photoFiles, photoUri, pickPhoto } from '@/src/ui/Photo';
 
 const KINDS = CARE_EVENT_TYPES.map((type) => ({
   label: `${CARE_COPY[type].icon} ${CARE_COPY[type].label}`,
@@ -25,7 +27,8 @@ const WHEN = [
 
 /**
  * The plant sheet (spec #8, prototype #6): logs any care type or a Note on a day up to three days
- * back, a repot with its new pot and soil, and leads to the plant's Care Log.
+ * back, a repot with its new pot and soil, adds or replaces the plant's photo, and leads to the
+ * plant's Care Log.
  */
 export default function PlantSheet() {
   const { id } = useLocalSearchParams<'/plants/[id]'>();
@@ -36,6 +39,7 @@ export default function PlantSheet() {
     () => (plant && dueCare(plant)[0]?.type) ?? 'water',
   );
   const [daysAgo, setDaysAgo] = useState(0);
+  const [photo, setPhoto] = useState(() => plant?.photo ?? null);
   const details = useCareEventDetails(type);
   // Only a plant in care, live and not Archived, has a sheet.
   if (!plant) return null;
@@ -54,11 +58,26 @@ export default function PlantSheet() {
     }
   };
 
+  const changePhoto = async () => {
+    try {
+      const prepared = await pickPhoto();
+      if (prepared) setPhoto(setPlantPhoto(db, photoFiles, plant.id, prepared).filename);
+    } catch (error) {
+      alertError('Could not save the photo', error);
+    }
+  };
+
   return (
     <View style={styles.sheet}>
-      <View>
-        <Text style={styles.name}>{plant.displayName}</Text>
-        {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
+      <View style={styles.header}>
+        <PlantPhoto uri={photoUri(photo)} size={64} />
+        <View style={styles.grow}>
+          <Text style={styles.name}>{plant.displayName}</Text>
+          {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
+          <Pressable accessibilityRole="button" hitSlop={8} onPress={changePhoto}>
+            <Text style={styles.photoLink}>{photo ? 'Replace photo' : 'Add photo'}</Text>
+          </Pressable>
+        </View>
       </View>
       <ChipGroup options={KINDS} value={type} onChange={setType} />
       <Text style={styles.hint}>When did it happen?</Text>
@@ -83,8 +102,11 @@ export default function PlantSheet() {
 
 const styles = StyleSheet.create({
   sheet: { gap: 12, padding: 20, paddingTop: 28 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  grow: { flex: 1 },
   name: { fontSize: 20, fontWeight: '800' },
   scientific: { fontSize: 14, fontStyle: 'italic', color: '#666' },
   hint: { fontSize: 14, color: '#666' },
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
+  photoLink: { fontSize: 15, color: '#2e7d32', fontWeight: '600', marginTop: 4 },
 });

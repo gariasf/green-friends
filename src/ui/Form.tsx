@@ -27,9 +27,11 @@ export function PrimaryButton({
   );
 }
 
-/** Tells the user why a core mutation refused a form, in the core's own words. */
-export function alertError(title: string, error: unknown): void {
-  Alert.alert(title, error instanceof Error ? error.message : String(error));
+/** Tells the user why a core mutation refused a form, in the core's own words; `then` runs once they have read it. */
+export function alertError(title: string, error: unknown, then?: () => void): void {
+  Alert.alert(title, error instanceof Error ? error.message : String(error), [
+    { text: 'OK', onPress: then },
+  ]);
 }
 
 /** Blank means not given; anything else goes to the core as a number for it to validate. */

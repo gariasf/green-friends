@@ -18,6 +18,7 @@ import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY } from '@/src/ui/CareEvent';
+import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 
 const UNDO_MS = 4000;
 
@@ -140,7 +141,7 @@ function CareCard({
     <View style={styles.card}>
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
       <Pressable accessible={false} onPress={() => openPlantSheet(plant)}>
-        <PhotoSlot size={64} />
+        <PlantPhoto uri={photoUri(plant.photo)} size={64} />
       </Pressable>
       <View style={styles.cardBody}>
         <View style={styles.cardHead}>
@@ -222,7 +223,7 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
             onPress={() => openPlantSheet(plant)}
             style={styles.restPlant}
           >
-            <PhotoSlot size={56} />
+            <PlantPhoto uri={photoUri(plant.photo)} size={56} />
             <Text style={styles.restName} numberOfLines={1}>
               {plant.displayName}
             </Text>
@@ -231,15 +232,6 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
         ))}
       </ScrollView>
     </>
-  );
-}
-
-/** Where the plant's photo goes; a placeholder until photos land (#15). */
-function PhotoSlot({ size }: { size: number }) {
-  return (
-    <View accessibilityElementsHidden style={[styles.photo, { width: size, height: size }]}>
-      <Text style={{ fontSize: size / 2 }}>🪴</Text>
-    </View>
   );
 }
 
@@ -281,12 +273,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   overdueEdge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: RED },
-  photo: {
-    borderRadius: 14,
-    backgroundColor: '#e8f5e9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   cardBody: { flex: 1, gap: 8 },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   name: { fontSize: 17, fontWeight: '700' },
