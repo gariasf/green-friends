@@ -81,6 +81,23 @@ export function logCareEvent(db: Db, input: NewCareEvent, now: Date = new Date()
   return event;
 }
 
+/**
+ * Deletes a live Care Event (CONTEXT.md, Deleted) as a tombstone, so the deletion survives Export
+ * and Import (ADR-0002). Due-ness re-derives from what is left of the Care Log; the Current Pot
+ * stays as it is. Throws for an unknown or already Deleted event.
+ */
+export function deleteCareEvent(db: Db, id: string, now: Date = new Date()): CareEvent {
+  const stamp = now.toISOString();
+  const tombstone = db
+    .update(careEvents)
+    .set({ updatedAt: stamp, deletedAt: stamp })
+    .where(and(eq(careEvents.id, id), isNull(careEvents.deletedAt)))
+    .returning()
+    .get();
+  if (!tombstone) throw new Error(`No care event ${id}`);
+  return tombstone;
+}
+
 /** The day of the plant's newest live repot Care Event; '' when there is none. */
 function newestRepotDay(db: Db, plantId: string): string {
   const row = db

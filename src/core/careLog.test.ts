@@ -1,5 +1,6 @@
 import { MONSTERA, NOON_SEP_22, gardenDb, noon } from '../test/garden';
-import { listCareEvents, logCareEvent } from './careLog';
+import { listNeedsAttention } from './care';
+import { deleteCareEvent, listCareEvents, logCareEvent } from './careLog';
 import { createPlant, getPlant } from './plants';
 
 describe('logging care', () => {
@@ -149,5 +150,63 @@ describe('logging care', () => {
 
     logCareEvent(db, { plantId: plant.id, type: 'repot' }, NOON_SEP_22);
     expect(getPlant(db, plant.id)).toMatchObject({ potSizeCm: 21, soil: 'Peat' });
+  });
+});
+
+describe('deleting care', () => {
+  test('deleting the Care Event just logged puts the plant back where it was', () => {
+    const db = gardenDb();
+    // Watered every 7 days from its creation on Sep 1: Due Sep 8, 14 days Overdue on the 22nd.
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, NOON_SEP_22);
+    expect(listNeedsAttention(db, '2026-09-22')).toEqual([]);
+
+    deleteCareEvent(db, watered.id, NOON_SEP_22);
+
+    expect(listNeedsAttention(db, '2026-09-22')).toMatchObject([
+      { id: plant.id, care: { water: { state: 'due', dueOn: '2026-09-08', daysOverdue: 14 } } },
+    ]);
+  });
+
+  test('a deleted Care Event leaves the Care Log as a tombstone stamped by the core clock', () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, NOON_SEP_22);
+    const later = noon(2026, 9, 23);
+
+    expect(deleteCareEvent(db, watered.id, later)).toEqual({
+      ...watered,
+      updatedAt: later.toISOString(),
+      deletedAt: later.toISOString(),
+    });
+    expect(listCareEvents(db, plant.id)).toEqual([]);
+  });
+
+  test('deleting a repot leaves the Current Pot as it is', () => {
+    const db = gardenDb();
+    const plant = createPlant(
+      db,
+      { speciesId: MONSTERA, potSizeCm: 17, soil: 'Peat' },
+      NOON_SEP_22,
+    );
+    const repot = logCareEvent(
+      db,
+      { plantId: plant.id, type: 'repot', potSizeCm: 21, soil: 'Aroid mix' },
+      NOON_SEP_22,
+    );
+
+    deleteCareEvent(db, repot.id, NOON_SEP_22);
+
+    expect(getPlant(db, plant.id)).toMatchObject({ potSizeCm: 21, soil: 'Aroid mix' });
+  });
+
+  test('only a live Care Event can be deleted', () => {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
+    const watered = logCareEvent(db, { plantId: plant.id, type: 'water' }, NOON_SEP_22);
+    deleteCareEvent(db, watered.id, NOON_SEP_22);
+
+    expect(() => deleteCareEvent(db, watered.id)).toThrow(/care event/i);
+    expect(() => deleteCareEvent(db, 'nope')).toThrow(/care event/i);
   });
 });

@@ -87,7 +87,8 @@ export function listNeedsAttention(db: Db, today: string = localDay(new Date()))
   return evaluateCare(db, today).filter(needsAttention);
 }
 
-function needsAttention(plant: PlantCare): boolean {
+/** Whether an evaluated plant Needs Attention (CONTEXT.md): at least one care type Due or Overdue. */
+export function needsAttention(plant: PlantCare): boolean {
   return CARE_TYPES.some((type) => plant.care[type].state === 'due');
 }
 
