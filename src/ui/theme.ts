@@ -32,6 +32,8 @@ export const colors = {
   tintSoft: DynamicColorIOS({ light: '#e8f5e9', dark: '#1d3320' }),
   /** Overdue care, toxicity, and destructive actions. */
   danger: Color.ios.systemRed,
+  /** A pale danger, behind the toxicity badge. */
+  dangerSoft: DynamicColorIOS({ light: '#fdecea', dark: '#3b1d1b' }),
   /** Care Due today. */
   dueToday: Color.ios.systemOrange,
   // Each kind of Care Event's hue, beside its symbol (CARE_COPY).
@@ -72,6 +74,15 @@ export const text = StyleSheet.create({
   subheadline: { fontSize: 15, color: colors.secondaryLabel },
   footnote: { fontSize: 13, color: colors.secondaryLabel },
   caption: { fontSize: 12, color: colors.secondaryLabel },
+});
+
+/**
+ * A header button, a 44 pt target by its own size: UIKit, not React Native, decides which touches
+ * reach a header item, so hitSlop past its edges can't be counted on.
+ */
+export const headerItem = StyleSheet.create({
+  text: { minHeight: 44, justifyContent: 'center' },
+  icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
 
 /** What a Pressable shows while pressed: a button fades, a row fills. */

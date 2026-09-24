@@ -14,7 +14,7 @@ function readGarden() {
 }
 
 /**
- * Garden: every live plant by Display Name, with its photo, each opening its log sheet; Archived
+ * Garden: every live plant by Display Name, with its photo, each opening its Plant screen; Archived
  * plants have a view of their own. Read again after writes: a photo is a row of its own, which a
  * live query over plants would miss.
  */
@@ -23,7 +23,10 @@ export default function GardenScreen() {
   useAfterWrites(useCallback(() => setGarden(readGarden()), []));
 
   return (
-    <ScrollView contentContainerStyle={plants.length === 0 ? styles.empty : styles.list}>
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={plants.length === 0 ? styles.empty : styles.list}
+    >
       {plants.length === 0 ? (
         <>
           <Text style={text.title2}>

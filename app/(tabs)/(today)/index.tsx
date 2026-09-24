@@ -1,3 +1,4 @@
+import { MenuView, type MenuAction } from '@expo/ui/community/menu';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -29,9 +30,9 @@ type Undo = { message: string; eventIds: string[] };
 /**
  * Today (spec #8, prototype #6): one card per plant that Needs Attention, most Overdue first, with
  * a checklist row per Due care type that logs it as done today in one tap; the rest of the garden
- * dimmed below. A card's ⋯, or any plant's name or photo, opens its log sheet. With no plant in
- * care, as on a fresh install, it offers to add one. Cards and rows fade in and out as care is
- * logged or falls Due, and the rest move into place.
+ * dimmed below. Tapping a plant opens its Plant screen, and a card's ⋯ opens a menu of what else
+ * there is to do (spec #22). With no plant in care, as on a fresh install, it offers to add one.
+ * Cards and rows fade in and out as care is logged or falls Due, and the rest move into place.
  */
 export default function TodayScreen() {
   const [plants, refresh] = usePlantCare();
@@ -66,9 +67,11 @@ export default function TodayScreen() {
   const needingAttention = plants.filter(needsAttention);
   const rest = plants.filter((plant) => !needsAttention(plant));
 
+  // The ScrollView comes first, so the large title collapses into the header as it scrolls and a
+  // tap on the tab scrolls back to the top.
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
         {/* What is there when Today opens is simply there; only later changes animate. */}
         <LayoutAnimationConfig skipEntering>
           {needingAttention.length > 0 ? (
@@ -99,7 +102,7 @@ export default function TodayScreen() {
         </LayoutAnimationConfig>
       </ScrollView>
       {undo && <UndoToast message={undo.message} onUndo={() => revert(undo)} />}
-    </View>
+    </>
   );
 }
 
@@ -117,8 +120,27 @@ function usePlantCare() {
   return [plants, refresh] as const;
 }
 
-function openLogSheet(plant: PlantCare) {
+function openPlant(plant: PlantCare) {
   router.push({ pathname: '/plants/[id]', params: { id: plant.id } });
+}
+
+/** What a card's ⋯ offers besides the one-tap log. */
+const MORE = [
+  { id: 'log', title: 'Log earlier…', image: 'calendar' },
+  { id: 'note', title: 'Add note', image: CARE_COPY.note.symbol },
+  { id: 'edit', title: 'Edit plant', image: 'pencil' },
+] satisfies MenuAction[];
+
+function more({ id }: PlantCare, action: string) {
+  switch (action) {
+    case 'log':
+      // With no type, the log sheet opens on the first Due care type.
+      return router.push({ pathname: '/plants/[id]/log', params: { id } });
+    case 'note':
+      return router.push({ pathname: '/plants/[id]/log', params: { id, type: 'note' } });
+    case 'edit':
+      return router.push({ pathname: '/plants/[id]/edit', params: { id } });
+  }
 }
 
 function CareCard({
@@ -142,7 +164,7 @@ function CareCard({
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
       <Pressable
         accessible={false}
-        onPress={() => openLogSheet(plant)}
+        onPress={() => openPlant(plant)}
         style={({ pressed }) => pressed && pressedStyle.button}
       >
         <PlantPhoto uri={photoUri(plant.photo)} size={64} />
@@ -153,7 +175,7 @@ function CareCard({
             accessibilityRole="button"
             // A one-line name is about 20 pt tall; this makes it a 44 pt target.
             hitSlop={12}
-            onPress={() => openLogSheet(plant)}
+            onPress={() => openPlant(plant)}
             style={({ pressed }) => [styles.grow, pressed && pressedStyle.button]}
           >
             <Text style={text.headline}>{plant.displayName}</Text>
@@ -166,16 +188,26 @@ function CareCard({
               onPress={() => onLog(plant, dueTypes)}
             />
           )}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`More for ${plant.displayName}`}
-            // 32 pt across; this makes it a 44 pt target.
-            hitSlop={6}
-            onPress={() => openLogSheet(plant)}
-            style={({ pressed }) => [styles.more, pressed && pressedStyle.button]}
+          {/* iOS's own menu, which opens on a tap. */}
+          <MenuView
+            title={plant.displayName}
+            actions={MORE}
+            onPressAction={({ nativeEvent }) => more(plant, nativeEvent.event)}
+            // Drawn where the 32 pt circle was, its 44 pt target around it.
+            style={styles.moreMenu}
           >
-            <SymbolView name="ellipsis" size={16} weight="bold" tintColor={colors.secondaryLabel} />
-          </Pressable>
+            {/* The menu, not React Native, takes the touch, so the target is the view's own size. */}
+            <View accessibilityLabel={`More for ${plant.displayName}`} style={styles.moreTarget}>
+              <View style={styles.more}>
+                <SymbolView
+                  name="ellipsis"
+                  size={16}
+                  weight="bold"
+                  tintColor={colors.secondaryLabel}
+                />
+              </View>
+            </View>
+          </MenuView>
         </View>
         <Animated.View layout={LinearTransition} style={styles.checklist}>
           {due.map(({ type, daysOverdue }, index) => {
@@ -187,13 +219,20 @@ function CareCard({
                 exiting={FadeOut}
                 style={[styles.row, index > 0 && group.divider]}
               >
-                <CareSymbol type={type} size={20} />
-                <View style={styles.grow}>
-                  <Text style={styles.rowLabel}>{CARE_COPY[type].label}</Text>
-                  <Text style={[styles.status, overdue ? styles.overdue : styles.dueToday]}>
-                    {overdue ? `${daysOverdue}d overdue` : 'due today'}
-                  </Text>
-                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityHint="Opens the plant"
+                  onPress={() => openPlant(plant)}
+                  style={({ pressed }) => [styles.rowBody, pressed && pressedStyle.button]}
+                >
+                  <CareSymbol type={type} size={20} />
+                  <View style={styles.grow}>
+                    <Text style={styles.rowLabel}>{CARE_COPY[type].label}</Text>
+                    <Text style={[styles.status, overdue ? styles.overdue : styles.dueToday]}>
+                      {overdue ? `${daysOverdue}d overdue` : 'due today'}
+                    </Text>
+                  </View>
+                </Pressable>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
@@ -232,7 +271,7 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
             key={plant.id}
             accessibilityRole="button"
             accessibilityLabel={`${plant.displayName}, all good`}
-            onPress={() => openLogSheet(plant)}
+            onPress={() => openPlant(plant)}
             style={({ pressed }) => [styles.restPlant, pressed && styles.restPlantPressed]}
           >
             <PlantPhoto uri={photoUri(plant.photo)} size={56} />
@@ -258,7 +297,6 @@ function UndoToast({ message, onUndo }: { message: string; onUndo: () => void })
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   content: { paddingTop: space.m, paddingBottom: 96 },
   summary: { ...text.subheadline, fontWeight: '600', marginHorizontal: space.xl },
   empty: { alignItems: 'center', gap: space.s, paddingHorizontal: space.xxxl, paddingVertical: 64 },
@@ -286,6 +324,8 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, gap: space.s },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },
   scientific: { ...text.caption, fontStyle: 'italic' },
+  moreMenu: { margin: -6 },
+  moreTarget: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   more: {
     width: 32,
     height: 32,
@@ -304,9 +344,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.m,
-    paddingVertical: space.s,
-    paddingHorizontal: space.m,
+    paddingRight: space.m,
     backgroundColor: colors.fill,
+  },
+  rowBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.m,
+    paddingVertical: space.s,
+    paddingLeft: space.m,
   },
   rowLabel: { ...text.subheadline, fontWeight: '700', color: colors.label },
   status: { ...text.footnote, fontWeight: '700' },

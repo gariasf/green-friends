@@ -1,14 +1,13 @@
 import { uuid } from 'expo-modules-core';
 import { router, Stack, ThemeProvider } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
+import { useColorScheme } from 'react-native';
 
 import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
-import { colors, navigationTheme, pressedStyle, space } from '@/src/ui/theme';
+import { colors, headerItem, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
@@ -33,74 +32,38 @@ const SHEET = {
   contentStyle: { backgroundColor: colors.sheet },
 } as const;
 
+/**
+ * The tabs, and above them what covers the tab bar: a Plant screen, its sheets, Edit plant,
+ * Archived and New plant. Back buttons are chevrons only; a screen over the tabs would otherwise
+ * be labelled "(tabs)".
+ */
 export default function RootLayout() {
   useDigests();
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
-      <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Screen
-          name="index"
-          options={{
-            title: 'Today',
-            headerRight: () => (
-              <View style={styles.headerButtons}>
-                <TextButton
-                  label="Garden"
-                  onPress={() => router.push('/garden')}
-                  style={styles.headerButton}
-                />
-                <TextButton
-                  label="Settings"
-                  onPress={() => router.push('/settings')}
-                  style={styles.headerButton}
-                />
-              </View>
-            ),
-          }}
-        />
-        <Stack.Screen
-          name="garden"
-          options={{
-            title: 'Garden',
-            headerRight: () => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Add plant"
-                onPress={() => router.push('/plants/new')}
-                style={({ pressed }) => [styles.headerIcon, pressed && pressedStyle.button]}
-              >
-                <SymbolView name="plus" size={22} weight="semibold" tintColor={colors.tint} />
-              </Pressable>
-            ),
-          }}
-        />
+      <Stack
+        screenOptions={{
+          contentStyle: { backgroundColor: colors.background },
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="plants/new"
           options={{
             title: 'New plant',
             presentation: 'modal',
             headerLeft: () => (
-              <TextButton
-                label="Cancel"
-                onPress={() => router.back()}
-                style={styles.headerButton}
-              />
+              <TextButton label="Cancel" onPress={() => router.back()} style={headerItem.text} />
             ),
           }}
         />
-        <Stack.Screen name="plants/[id]/index" options={SHEET} />
+        {/* The plant's photo leads the screen and its name follows, so the header has no title. */}
+        <Stack.Screen name="plants/[id]/index" options={{ title: '' }} />
+        <Stack.Screen name="plants/[id]/log" options={SHEET} />
         <Stack.Screen name="care-events/[id]" options={SHEET} />
         <Stack.Screen name="archived" options={{ title: 'Archived' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>
     </ThemeProvider>
   );
 }
-
-// A header button is a 44 pt target by its own size: UIKit, not React Native, decides which touches
-// reach a header item, so hitSlop past its edges can't be counted on.
-const styles = StyleSheet.create({
-  headerButtons: { flexDirection: 'row', gap: space.l },
-  headerButton: { minHeight: 44, justifyContent: 'center' },
-  headerIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-});

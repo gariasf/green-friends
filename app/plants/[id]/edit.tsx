@@ -81,6 +81,7 @@ export default function EditPlantScreen() {
           style: 'destructive',
           onPress: () => {
             deletePlant(db, photoFiles, plant.id);
+            // Back to what opened Edit; a Plant screen there closes itself once its plant is gone.
             router.back();
           },
         },
@@ -124,11 +125,6 @@ export default function EditPlantScreen() {
       ))}
 
       <PrimaryButton label="Save" onPress={save} />
-      <TextButton
-        label="Care Log"
-        onPress={() => router.push({ pathname: '/plants/[id]/log', params: { id: plant.id } })}
-        style={styles.centered}
-      />
 
       <View style={styles.actions}>
         {plant.archivedAt ? (

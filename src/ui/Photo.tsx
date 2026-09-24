@@ -41,10 +41,7 @@ export function photoUri(filename: string | null): string | null {
 /** The long edge of a stored photo, in pixels (ADR-0001). */
 const LONG_EDGE = 1600;
 
-/**
- * "Add photo", or "Replace photo" once there is one: asks for a photo, prepares it for
- * setPlantPhoto and hands the prepared file to `onPick`, telling the user when either fails.
- */
+/** "Add photo", or "Replace photo" once there is one: choosePhoto as a button. */
 export function PhotoButton({
   hasPhoto,
   onPick,
@@ -52,15 +49,25 @@ export function PhotoButton({
   hasPhoto: boolean;
   onPick: (prepared: string) => void;
 }) {
-  const choose = async () => {
-    try {
-      const prepared = await pickPhoto();
-      if (prepared) onPick(prepared);
-    } catch (error) {
-      alertError('Could not add the photo', error);
-    }
-  };
-  return <TextButton label={hasPhoto ? 'Replace photo' : 'Add photo'} onPress={choose} />;
+  return (
+    <TextButton
+      label={hasPhoto ? 'Replace photo' : 'Add photo'}
+      onPress={() => choosePhoto(onPick)}
+    />
+  );
+}
+
+/**
+ * Asks for a photo, prepares it for setPlantPhoto and hands the prepared file to `onPick`, telling
+ * the user when either fails.
+ */
+export async function choosePhoto(onPick: (prepared: string) => void): Promise<void> {
+  try {
+    const prepared = await pickPhoto();
+    if (prepared) onPick(prepared);
+  } catch (error) {
+    alertError('Could not add the photo', error);
+  }
 }
 
 /**

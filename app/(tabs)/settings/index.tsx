@@ -125,7 +125,7 @@ export default function SettingsScreen() {
     );
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.screen}>
       <Text style={styles.heading}>Growing season</Text>
       <Text style={text.subheadline}>
         Watering and fertilizing follow the Growing interval in these months and the Dormant

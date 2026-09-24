@@ -1,85 +1,78 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
+import * as Haptics from 'expo-haptics';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { careLogQuery, type CareEvent } from '@/src/core/careLog';
+import { dueCare, evaluateCare } from '@/src/core/care';
+import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
 import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, CareSymbol, dayLabel } from '@/src/ui/CareEvent';
-import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
+import { alertError, CloseButton, PrimaryButton, WhenPicker } from '@/src/ui/Form';
+import { space, text } from '@/src/ui/theme';
 
-/** A plant's Care Log (spec #8): every Care Event, newest first; each opens to be edited or deleted. */
-export default function CareLogScreen() {
-  const { id } = useLocalSearchParams<'/plants/[id]/log'>();
+/**
+ * The log sheet (spec #22): logs any care type or a Note on any day up to today, a repot with its
+ * new pot and soil. Opens preset to the care type in its `type` param, else the first one Due.
+ */
+export default function LogCareSheet() {
+  const { id, type: preset } = useLocalSearchParams<'/plants/[id]/log', { type?: string }>();
   const [displayName] = useState(() => getDisplayName(db, id));
-  const { data: events, updatedAt } = useLiveQuery(careLogQuery(db, id));
-  const today = localDay(new Date());
+  const [type, setType] = useState<CareEventType>(
+    () => CARE_EVENT_TYPES.find((option) => option === preset) ?? firstDue(id) ?? 'water',
+  );
+  const [day, setDay] = useState(() => localDay(new Date()));
+  const details = useCareEventDetails(type);
+
+  const log = () => {
+    try {
+      logCareEvent(db, { plantId: id, type, occurredOn: day, ...details.values });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } catch (error) {
+      alertError('Could not log it', error);
+    }
+  };
 
   return (
-    <>
-      <Stack.Screen options={{ title: displayName }} />
-      {/* ponytail: renders every Care Event at once; back to a FlatList if a Care Log ever runs
-          into the thousands. */}
-      {updatedAt && (
-        <ScrollView contentContainerStyle={events.length === 0 ? styles.empty : styles.list}>
-          {events.length === 0 ? (
-            <Text style={text.subheadline}>Nothing logged yet.</Text>
-          ) : (
-            <View style={group.box}>
-              {events.map((event, index) => (
-                <CareEventRow key={event.id} event={event} today={today} first={index === 0} />
-              ))}
-            </View>
-          )}
-        </ScrollView>
-      )}
-    </>
+    <View style={styles.sheet}>
+      <View style={styles.header}>
+        <View style={styles.grow}>
+          <Text style={text.footnote}>{displayName}</Text>
+          <Text style={text.title3}>Log care</Text>
+        </View>
+        <CloseButton />
+      </View>
+      <SegmentedControl
+        values={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
+        selectedIndex={CARE_EVENT_TYPES.indexOf(type)}
+        onChange={({ nativeEvent }) => {
+          Haptics.selectionAsync();
+          setType(CARE_EVENT_TYPES[nativeEvent.selectedSegmentIndex]);
+        }}
+      />
+      <WhenPicker label="When did it happen?" value={day} onChange={setDay} />
+      {details.fields}
+      <PrimaryButton
+        label={type === 'note' ? 'Add note' : `Mark as ${CARE_COPY[type].done.toLowerCase()}`}
+        disabled={!details.complete}
+        onPress={log}
+      />
+    </View>
   );
 }
 
-function CareEventRow({
-  event,
-  today,
-  first,
-}: {
-  event: CareEvent;
-  today: string;
-  first: boolean;
-}) {
-  const copy = CARE_COPY[event.type];
-  const day = dayLabel(event.occurredOn, today);
-  const detail = [event.potSizeCm !== null && `${event.potSizeCm} cm`, event.soil, event.note]
-    .filter(Boolean)
-    .join(' · ');
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={[copy.done, day, detail].filter(Boolean).join(', ')}
-      accessibilityHint="Edit or delete"
-      onPress={() => router.push({ pathname: '/care-events/[id]', params: { id: event.id } })}
-      style={({ pressed }) => [group.row, !first && group.divider, pressed && pressedStyle.row]}
-    >
-      <CareSymbol type={event.type} size={20} />
-      <View style={styles.grow}>
-        <Text style={text.body}>{copy.done}</Text>
-        {detail ? <Text style={text.subheadline}>{detail}</Text> : null}
-      </View>
-      <Text style={text.subheadline}>{day}</Text>
-      <SymbolView
-        name="chevron.right"
-        size={14}
-        weight="semibold"
-        tintColor={colors.tertiaryLabel}
-      />
-    </Pressable>
-  );
+/** The plant's first Due care type; none for an Archived plant, which is out of care. */
+function firstDue(id: string): CareEventType | undefined {
+  // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants.
+  const plant = evaluateCare(db).find((candidate) => candidate.id === id);
+  return plant && dueCare(plant)[0]?.type;
 }
 
 const styles = StyleSheet.create({
-  empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
-  list: { paddingVertical: space.l },
+  sheet: { gap: space.l, padding: space.xl, paddingTop: space.xxl },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.m },
   grow: { flex: 1 },
 });

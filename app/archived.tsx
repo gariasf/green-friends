@@ -11,8 +11,8 @@ import { group, space, text } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 /**
- * Archived plants (CONTEXT.md): out of care, their Care Log and photo kept. Each opens its details,
- * where it can be unarchived or deleted.
+ * Archived plants (CONTEXT.md): out of care, their Care Log and photo kept. Each opens its Plant
+ * screen, where it can be unarchived.
  */
 export default function ArchivedScreen() {
   const [plants, setPlants] = useState(() => listArchivedPlants(db));
@@ -35,9 +35,7 @@ export default function ArchivedScreen() {
                 `Archived · ${dayLabel(localDay(new Date(plant.archivedAt)), today)}`
               }
               first={index === 0}
-              onPress={() =>
-                router.push({ pathname: '/plants/[id]/edit', params: { id: plant.id } })
-              }
+              onPress={() => router.push({ pathname: '/plants/[id]', params: { id: plant.id } })}
             />
           ))}
         </View>
