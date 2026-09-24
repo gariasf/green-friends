@@ -40,6 +40,11 @@ export const species = sqliteTable('species', {
   fertilizingGrowingDays: integer('fertilizing_growing_days'),
   fertilizingDormantDays: integer('fertilizing_dormant_days'),
   repottingMonths: integer('repotting_months'),
+  /**
+   * Harmful to cats or dogs if eaten, curated by hand (research #4); null where the catalog does
+   * not say, as in a catalog seeded before the column existed, until its reseed.
+   */
+  toxicToPets: integer('toxic_to_pets', { mode: 'boolean' }),
 });
 
 /** Single row (id 1): the version of the bundled dataset the species table was last seeded from. */

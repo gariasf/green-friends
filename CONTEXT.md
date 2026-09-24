@@ -13,7 +13,7 @@ An individual specimen the user owns and cares for. May reference a Species; a p
 _Avoid_: specimen, item
 
 **Species**:
-A read-only catalog entry (colloquial + scientific name) bundled with the app, carrying care defaults. Never user-editable.
+A read-only catalog entry (colloquial + scientific name) bundled with the app, carrying care defaults and whether it is toxic to pets. Never user-editable.
 _Avoid_: variety, plant type
 
 **Display Name**:

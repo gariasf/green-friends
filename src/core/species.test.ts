@@ -1,5 +1,6 @@
 import bundled from '../../assets/species.json';
 import { openTestDb } from '../test/db';
+import { createPlant, getPlant, updatePlant } from './plants';
 import { getSettings, updateSettings } from './settings';
 import {
   getSpecies,
@@ -18,6 +19,7 @@ const monstera = (wateringGrowingDays: number): Species => ({
   fertilizingGrowingDays: 30,
   fertilizingDormantDays: null,
   repottingMonths: 24,
+  toxicToPets: true,
 });
 
 const pothos: Species = {
@@ -29,19 +31,22 @@ const pothos: Species = {
   fertilizingGrowingDays: 30,
   fertilizingDormantDays: null,
   repottingMonths: 24,
+  toxicToPets: true,
 };
 
 describe('species catalog', () => {
-  test('first launch seeds the bundled starter set into the empty catalog', () => {
+  test('first launch seeds the bundled catalog into the empty one', () => {
     const db = openTestDb();
     expect(listSpecies(db)).toEqual([]);
 
     expect(seedSpecies(db, bundled)).toBe(true);
 
     const catalog = listSpecies(db);
-    // Ticket #10 scopes the starter set to roughly the top 50 houseplants; #20 grows it to ~300.
-    expect(catalog.length).toBeGreaterThanOrEqual(50);
+    // Ticket #20 grows the catalog to roughly 300 common houseplants.
+    expect(catalog.length).toBeGreaterThanOrEqual(290);
     expect(catalog).toContainEqual(monstera(7));
+    // Pet toxicity is curated by hand for every Species.
+    expect(catalog.filter((s) => s.toxicToPets === null)).toEqual([]);
     expect(getSpeciesDatasetVersion(db)).toBe(bundled.version);
   });
 
@@ -58,12 +63,17 @@ describe('species catalog', () => {
     const db = openTestDb();
     seedSpecies(db, { version: 1, species: [monstera(7)] });
     const settings = updateSettings(db, { growingStartMonth: 4 });
+    const plant = createPlant(db, { speciesId: monstera(7).id });
+    const other = createPlant(db, { speciesId: monstera(7).id });
+    const overridden = updatePlant(db, other.id, { wateringGrowingDays: 3 });
 
     expect(seedSpecies(db, { version: 2, species: [monstera(9), pothos] })).toBe(true);
 
     expect(listSpecies(db)).toEqual([monstera(9), pothos]);
     expect(getSpeciesDatasetVersion(db)).toBe(2);
     expect(getSettings(db)).toEqual(settings);
+    expect(getPlant(db, plant.id)).toEqual(plant);
+    expect(getPlant(db, overridden.id)).toEqual(overridden);
   });
 
   test('an older dataset never replaces a newer catalog', () => {

@@ -1,0 +1,1 @@
+ALTER TABLE `species` ADD `toxic_to_pets` integer;

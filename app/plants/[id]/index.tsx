@@ -65,6 +65,11 @@ export default function PlantSheet() {
         <View style={styles.grow}>
           <Text style={styles.name}>{plant.displayName}</Text>
           {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
+          {plant.toxicToPets !== null && (
+            <Text style={[styles.hint, plant.toxicToPets && styles.toxic]}>
+              {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
+            </Text>
+          )}
           <PhotoButton
             hasPhoto={photo !== null}
             onPick={(prepared) =>
@@ -112,6 +117,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '800' },
   scientific: { fontSize: 14, fontStyle: 'italic', color: '#666' },
   hint: { fontSize: 14, color: '#666' },
+  toxic: { color: '#e0342b', fontWeight: '600' },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 32 },
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
 });

@@ -8,15 +8,17 @@
  *   Wikidata item ID (QID) of the taxon and its scientific name is that item's taxon name (P225).
  *   This script fetches the taxon name and checks it against the curated entry, so a wrong QID
  *   cannot ship.
- * - The curated care layer (colloquial names, watering / fertilizing / repotting defaults) is
- *   hand-written in this repo.
+ * - The curated care layer (colloquial names, watering / fertilizing / repotting defaults, pet
+ *   toxicity) is hand-written in this repo. No open dataset of pet toxicity is licensed for
+ *   commercial use (research #4), so it is curated per species and cross-checked against public
+ *   references such as the ASPCA's toxic and non-toxic plant lists; none of them is imported.
  * - No Perenual data: its terms forbid redistribution. Open Plantbook thresholds are not bundled
  *   because nothing in v1 reads them; openplantbook-coverage.ts runs the coverage spot-check.
  *
  * Invariants: QIDs unique and append-only (every ID ever committed in assets/species.json stays,
  * none is reused for another taxon), intervals are positive integers, a Dormant interval needs a
- * Growing one, and the dataset version goes up whenever the species content changes (the app
- * reseeds on a higher version).
+ * Growing one, every species states its pet toxicity, and the dataset version goes up whenever the
+ * species content changes (the app reseeds on a higher version).
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -40,7 +42,8 @@ const FIELD_KINDS = {
   fertilizingGrowingDays: 'interval',
   fertilizingDormantDays: 'interval',
   repottingMonths: 'interval',
-} satisfies Record<keyof Species, 'name' | 'interval'>;
+  toxicToPets: 'flag',
+} satisfies Record<keyof Species, 'name' | 'interval' | 'flag'>;
 
 const SOURCES = [
   {
@@ -52,7 +55,7 @@ const SOURCES = [
   {
     name: 'Green Friends curated care layer',
     url: 'https://github.com/gariasf/green-friends/blob/main/scripts/species/curated.json',
-    usedFor: 'Colloquial names and care defaults',
+    usedFor: 'Colloquial names, care defaults and pet toxicity',
   },
 ];
 
@@ -111,6 +114,8 @@ function validate({ version, species }: SpeciesDataset): string[] {
         const other = seen.get(`${key}:${value}`);
         if (other) problems.push(`${where}: ${key} duplicates ${other}`);
         seen.set(`${key}:${value}`, s.id);
+      } else if (kind === 'flag') {
+        if (typeof value !== 'boolean') problems.push(`${where}: ${key} must be true or false`);
       } else if (
         value !== null &&
         !(typeof value === 'number' && Number.isInteger(value) && value > 0)

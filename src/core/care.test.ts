@@ -2,7 +2,7 @@ import type { Db } from '../db/types';
 import { MONSTERA, catalog, gardenDb, noon } from '../test/garden';
 import { dueCare, evaluateCare, listNeedsAttention } from './care';
 import { logCareEvent } from './careLog';
-import { archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
+import { NO_SCHEDULE, archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
 import { updateSettings } from './settings';
 import { seedSpecies } from './species';
 
@@ -290,6 +290,22 @@ describe('effective schedule', () => {
 
     expect(careOn(db, '2026-09-27').water).toMatchObject({ state: 'due', dueOn: '2026-09-27' });
     expect(careOn(db, '2026-10-06').fertilize).toMatchObject({ state: 'due', dueOn: '2026-10-06' });
+  });
+});
+
+describe('the evaluated plant', () => {
+  test("carries its Species' pet toxicity, and none without a Species", () => {
+    const db = gardenDb();
+    createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' });
+    createPlant(db, {
+      nickname: 'Air plant',
+      schedule: { ...NO_SCHEDULE, wateringGrowingDays: 7 },
+    });
+
+    expect(evaluateCare(db)).toMatchObject([
+      { displayName: 'Air plant', toxicToPets: null },
+      { displayName: 'Monty', toxicToPets: true },
+    ]);
   });
 });
 

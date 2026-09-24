@@ -34,6 +34,8 @@ export type PlantCare = {
   id: string;
   displayName: string;
   scientificName: string | null;
+  /** The Species' pet toxicity; null without a Species the catalog knows. */
+  toxicToPets: boolean | null;
   /** The live photo's filename (src/core/photos.ts); null when the plant has none. */
   photo: string | null;
   care: Record<CareType, CareStatus>;
@@ -90,6 +92,7 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
           id: plant.id,
           displayName,
           scientificName: species?.scientificName ?? null,
+          toxicToPets: species?.toxicToPets ?? null,
           photo,
         },
         dueDays,
