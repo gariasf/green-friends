@@ -1,77 +1,91 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
+import * as Haptics from 'expo-haptics';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { careLogQuery, type CareEvent } from '@/src/core/careLog';
+import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
 import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, dayLabel } from '@/src/ui/CareEvent';
+import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
+import { alertError, PrimaryButton } from '@/src/ui/Form';
+import { colors, space, text } from '@/src/ui/theme';
+import { WhenPicker } from '@/src/ui/WhenPicker';
 
-/** A plant's Care Log (spec #8): every Care Event, newest first; each opens to be edited or deleted. */
-export default function CareLogScreen() {
-  const { id } = useLocalSearchParams<'/plants/[id]/log'>();
-  const [displayName] = useState(() => getDisplayName(db, id));
-  const { data: events, updatedAt } = useLiveQuery(careLogQuery(db, id));
-  const today = localDay(new Date());
+const SAVE: Record<CareEventType, string> = {
+  water: 'Mark as watered',
+  fertilize: 'Mark as fertilized',
+  repot: 'Mark as repotted',
+  note: 'Add note',
+};
 
-  return (
-    <>
-      <Stack.Screen options={{ title: displayName }} />
-      {updatedAt && (
-        <FlatList
-          data={events}
-          keyExtractor={(event) => event.id}
-          contentContainerStyle={events.length === 0 ? styles.empty : undefined}
-          ListEmptyComponent={<Text style={styles.hint}>Nothing logged yet.</Text>}
-          renderItem={({ item }) => <CareEventRow event={item} today={today} />}
-        />
-      )}
-    </>
+/**
+ * PROTOTYPE (UI pass): logging care on any day, as a sheet over the plant or Today: which care
+ * (a segmented control), when (Today, Yesterday or any earlier day), and what a Note or a repot
+ * records. Opened preset to the care type it was asked for.
+ */
+export default function LogCareSheet() {
+  const params = useLocalSearchParams<{ id: string; type?: string }>();
+  const id = params.id;
+  const [name] = useState(() => getDisplayName(db, id));
+  const [type, setType] = useState<CareEventType>(() =>
+    CARE_EVENT_TYPES.includes(params.type as CareEventType)
+      ? (params.type as CareEventType)
+      : 'water',
   );
-}
+  const [day, setDay] = useState(() => localDay(new Date()));
+  const details = useCareEventDetails(type);
 
-function CareEventRow({ event, today }: { event: CareEvent; today: string }) {
-  const copy = CARE_COPY[event.type];
-  const day = dayLabel(event.occurredOn, today);
-  const detail = [event.potSizeCm !== null && `${event.potSizeCm} cm`, event.soil, event.note]
-    .filter(Boolean)
-    .join(' · ');
+  const save = () => {
+    try {
+      logCareEvent(db, { plantId: id, type, occurredOn: day, ...details.values });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } catch (error) {
+      alertError('Could not log it', error);
+    }
+  };
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={[copy.done, day, detail].filter(Boolean).join(', ')}
-      accessibilityHint="Edit or delete"
-      onPress={() => router.push({ pathname: '/care-events/[id]', params: { id: event.id } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <Text style={styles.icon}>{copy.icon}</Text>
-      <View style={styles.grow}>
-        <Text style={styles.label}>{copy.done}</Text>
-        {detail ? <Text style={styles.hint}>{detail}</Text> : null}
+    <View style={styles.sheet}>
+      <View style={styles.header}>
+        <View style={styles.grow}>
+          <Text style={text.footnote}>{name}</Text>
+          <Text style={text.title3}>Log care</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          hitSlop={10}
+          onPress={() => router.back()}
+        >
+          <SymbolView name="xmark.circle.fill" size={30} tintColor={colors.tertiaryLabel} />
+        </Pressable>
       </View>
-      <Text style={styles.hint}>{day}</Text>
-      <Text style={styles.chevron}>›</Text>
-    </Pressable>
+      <SegmentedControl
+        values={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
+        selectedIndex={CARE_EVENT_TYPES.indexOf(type)}
+        onChange={({ nativeEvent }) => {
+          Haptics.selectionAsync();
+          setType(CARE_EVENT_TYPES[nativeEvent.selectedSegmentIndex]);
+        }}
+      />
+      <View style={styles.block}>
+        <Text style={styles.label}>When</Text>
+        <WhenPicker value={day} onChange={(picked) => picked && setDay(picked)} />
+      </View>
+      {details.fields}
+      <PrimaryButton label={SAVE[type]} disabled={!details.complete} onPress={save} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  rowPressed: { backgroundColor: '#f2f2f7' },
-  icon: { fontSize: 20 },
-  grow: { flex: 1, gap: 2 },
-  label: { fontSize: 17, fontWeight: '500' },
-  hint: { fontSize: 14, color: '#666' },
-  chevron: { fontSize: 20, color: '#aeaeb5' },
+  sheet: { gap: space.l, padding: space.xl, paddingTop: space.xxl },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.m },
+  grow: { flex: 1 },
+  block: { gap: space.s },
+  label: { ...text.footnote, marginLeft: space.xs },
 });

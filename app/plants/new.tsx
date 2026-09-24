@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { localDay, shiftDays } from '@/src/core/dates';
 import { setPlantPhoto } from '@/src/core/photos';
 import {
   CARE_TYPES,
@@ -13,34 +12,16 @@ import {
 } from '@/src/core/plants';
 import { listSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
+import { colors, space, text } from '@/src/ui/theme';
+import { WhenPicker } from '@/src/ui/WhenPicker';
 
-/** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
-type Ago = { label: string; value: number | null };
-const NOT_SURE: Ago = { label: 'Not sure', value: null };
-const DAYS_AGO: Ago[] = [
-  NOT_SURE,
-  { label: 'Today', value: 0 },
-  { label: 'Yesterday', value: 1 },
-  { label: '3 days ago', value: 3 },
-  { label: '1 week ago', value: 7 },
-  { label: '2 weeks ago', value: 14 },
-  { label: '1 month ago', value: 30 },
-];
-// Approximate day counts: a repot "about a year ago" needs no calendar-month arithmetic.
-const MONTHS_AGO: Ago[] = [
-  NOT_SURE,
-  { label: 'This month', value: 0 },
-  { label: '6 months ago', value: 182 },
-  { label: '1 year ago', value: 365 },
-  { label: '2 years ago', value: 730 },
-];
-const LAST_DONE: Record<CareType, { label: string; options: Ago[] }> = {
-  water: { label: 'Water it', options: DAYS_AGO },
-  fertilize: { label: 'Fertilize it', options: DAYS_AGO },
-  repot: { label: 'Repot it', options: MONTHS_AGO },
+/** "When did you last …?", per care type (PROTOTYPE, UI pass: any day, or not sure). */
+const LAST_DONE: Record<CareType, string> = {
+  water: 'Last watered',
+  fertilize: 'Last fertilized',
+  repot: 'Last repotted',
 };
 
 type ScheduleForm = Record<keyof CareSchedule, string>;
@@ -71,7 +52,7 @@ export default function NewPlantScreen() {
   /** The prepared photo's file, filed with the plant once it is added. */
   const [prepared, setPrepared] = useState<string | null>(null);
   const [schedule, setSchedule] = useState(EMPTY_SCHEDULE);
-  const [lastDone, setLastDone] = useState<Record<CareType, number | null>>({
+  const [lastDone, setLastDone] = useState<Record<CareType, string | null>>({
     water: null,
     fertilize: null,
     repot: null,
@@ -92,11 +73,10 @@ export default function NewPlantScreen() {
   const canSave = species !== null || (ownSchedule && nickname.trim() !== '');
 
   const save = () => {
-    const today = localDay(new Date());
     const lastDoneDays: Partial<Record<CareType, string>> = {};
     for (const type of CARE_TYPES) {
-      const ago = lastDone[type];
-      if (ago !== null) lastDoneDays[type] = shiftDays(today, -ago);
+      const day = lastDone[type];
+      if (day !== null) lastDoneDays[type] = day;
     }
     let plant: Plant;
     try {
@@ -228,11 +208,11 @@ export default function NewPlantScreen() {
       </Text>
       {CARE_TYPES.map((type) => (
         <View key={type} style={styles.row}>
-          <Text style={styles.label}>{LAST_DONE[type].label}</Text>
-          <ChipGroup
-            options={LAST_DONE[type].options}
+          <Text style={styles.label}>{LAST_DONE[type]}</Text>
+          <WhenPicker
+            optional
             value={lastDone[type]}
-            onChange={(value) => setLastDone({ ...lastDone, [type]: value })}
+            onChange={(day) => setLastDone({ ...lastDone, [type]: day })}
           />
         </View>
       ))}
@@ -267,22 +247,27 @@ function Picked({
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 48 },
-  heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
-  hint: { fontSize: 14, color: '#666' },
-  label: { fontSize: 16, fontWeight: '500' },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
-  row: { gap: 8 },
-  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
+  heading: { ...text.title3, marginTop: space.s },
+  hint: { ...text.subheadline },
+  label: { ...text.callout, fontWeight: '500' },
+  link: { fontSize: 16, color: colors.tint, fontWeight: '600' },
+  row: { gap: space.s },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   grow: { flex: 1, gap: 2 },
-  match: { paddingVertical: 8, gap: 2, borderBottomWidth: 1, borderColor: '#eee' },
-  matchName: { fontSize: 16, fontWeight: '500' },
+  match: {
+    paddingVertical: space.s,
+    gap: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+  },
+  matchName: { ...text.callout, fontWeight: '500' },
   picked: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#e8f5e9',
+    gap: space.m,
+    padding: space.m,
+    borderRadius: 10,
+    backgroundColor: colors.tintSoft,
   },
 });

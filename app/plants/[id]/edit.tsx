@@ -1,5 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { SymbolView } from 'expo-symbols';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -18,10 +19,11 @@ import {
 } from '@/src/core/plants';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import { CARE_COPY } from '@/src/ui/CareEvent';
+import { CARE_COPY, describeSchedule } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
+import { colors, space, text } from '@/src/ui/theme';
 
 /**
  * One care type's schedule as the form holds it: an Override while `own`, else the Species
@@ -125,13 +127,6 @@ export default function EditPlantScreen() {
       ))}
 
       <PrimaryButton label="Save" onPress={save} />
-      <Pressable
-        accessibilityRole="button"
-        hitSlop={8}
-        onPress={() => router.push({ pathname: '/plants/[id]/log', params: { id: plant.id } })}
-      >
-        <Text style={styles.link}>Care Log ›</Text>
-      </Pressable>
 
       <View style={styles.actions}>
         {plant.archivedAt ? (
@@ -174,9 +169,10 @@ function CareTypeSchedule({
 }) {
   return (
     <View style={styles.careType}>
-      <Text style={styles.label}>
-        {CARE_COPY[type].icon} {CARE_COPY[type].label}
-      </Text>
+      <View style={styles.careTypeHead}>
+        <SymbolView name={CARE_COPY[type].symbol} size={18} tintColor={CARE_COPY[type].hue} />
+        <Text style={styles.label}>{CARE_COPY[type].label}</Text>
+      </View>
       <ChipGroup
         options={[
           { label: defaults ? 'Species default' : 'None', value: false },
@@ -185,7 +181,7 @@ function CareTypeSchedule({
         value={value.own}
         onChange={(own) => onChange({ ...value, own })}
       />
-      {!value.own && <Text style={styles.hint}>{describeDefault(type, defaults)}</Text>}
+      {!value.own && <Text style={styles.hint}>{describeSchedule(type, defaults)}.</Text>}
       {value.own && (
         <>
           <Text style={styles.hint}>
@@ -250,30 +246,15 @@ function startingSchedule(
   };
 }
 
-/** A care type's Species default in words; a plant with no Species has none. */
-function describeDefault(type: CareType, defaults: CareSchedule | null): string {
-  if (!defaults) return 'Never Due.';
-  if (type === 'repot') {
-    return defaults.repottingMonths === null
-      ? 'Never.'
-      : `Every ${defaults.repottingMonths} months.`;
-  }
-  const growing = defaults[SEASONAL[type].growing];
-  const dormant = defaults[SEASONAL[type].dormant];
-  if (growing === null) return 'Never.';
-  return dormant === null
-    ? `Every ${growing} days, paused in the Dormant season.`
-    : `Every ${growing} days, every ${dormant} days in the Dormant season.`;
-}
-
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 48 },
-  heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
-  label: { fontSize: 16, fontWeight: '600' },
-  hint: { fontSize: 14, color: '#666' },
+  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
+  heading: { ...text.title3, marginTop: space.s },
+  label: { ...text.callout, fontWeight: '600' },
+  hint: { ...text.subheadline },
   centered: { textAlign: 'center' },
-  careType: { gap: 8 },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
-  actions: { marginTop: 24, gap: 24 },
-  delete: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
+  careType: { gap: space.s },
+  careTypeHead: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  link: { fontSize: 16, color: colors.tint, fontWeight: '600', textAlign: 'center' },
+  actions: { marginTop: space.xxl, gap: space.xxl },
+  delete: { fontSize: 16, color: colors.destructive, fontWeight: '600', textAlign: 'center' },
 });

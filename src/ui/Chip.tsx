@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-/** A selectable pill. */
+import { colors, space } from '@/src/ui/theme';
+
+/** A selectable pill, for a handful of quick picks; bigger choices get native controls. */
 export function Chip({
   label,
   selected,
@@ -14,8 +16,13 @@ export function Chip({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
+      hitSlop={4}
       onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && styles.pressed,
+      ]}
     >
       <Text style={[styles.text, selected && styles.textSelected]}>{label}</Text>
     </Pressable>
@@ -47,15 +54,16 @@ export function ChipGroup<T>({
 }
 
 const styles = StyleSheet.create({
-  group: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  group: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#bbb',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: space.m + 2,
+    borderRadius: 18,
+    backgroundColor: colors.fill,
   },
-  chipSelected: { backgroundColor: '#2e7d32', borderColor: '#2e7d32' },
-  text: { fontSize: 15 },
-  textSelected: { color: '#fff', fontWeight: '600' },
+  chipSelected: { backgroundColor: colors.tint },
+  pressed: { opacity: 0.6 },
+  text: { fontSize: 15, fontWeight: '500', color: colors.label },
+  textSelected: { color: colors.onTint, fontWeight: '600' },
 });

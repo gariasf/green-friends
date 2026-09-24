@@ -1,11 +1,12 @@
 import { uuid } from 'expo-modules-core';
-import { Link, router, Stack } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { router, Stack, ThemeProvider } from 'expo-router';
+import { Pressable, Text, useColorScheme } from 'react-native';
 
 import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
+import { colors, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
@@ -19,64 +20,47 @@ migrate(db);
 seedSpecies(db, bundledSpecies);
 
 /**
- * A native bottom sheet as tall as what it holds, for the plant sheet (prototype #6) and a Care
- * Event's edit sheet. Opaque: the iOS 26 glass default turns dark over the dimmed screen, under
- * text drawn for a light background.
+ * A native bottom sheet as tall as what it holds, for logging care and editing a Care Event, with
+ * a grabber. Opaque: the iOS 26 glass default turns dark over the dimmed screen.
  */
 const SHEET = {
   presentation: 'formSheet',
   sheetAllowedDetents: 'fitToContents',
+  sheetGrabberVisible: true,
   headerShown: false,
-  contentStyle: { backgroundColor: '#fff' },
+  contentStyle: { backgroundColor: colors.sheet },
 } as const;
 
 export default function RootLayout() {
   useDigests();
+  const scheme = useColorScheme();
   return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{
-          title: 'Today',
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-              <Link href="/garden" style={{ fontSize: 17 }}>
-                Garden
-              </Link>
-              <Link href="/settings" style={{ fontSize: 17 }}>
-                Settings
-              </Link>
-            </View>
-          ),
+    <ThemeProvider value={navigationTheme(scheme)}>
+      <Stack
+        screenOptions={{
+          contentStyle: { backgroundColor: colors.background },
+          headerBackButtonDisplayMode: 'minimal',
         }}
-      />
-      <Stack.Screen
-        name="garden"
-        options={{
-          title: 'Garden',
-          headerRight: () => (
-            <Link href="/plants/new" accessibilityLabel="Add plant" style={{ fontSize: 28 }}>
-              +
-            </Link>
-          ),
-        }}
-      />
-      <Stack.Screen
-        name="plants/new"
-        options={{
-          title: 'New plant',
-          presentation: 'modal',
-          headerLeft: () => (
-            <Pressable accessibilityRole="button" onPress={() => router.back()}>
-              <Text style={{ fontSize: 17 }}>Cancel</Text>
-            </Pressable>
-          ),
-        }}
-      />
-      <Stack.Screen name="plants/[id]/index" options={SHEET} />
-      <Stack.Screen name="care-events/[id]" options={SHEET} />
-      <Stack.Screen name="archived" options={{ title: 'Archived' }} />
-      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-    </Stack>
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="plants/new"
+          options={{
+            title: 'New plant',
+            presentation: 'modal',
+            headerLeft: () => (
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.back()}>
+                <Text style={{ fontSize: 17, color: colors.tint }}>Cancel</Text>
+              </Pressable>
+            ),
+          }}
+        />
+        <Stack.Screen name="plants/[id]/index" options={{ title: '' }} />
+        <Stack.Screen name="plants/[id]/log" options={SHEET} />
+        <Stack.Screen name="plants/[id]/edit" options={{ title: 'Edit plant' }} />
+        <Stack.Screen name="care-events/[id]" options={SHEET} />
+        <Stack.Screen name="archived" options={{ title: 'Archived' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }

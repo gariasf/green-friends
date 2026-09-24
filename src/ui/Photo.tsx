@@ -1,10 +1,12 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { SymbolView } from 'expo-symbols';
 import { ActionSheetIOS, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { PhotoFiles } from '@/src/core/photos';
 import { alertError } from '@/src/ui/Form';
+import { colors } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -59,7 +61,12 @@ export function PhotoButton({
     }
   };
   return (
-    <Pressable accessibilityRole="button" hitSlop={8} onPress={choose}>
+    <Pressable
+      accessibilityRole="button"
+      hitSlop={8}
+      onPress={choose}
+      style={({ pressed }) => pressed && styles.pressed}
+    >
       <Text style={styles.link}>{hasPhoto ? 'Replace photo' : 'Add photo'}</Text>
     </Pressable>
   );
@@ -69,7 +76,7 @@ export function PhotoButton({
  * Asks for a photo from the camera or the library and prepares it. Resolves to the prepared
  * file, or null when the user backs out.
  */
-async function pickPhoto(): Promise<string | null> {
+export async function pickPhoto(): Promise<string | null> {
   const source = await chooseSource();
   if (source === null) return null;
   if (source === 'camera' && !(await ImagePicker.requestCameraPermissionsAsync()).granted) {
@@ -118,24 +125,35 @@ function deleteIfThere(file: File): void {
   if (file.exists) file.delete();
 }
 
-/** A plant's photo as a rounded square, or a potted plant while it has none. */
-export function PlantPhoto({ uri, size }: { uri: string | null; size: number }) {
+/** A plant's photo as a rounded square, or a leaf while it has none. */
+export function PlantPhoto({
+  uri,
+  size,
+  radius = size * 0.22,
+}: {
+  uri: string | null;
+  size: number;
+  radius?: number;
+}) {
   return (
-    <View accessibilityElementsHidden style={[styles.photo, { width: size, height: size }]}>
+    <View
+      accessibilityElementsHidden
+      style={[styles.photo, { width: size, height: size, borderRadius: radius }]}
+    >
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} />
       ) : (
-        <Text style={{ fontSize: size / 2 }}>🪴</Text>
+        <SymbolView name="leaf.fill" size={size * 0.42} tintColor={colors.tint} />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
+  link: { fontSize: 16, color: colors.tint, fontWeight: '600' },
+  pressed: { opacity: 0.5 },
   photo: {
-    borderRadius: 14,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: colors.tintSoft,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

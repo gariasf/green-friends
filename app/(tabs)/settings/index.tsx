@@ -18,6 +18,7 @@ import { db, withScratchDb } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
+import { colors, space, text } from '@/src/ui/theme';
 
 const MONTHS = [
   'Jan',
@@ -124,7 +125,7 @@ export default function SettingsScreen() {
     );
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.screen}>
       <Text style={styles.heading}>Growing season</Text>
       <Text style={styles.hint}>
         Watering and fertilizing follow the Growing interval in these months and the Dormant
@@ -195,12 +196,12 @@ function MonthRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 48 },
-  heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
-  hint: { fontSize: 14, color: '#666' },
-  row: { gap: 8 },
-  label: { fontSize: 16, fontWeight: '500' },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
-  erase: { marginTop: 32 },
-  danger: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
+  screen: { padding: space.l, gap: space.m, paddingBottom: 120 },
+  heading: { ...text.title3, marginTop: space.s },
+  hint: { ...text.subheadline },
+  row: { gap: space.s },
+  label: { ...text.callout, fontWeight: '500' },
+  link: { fontSize: 16, color: colors.tint, fontWeight: '600' },
+  erase: { marginTop: space.xxxl },
+  danger: { fontSize: 16, color: colors.destructive, fontWeight: '600', textAlign: 'center' },
 });
