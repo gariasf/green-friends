@@ -27,7 +27,8 @@ type Undo = { message: string; eventIds: string[] };
 /**
  * Today (spec #8, prototype #6): one card per plant that Needs Attention, most Overdue first, with
  * a checklist row per Due care type that logs it as done today in one tap; the rest of the garden
- * dimmed below. A card's ⋯, or any plant's name or photo, opens its plant sheet.
+ * dimmed below. A card's ⋯, or any plant's name or photo, opens its plant sheet. With no plant in
+ * care, as on a fresh install, it offers to add one.
  */
 export default function TodayScreen() {
   const [plants, refresh] = usePlantCare();
@@ -71,11 +72,24 @@ export default function TodayScreen() {
               <CareCard key={plant.id} plant={plant} onLog={log} />
             ))}
           </>
-        ) : (
-          <View style={styles.caughtUp}>
-            <Text style={styles.caughtUpIcon}>🌿</Text>
+        ) : plants.length > 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>🌿</Text>
             <Text style={styles.title}>All caught up</Text>
             <Text style={styles.hint}>Nothing needs you today.</Text>
+          </View>
+        ) : (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>🪴</Text>
+            <Text style={styles.title}>No plants in care</Text>
+            <Text style={styles.hint}>Plants show up here when they need you.</Text>
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => router.push('/plants/new')}
+            >
+              <Text style={styles.link}>Add a plant</Text>
+            </Pressable>
           </View>
         )}
         {rest.length > 0 && <RestOfGarden plants={rest} />}
@@ -237,10 +251,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f2f2f7' },
   content: { paddingTop: 12, paddingBottom: 96 },
   summary: { marginHorizontal: 20, fontSize: 14, fontWeight: '600', color: '#666' },
-  caughtUp: { alignItems: 'center', paddingHorizontal: 32, paddingVertical: 64, gap: 8 },
-  caughtUpIcon: { fontSize: 56 },
+  empty: { alignItems: 'center', paddingHorizontal: 32, paddingVertical: 64, gap: 8 },
+  emptyIcon: { fontSize: 56 },
   title: { fontSize: 22, fontWeight: '600' },
   hint: { fontSize: 16, color: '#666', textAlign: 'center' },
+  link: { marginTop: 8, fontSize: 16, fontWeight: '600', color: GREEN },
   hintSmall: { fontSize: 11, color: '#666' },
   grow: { flex: 1 },
   card: {
