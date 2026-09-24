@@ -1,6 +1,9 @@
+import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-/** A selectable pill. */
+import { colors, space, text } from '@/src/ui/theme';
+
+/** A selectable pill on a fill. */
 export function Chip({
   label,
   selected,
@@ -14,15 +17,21 @@ export function Chip({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
+      // 36 pt tall; this makes it a 44 pt target.
+      hitSlop={4}
       onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && styles.pressed,
+      ]}
     >
-      <Text style={[styles.text, selected && styles.textSelected]}>{label}</Text>
+      <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
     </Pressable>
   );
 }
 
-/** A wrapping row of chips where exactly one option is selected. */
+/** A wrapping row of chips where exactly one option is selected; a new pick ticks like a picker. */
 export function ChipGroup<T>({
   options,
   value,
@@ -39,7 +48,10 @@ export function ChipGroup<T>({
           key={option.label}
           label={option.label}
           selected={Object.is(option.value, value)}
-          onPress={() => onChange(option.value)}
+          onPress={() => {
+            if (!Object.is(option.value, value)) Haptics.selectionAsync();
+            onChange(option.value);
+          }}
         />
       ))}
     </View>
@@ -47,15 +59,16 @@ export function ChipGroup<T>({
 }
 
 const styles = StyleSheet.create({
-  group: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  group: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#bbb',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: space.m,
+    borderRadius: 18,
+    backgroundColor: colors.fill,
   },
-  chipSelected: { backgroundColor: '#2e7d32', borderColor: '#2e7d32' },
-  text: { fontSize: 15 },
-  textSelected: { color: '#fff', fontWeight: '600' },
+  chipSelected: { backgroundColor: colors.tint },
+  pressed: { opacity: 0.5 },
+  label: { ...text.subheadline, fontWeight: '500', color: colors.label },
+  labelSelected: { fontWeight: '600', color: colors.onTint },
 });

@@ -1,7 +1,60 @@
-import { Alert, Pressable, StyleSheet, Text, TextInput, type TextInputProps } from 'react-native';
+import { useId } from 'react';
+import {
+  Alert,
+  InputAccessoryView,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
 
-export function Field(props: TextInputProps) {
-  return <TextInput style={styles.field} placeholderTextColor="#8e8e93" {...props} />;
+import { colors, space, text } from '@/src/ui/theme';
+
+const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
+
+/**
+ * A text field with its label above it and, optionally, its unit after the value ("cm"). A number
+ * pad has no return key, so it gets a Done bar above it.
+ */
+export function Field({
+  label,
+  suffix,
+  ...props
+}: TextInputProps & { label?: string; suffix?: string }) {
+  const doneBar = useId();
+  const numberPad = NUMBER_PADS.includes(props.keyboardType);
+  return (
+    <View style={styles.fieldBlock}>
+      {label && <Text style={styles.label}>{label}</Text>}
+      <View style={styles.field}>
+        <TextInput
+          style={[styles.input, props.multiline && styles.multiline]}
+          placeholderTextColor={colors.placeholder}
+          selectionColor={colors.tint}
+          accessibilityLabel={label && suffix ? `${label}, ${suffix}` : label}
+          inputAccessoryViewID={numberPad ? doneBar : undefined}
+          {...props}
+        />
+        {suffix && (
+          <Text accessibilityElementsHidden style={styles.suffix}>
+            {suffix}
+          </Text>
+        )}
+      </View>
+      {numberPad && (
+        <InputAccessoryView nativeID={doneBar}>
+          <View style={styles.doneBar}>
+            <TextButton label="Done" onPress={Keyboard.dismiss} />
+          </View>
+        </InputAccessoryView>
+      )}
+    </View>
+  );
 }
 
 /** The one filled button that completes a form. */
@@ -20,9 +73,38 @@ export function PrimaryButton({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.button, disabled && styles.buttonDisabled]}
+      style={({ pressed }) => [
+        styles.button,
+        disabled && styles.buttonDisabled,
+        pressed && styles.pressed,
+      ]}
     >
-      <Text style={styles.buttonText}>{label}</Text>
+      <Text style={[styles.buttonLabel, disabled && styles.buttonLabelDisabled]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** A button that is only its label, in the tint, or in red when it destroys something. */
+export function TextButton({
+  label,
+  destructive = false,
+  onPress,
+  style,
+}: {
+  label: string;
+  destructive?: boolean;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      // A line of body text is about 20 pt tall; this makes it a 44 pt target.
+      hitSlop={12}
+      onPress={onPress}
+      style={({ pressed }) => [style, pressed && styles.pressed]}
+    >
+      <Text style={[styles.textButton, destructive && styles.destructive]}>{label}</Text>
     </Pressable>
   );
 }
@@ -41,22 +123,40 @@ export function optionalNumber(text: string): number | null {
 }
 
 const styles = StyleSheet.create({
+  fieldBlock: { gap: space.xs },
+  label: { ...text.footnote, marginLeft: space.xs },
   field: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingHorizontal: space.m,
+    borderRadius: 10,
+    backgroundColor: colors.fill,
+  },
+  input: { ...text.body, flex: 1, paddingVertical: space.s },
+  multiline: { minHeight: 88 },
+  suffix: { ...text.body, color: colors.secondaryLabel, marginLeft: space.s },
+  doneBar: {
+    alignItems: 'flex-end',
+    paddingHorizontal: space.l,
+    paddingVertical: space.m,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
   },
   button: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 10,
+    minHeight: 50,
+    marginTop: space.m,
+    paddingHorizontal: space.xl,
+    borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#2e7d32',
+    justifyContent: 'center',
+    backgroundColor: colors.tint,
   },
-  buttonDisabled: { backgroundColor: '#bbb' },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  buttonDisabled: { backgroundColor: colors.fill },
+  buttonLabel: { ...text.headline, color: colors.onTint },
+  buttonLabelDisabled: { color: colors.tertiaryLabel },
+  textButton: { ...text.body, color: colors.tint },
+  destructive: { color: colors.danger },
+  pressed: { opacity: 0.5 },
 });

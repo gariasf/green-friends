@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localDay } from '@/src/core/dates';
 import { listArchivedPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { dayLabel } from '@/src/ui/CareEvent';
 import { PlantRow } from '@/src/ui/PlantRow';
+import { group, space, text } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 /**
@@ -19,26 +20,33 @@ export default function ArchivedScreen() {
   const today = localDay(new Date());
 
   return (
-    <FlatList
-      data={plants}
-      keyExtractor={(plant) => plant.id}
-      contentContainerStyle={plants.length === 0 ? styles.empty : undefined}
-      ListEmptyComponent={<Text style={styles.hint}>No archived plants.</Text>}
-      renderItem={({ item }) => (
-        <PlantRow
-          photo={item.photo}
-          name={item.displayName}
-          detail={
-            item.archivedAt && `Archived · ${dayLabel(localDay(new Date(item.archivedAt)), today)}`
-          }
-          onPress={() => router.push({ pathname: '/plants/[id]/edit', params: { id: item.id } })}
-        />
+    <ScrollView contentContainerStyle={plants.length === 0 ? styles.empty : styles.list}>
+      {plants.length === 0 ? (
+        <Text style={text.subheadline}>No archived plants.</Text>
+      ) : (
+        <View style={group.box}>
+          {plants.map((plant, index) => (
+            <PlantRow
+              key={plant.id}
+              photo={plant.photo}
+              name={plant.displayName}
+              detail={
+                plant.archivedAt &&
+                `Archived · ${dayLabel(localDay(new Date(plant.archivedAt)), today)}`
+              }
+              first={index === 0}
+              onPress={() =>
+                router.push({ pathname: '/plants/[id]/edit', params: { id: plant.id } })
+              }
+            />
+          ))}
+        </View>
       )}
-    />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  hint: { fontSize: 14, color: '#666' },
+  list: { paddingVertical: space.l },
+  empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
 });

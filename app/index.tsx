@@ -1,14 +1,14 @@
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  AccessibilityInfo,
-  LayoutAnimation,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LayoutAnimationConfig,
+  LinearTransition,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/core/care';
@@ -16,8 +16,10 @@ import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, plantsNeedYou } from '@/src/ui/CareEvent';
+import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
+import { colors, group, space, text } from '@/src/ui/theme';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 const UNDO_MS = 4000;
@@ -28,7 +30,8 @@ type Undo = { message: string; eventIds: string[] };
  * Today (spec #8, prototype #6): one card per plant that Needs Attention, most Overdue first, with
  * a checklist row per Due care type that logs it as done today in one tap; the rest of the garden
  * dimmed below. A card's ⋯, or any plant's name or photo, opens its plant sheet. With no plant in
- * care, as on a fresh install, it offers to add one.
+ * care, as on a fresh install, it offers to add one. Cards and rows fade in and out as care is
+ * logged or falls Due, and the rest move into place.
  */
 export default function TodayScreen() {
   const [plants, refresh] = usePlantCare();
@@ -43,6 +46,7 @@ export default function TodayScreen() {
 
   const log = (plant: PlantCare, types: CareType[]) => {
     const eventIds = types.map((type) => logCareEvent(db, { plantId: plant.id, type }).id);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     refresh();
     setUndo({
       message:
@@ -65,33 +69,34 @@ export default function TodayScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        {needingAttention.length > 0 ? (
-          <>
-            <Text style={styles.summary}>{plantsNeedYou(needingAttention.length)}</Text>
-            {needingAttention.map((plant) => (
-              <CareCard key={plant.id} plant={plant} onLog={log} />
-            ))}
-          </>
-        ) : plants.length > 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🌿</Text>
-            <Text style={styles.title}>All caught up</Text>
-            <Text style={styles.hint}>Nothing needs you today.</Text>
-          </View>
-        ) : (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🪴</Text>
-            <Text style={styles.title}>No plants in care</Text>
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={() => router.push('/plants/new')}
-            >
-              <Text style={styles.link}>Add a plant</Text>
-            </Pressable>
-          </View>
-        )}
-        {rest.length > 0 && <RestOfGarden plants={rest} />}
+        {/* What is there when Today opens is simply there; only later changes animate. */}
+        <LayoutAnimationConfig skipEntering>
+          {needingAttention.length > 0 ? (
+            <>
+              <Text style={styles.summary}>{plantsNeedYou(needingAttention.length)}</Text>
+              {needingAttention.map((plant) => (
+                <CareCard key={plant.id} plant={plant} onLog={log} />
+              ))}
+            </>
+          ) : plants.length > 0 ? (
+            <Animated.View entering={FadeIn} style={styles.empty}>
+              <SymbolView name="checkmark.seal" size={48} tintColor={colors.tint} />
+              <Text style={text.title2}>All caught up</Text>
+              <Text style={styles.hint}>Nothing needs you today.</Text>
+            </Animated.View>
+          ) : (
+            <Animated.View entering={FadeIn} style={styles.empty}>
+              <SymbolView name="leaf" size={48} tintColor={colors.tint} />
+              <Text style={text.title2}>No plants in care</Text>
+              <TextButton
+                label="Add a plant"
+                onPress={() => router.push('/plants/new')}
+                style={styles.emptyAction}
+              />
+            </Animated.View>
+          )}
+          {rest.length > 0 && <RestOfGarden plants={rest} />}
+        </LayoutAnimationConfig>
       </ScrollView>
       {undo && <UndoToast message={undo.message} onUndo={() => revert(undo)} />}
     </View>
@@ -101,15 +106,11 @@ export default function TodayScreen() {
 /**
  * Every plant's care state for today (evaluateCare), re-evaluated after writes (due-ness derives
  * from several tables, and useLiveQuery re-runs on one) and on returning to the foreground, where
- * the day may have turned. `refresh` animates the change, so a logged row folds away instead of
- * jumping.
+ * the day may have turned.
  */
 function usePlantCare() {
   const [plants, setPlants] = useState(() => evaluateCare(db));
-  const refresh = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setPlants(evaluateCare(db));
-  }, []);
+  const refresh = useCallback(() => setPlants(evaluateCare(db)), []);
   // ponytail: left open across midnight, Today shows yesterday until the next write or
   // foregrounding; add a timer for the next local midnight if that ever matters.
   useAfterWritesOrForeground(refresh);
@@ -132,50 +133,61 @@ function CareCard({
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
 
   return (
-    <View style={styles.card}>
+    <Animated.View
+      layout={LinearTransition}
+      entering={FadeIn}
+      exiting={FadeOut}
+      style={styles.card}
+    >
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
-      <Pressable accessible={false} onPress={() => openPlantSheet(plant)}>
+      <Pressable
+        accessible={false}
+        onPress={() => openPlantSheet(plant)}
+        style={({ pressed }) => pressed && styles.pressed}
+      >
         <PlantPhoto uri={photoUri(plant.photo)} size={64} />
       </Pressable>
       <View style={styles.cardBody}>
         <View style={styles.cardHead}>
           <Pressable
             accessibilityRole="button"
+            // A one-line name is about 20 pt tall; this makes it a 44 pt target.
+            hitSlop={12}
             onPress={() => openPlantSheet(plant)}
-            style={styles.grow}
+            style={({ pressed }) => [styles.grow, pressed && styles.pressed]}
           >
-            <Text style={styles.name}>{plant.displayName}</Text>
+            <Text style={text.headline}>{plant.displayName}</Text>
             {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           </Pressable>
-          {due.length > 1 && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Log all due care for ${plant.displayName}`}
-              hitSlop={8}
-              onPress={() => onLog(plant, dueTypes)}
-            >
-              <Text style={styles.all}>✓ All</Text>
-            </Pressable>
-          )}
+          {due.length > 1 && <TextButton label="Log all" onPress={() => onLog(plant, dueTypes)} />}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`More for ${plant.displayName}`}
-            hitSlop={8}
+            // 32 pt across; this makes it a 44 pt target.
+            hitSlop={6}
             onPress={() => openPlantSheet(plant)}
-            style={styles.more}
+            style={({ pressed }) => [styles.more, pressed && styles.pressed]}
           >
-            <Text style={styles.moreText}>⋯</Text>
+            <SymbolView name="ellipsis" size={16} weight="bold" tintColor={colors.secondaryLabel} />
           </Pressable>
         </View>
-        <View style={styles.checklist}>
+        <Animated.View layout={LinearTransition} style={styles.checklist}>
           {due.map(({ type, daysOverdue }, index) => {
             const overdue = daysOverdue > 0;
             return (
-              <View key={type} style={[styles.row, index > 0 && styles.rowDivider]}>
+              <Animated.View
+                key={type}
+                layout={LinearTransition}
+                exiting={FadeOut}
+                style={[styles.row, index > 0 && group.divider]}
+              >
+                <SymbolView
+                  name={CARE_COPY[type].symbol}
+                  size={20}
+                  tintColor={CARE_COPY[type].hue}
+                />
                 <View style={styles.grow}>
-                  <Text style={styles.rowLabel}>
-                    {CARE_COPY[type].icon} {CARE_COPY[type].label}
-                  </Text>
+                  <Text style={styles.rowLabel}>{CARE_COPY[type].label}</Text>
                   <Text style={[styles.status, overdue ? styles.overdue : styles.dueToday]}>
                     {overdue ? `${daysOverdue}d overdue` : 'due today'}
                   </Text>
@@ -183,27 +195,31 @@ function CareCard({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
+                  // 30 pt across; this makes it a 46 pt target.
                   hitSlop={8}
                   onPress={() => onLog(plant, [type])}
-                  style={({ pressed }) => [styles.check, pressed && styles.checkPressed]}
                 >
                   {({ pressed }) => (
-                    <Text style={[styles.checkMark, pressed && styles.checkMarkPressed]}>✓</Text>
+                    <SymbolView
+                      name={pressed ? 'checkmark.circle.fill' : 'circle'}
+                      size={30}
+                      tintColor={pressed ? colors.tint : colors.tertiaryLabel}
+                    />
                   )}
                 </Pressable>
-              </View>
+              </Animated.View>
             );
           })}
-        </View>
+        </Animated.View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 function RestOfGarden({ plants }: { plants: PlantCare[] }) {
   return (
-    <>
-      <Text style={styles.restHeading}>Rest of the garden · {plants.length}</Text>
+    <Animated.View layout={LinearTransition}>
+      <Text style={group.header}>Rest of the garden · {plants.length}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -215,125 +231,105 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
             accessibilityRole="button"
             accessibilityLabel={`${plant.displayName}, all good`}
             onPress={() => openPlantSheet(plant)}
-            style={styles.restPlant}
+            style={({ pressed }) => [styles.restPlant, pressed && styles.restPlantPressed]}
           >
             <PlantPhoto uri={photoUri(plant.photo)} size={56} />
             <Text style={styles.restName} numberOfLines={1}>
               {plant.displayName}
             </Text>
-            <Text style={styles.hintSmall}>all good</Text>
+            <Text style={text.caption}>all good</Text>
           </Pressable>
         ))}
       </ScrollView>
-    </>
+    </Animated.View>
   );
 }
 
 function UndoToast({ message, onUndo }: { message: string; onUndo: () => void }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.toast, { bottom: insets.bottom + 12 }]}>
+    <View style={[styles.toast, { bottom: insets.bottom + space.m }]}>
       <Text style={styles.toastText}>{message}</Text>
-      <Pressable accessibilityRole="button" hitSlop={12} onPress={onUndo}>
-        <Text style={styles.toastUndo}>Undo</Text>
-      </Pressable>
+      <TextButton label="Undo" onPress={onUndo} />
     </View>
   );
 }
 
-const RED = '#e0342b';
-const AMBER = '#c96a00';
-const GREEN = '#2e7d32';
-const SEPARATOR = '#e4e4e9';
-
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#f2f2f7' },
-  content: { paddingTop: 12, paddingBottom: 96 },
-  summary: { marginHorizontal: 20, fontSize: 14, fontWeight: '600', color: '#666' },
-  empty: { alignItems: 'center', paddingHorizontal: 32, paddingVertical: 64, gap: 8 },
-  emptyIcon: { fontSize: 56 },
-  title: { fontSize: 22, fontWeight: '600' },
-  hint: { fontSize: 16, color: '#666', textAlign: 'center' },
-  link: { marginTop: 8, fontSize: 16, fontWeight: '600', color: GREEN },
-  hintSmall: { fontSize: 11, color: '#666' },
+  screen: { flex: 1 },
+  content: { paddingTop: space.m, paddingBottom: 96 },
+  summary: { ...text.subheadline, fontWeight: '600', marginHorizontal: space.xl },
+  empty: { alignItems: 'center', gap: space.s, paddingHorizontal: space.xxxl, paddingVertical: 64 },
+  emptyAction: { marginTop: space.s },
+  hint: { ...text.body, color: colors.secondaryLabel, textAlign: 'center' },
   grow: { flex: 1 },
+  pressed: { opacity: 0.5 },
   card: {
     flexDirection: 'row',
-    gap: 12,
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
+    gap: space.m,
+    marginHorizontal: space.l,
+    marginTop: space.m,
+    padding: space.m,
     borderRadius: 18,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     overflow: 'hidden',
   },
-  overdueEdge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: RED },
-  cardBody: { flex: 1, gap: 8 },
-  cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  name: { fontSize: 17, fontWeight: '700' },
-  scientific: { fontSize: 12, fontStyle: 'italic', color: '#666' },
-  all: { fontSize: 14, fontWeight: '700', color: GREEN, paddingVertical: 4 },
+  overdueEdge: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: colors.danger,
+  },
+  cardBody: { flex: 1, gap: space.s },
+  cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },
+  scientific: { ...text.caption, fontStyle: 'italic' },
   more: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: SEPARATOR,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.fill,
   },
-  moreText: { fontSize: 15, fontWeight: '800', color: '#666' },
-  checklist: { borderWidth: 1, borderColor: SEPARATOR, borderRadius: 12, overflow: 'hidden' },
+  checklist: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-    backgroundColor: '#f7f7fa',
+    gap: space.m,
+    paddingVertical: space.s,
+    paddingHorizontal: space.m,
+    backgroundColor: colors.fill,
   },
-  rowDivider: { borderTopWidth: 1, borderColor: SEPARATOR },
-  rowLabel: { fontSize: 15, fontWeight: '700' },
-  status: { fontSize: 13, fontWeight: '700' },
-  overdue: { color: RED },
-  dueToday: { color: AMBER },
-  check: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: '#aeaeb5',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkPressed: { backgroundColor: GREEN, borderColor: GREEN },
-  checkMark: { fontSize: 16, fontWeight: '800', color: 'transparent' },
-  checkMarkPressed: { color: '#fff' },
-  restHeading: {
-    marginTop: 24,
-    marginHorizontal: 20,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  restStrip: { gap: 10, paddingHorizontal: 16, paddingVertical: 8 },
-  restPlant: { width: 72, alignItems: 'center', gap: 2, opacity: 0.6 },
-  restName: { fontSize: 12, fontWeight: '600' },
+  rowLabel: { ...text.subheadline, fontWeight: '700', color: colors.label },
+  status: { ...text.footnote, fontWeight: '700' },
+  overdue: { color: colors.danger },
+  dueToday: { color: colors.dueToday },
+  restStrip: { gap: space.m, paddingHorizontal: space.l, paddingVertical: space.s },
+  restPlant: { width: 72, alignItems: 'center', gap: space.xs, opacity: 0.6 },
+  restPlantPressed: { opacity: 0.3 },
+  restName: { ...text.caption, fontWeight: '600', color: colors.label },
   toast: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: space.l,
+    right: space.l,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    gap: space.m,
+    paddingVertical: space.m,
+    paddingHorizontal: space.l,
     borderRadius: 14,
-    backgroundColor: '#1c1c22',
+    backgroundColor: colors.floating,
+    // Black, iOS's default shadow colour.
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  toastText: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
-  toastUndo: { color: '#81c784', fontSize: 15, fontWeight: '800' },
+  toastText: { ...text.subheadline, flex: 1, fontWeight: '600', color: colors.label },
 });

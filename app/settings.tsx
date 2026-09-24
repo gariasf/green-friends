@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
 import { useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localTime } from '@/src/core/dates';
 import { shareExport, type ShareSheet } from '@/src/core/export';
@@ -16,8 +16,9 @@ import {
 } from '@/src/core/settings';
 import { db, withScratchDb } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
-import { alertError } from '@/src/ui/Form';
+import { alertError, TextButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
+import { space, text } from '@/src/ui/theme';
 
 const MONTHS = [
   'Jan',
@@ -126,7 +127,7 @@ export default function SettingsScreen() {
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Text style={styles.heading}>Growing season</Text>
-      <Text style={styles.hint}>
+      <Text style={text.subheadline}>
         Watering and fertilizing follow the Growing interval in these months and the Dormant
         interval outside them.
       </Text>
@@ -142,7 +143,7 @@ export default function SettingsScreen() {
       />
 
       <Text style={styles.heading}>Daily digest</Text>
-      <Text style={styles.hint}>
+      <Text style={text.subheadline}>
         One notification at this time, and only on days a plant needs you.
       </Text>
       <ChipGroup
@@ -152,27 +153,21 @@ export default function SettingsScreen() {
       />
 
       <Text style={styles.heading}>Export</Text>
-      <Text style={styles.hint}>
+      <Text style={text.subheadline}>
         Every plant, Archived ones too, with its Care Log and photo, and these settings, in one zip
         file to keep wherever you like.
       </Text>
-      <Pressable accessibilityRole="button" hitSlop={8} onPress={exportGarden}>
-        <Text style={styles.link}>Export garden</Text>
-      </Pressable>
+      <TextButton label="Export garden" onPress={exportGarden} />
 
       <Text style={styles.heading}>Import</Text>
-      <Text style={styles.hint}>
+      <Text style={text.subheadline}>
         Brings an export into this garden. For each plant, Care Event and photo, the newer version
         wins, deletions too, and nothing is wiped. To go back to an export exactly, erase all data
         first.
       </Text>
-      <Pressable accessibilityRole="button" hitSlop={8} onPress={importGarden}>
-        <Text style={styles.link}>Import garden</Text>
-      </Pressable>
+      <TextButton label="Import garden" onPress={importGarden} />
 
-      <Pressable accessibilityRole="button" hitSlop={8} onPress={erase} style={styles.erase}>
-        <Text style={styles.danger}>Erase all data</Text>
-      </Pressable>
+      <TextButton label="Erase all data" destructive onPress={erase} style={styles.erase} />
     </ScrollView>
   );
 }
@@ -188,19 +183,15 @@ function MonthRow({
 }) {
   return (
     <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={text.body}>{label}</Text>
       <ChipGroup options={MONTHS} value={value} onChange={onChange} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 48 },
-  heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
-  hint: { fontSize: 14, color: '#666' },
-  row: { gap: 8 },
-  label: { fontSize: 16, fontWeight: '500' },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
-  erase: { marginTop: 32 },
-  danger: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
+  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
+  heading: { ...text.title3, marginTop: space.s },
+  row: { gap: space.s },
+  erase: { alignSelf: 'center', marginTop: space.xxxl },
 });

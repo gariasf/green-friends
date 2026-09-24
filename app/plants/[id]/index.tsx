@@ -1,6 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { dueCare, evaluateCare } from '@/src/core/care';
 import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
@@ -9,14 +10,12 @@ import { setPlantPhoto } from '@/src/core/photos';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
-import { alertError, PrimaryButton } from '@/src/ui/Form';
+import { alertError, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
+import { colors, space, text } from '@/src/ui/theme';
 
-const KINDS = CARE_EVENT_TYPES.map((type) => ({
-  label: `${CARE_COPY[type].icon} ${CARE_COPY[type].label}`,
-  value: type,
-}));
+const KINDS = CARE_EVENT_TYPES.map((type) => ({ label: CARE_COPY[type].label, value: type }));
 
 /** Backdating quick options (spec #8), in days ago. */
 const WHEN = [
@@ -54,6 +53,7 @@ export default function PlantSheet() {
         occurredOn: shiftDays(localDay(new Date()), -daysAgo),
         ...details.values,
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch (error) {
       alertError('Could not log it', error);
@@ -65,10 +65,10 @@ export default function PlantSheet() {
       <View style={styles.header}>
         <PlantPhoto uri={photoUri(photo)} size={64} />
         <View style={styles.grow}>
-          <Text style={styles.name}>{plant.displayName}</Text>
+          <Text style={text.title3}>{plant.displayName}</Text>
           {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           {plant.toxicToPets !== null && (
-            <Text style={plant.toxicToPets ? styles.toxic : styles.hint}>
+            <Text style={plant.toxicToPets ? styles.toxic : text.subheadline}>
               {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
             </Text>
           )}
@@ -81,7 +81,7 @@ export default function PlantSheet() {
         </View>
       </View>
       <ChipGroup options={KINDS} value={type} onChange={setType} />
-      <Text style={styles.hint}>When did it happen?</Text>
+      <Text style={text.subheadline}>When did it happen?</Text>
       <ChipGroup options={WHEN} value={daysAgo} onChange={setDaysAgo} />
       {details.fields}
       <PrimaryButton
@@ -91,35 +91,26 @@ export default function PlantSheet() {
       />
       {/* Replace, not push: a screen pushed from a sheet would land beneath it. */}
       <View style={styles.links}>
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={8}
+        <TextButton
+          label="Care Log"
           onPress={() => router.replace({ pathname: '/plants/[id]/log', params: { id: plant.id } })}
-        >
-          <Text style={styles.link}>Care Log ›</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={8}
+        />
+        <TextButton
+          label="Edit plant"
           onPress={() =>
             router.replace({ pathname: '/plants/[id]/edit', params: { id: plant.id } })
           }
-        >
-          <Text style={styles.link}>Edit plant ›</Text>
-        </Pressable>
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { gap: 12, padding: 20, paddingTop: 28 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  grow: { flex: 1, gap: 4 },
-  name: { fontSize: 20, fontWeight: '800' },
-  scientific: { fontSize: 14, fontStyle: 'italic', color: '#666' },
-  hint: { fontSize: 14, color: '#666' },
-  toxic: { fontSize: 14, fontWeight: '600', color: '#e0342b' },
-  links: { flexDirection: 'row', justifyContent: 'center', gap: 32 },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
+  sheet: { gap: space.m, padding: space.xl, paddingTop: space.xxl },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.m },
+  grow: { flex: 1, gap: space.xs },
+  scientific: { ...text.subheadline, fontStyle: 'italic' },
+  toxic: { ...text.subheadline, fontWeight: '600', color: colors.danger },
+  links: { flexDirection: 'row', justifyContent: 'center', gap: space.xxxl, marginTop: space.s },
 });

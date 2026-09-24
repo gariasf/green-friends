@@ -1,4 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -20,8 +21,9 @@ import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
-import { alertError, Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
+import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
+import { colors, space, text } from '@/src/ui/theme';
 
 /**
  * One care type's schedule as the form holds it: an Override while `own`, else the Species
@@ -94,24 +96,22 @@ export default function EditPlantScreen() {
     >
       <Stack.Screen options={{ title: displayName }} />
       <Text style={styles.heading}>About this plant</Text>
-      <Text style={styles.hint}>Nickname</Text>
       <Field
+        label="Nickname"
         // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).
         placeholder={defaults?.colloquialName ?? 'Required without a known species'}
         value={nickname}
         onChangeText={setNickname}
-        accessibilityLabel="Nickname"
       />
-      <Text style={styles.hint}>Pot size, cm</Text>
       <Field
+        label="Pot size"
+        suffix="cm"
         placeholder="Optional"
         value={potSizeCm}
         onChangeText={setPotSizeCm}
         keyboardType="decimal-pad"
-        accessibilityLabel="Pot size, cm"
       />
-      <Text style={styles.hint}>Soil</Text>
-      <Field placeholder="Optional" value={soil} onChangeText={setSoil} accessibilityLabel="Soil" />
+      <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
 
       <Text style={styles.heading}>Care schedule</Text>
       {CARE_TYPES.map((type) => (
@@ -125,13 +125,11 @@ export default function EditPlantScreen() {
       ))}
 
       <PrimaryButton label="Save" onPress={save} />
-      <Pressable
-        accessibilityRole="button"
-        hitSlop={8}
+      <TextButton
+        label="Care Log"
         onPress={() => router.push({ pathname: '/plants/[id]/log', params: { id: plant.id } })}
-      >
-        <Text style={styles.link}>Care Log ›</Text>
-      </Pressable>
+        style={styles.centered}
+      />
 
       <View style={styles.actions}>
         {plant.archivedAt ? (
@@ -153,9 +151,7 @@ export default function EditPlantScreen() {
             }}
           />
         )}
-        <Pressable accessibilityRole="button" hitSlop={8} onPress={remove}>
-          <Text style={styles.delete}>Delete plant</Text>
-        </Pressable>
+        <TextButton label="Delete plant" destructive onPress={remove} style={styles.centered} />
       </View>
     </ScrollView>
   );
@@ -174,9 +170,10 @@ function CareTypeSchedule({
 }) {
   return (
     <View style={styles.careType}>
-      <Text style={styles.label}>
-        {CARE_COPY[type].icon} {CARE_COPY[type].label}
-      </Text>
+      <View style={styles.careTypeHead}>
+        <SymbolView name={CARE_COPY[type].symbol} size={18} tintColor={CARE_COPY[type].hue} />
+        <Text style={text.headline}>{CARE_COPY[type].label}</Text>
+      </View>
       <ChipGroup
         options={[
           { label: defaults ? 'Species default' : 'None', value: false },
@@ -185,28 +182,28 @@ function CareTypeSchedule({
         value={value.own}
         onChange={(own) => onChange({ ...value, own })}
       />
-      {!value.own && <Text style={styles.hint}>{describeDefault(type, defaults)}</Text>}
+      {!value.own && <Text style={text.subheadline}>{describeDefault(type, defaults)}</Text>}
       {value.own && (
         <>
-          <Text style={styles.hint}>
-            {type === 'repot' ? 'Every … months' : 'Growing season: every … days'}
-          </Text>
           <Field
+            label={type === 'repot' ? 'Every' : 'Growing season, every'}
+            suffix={type === 'repot' ? 'months' : 'days'}
             value={value.growing}
             onChangeText={(growing) => onChange({ ...value, growing })}
             keyboardType="number-pad"
             accessibilityLabel={`${CARE_COPY[type].label}, ${type === 'repot' ? 'months' : 'Growing season, days'}`}
           />
           {type !== 'repot' && (
-            <>
-              <Text style={styles.hint}>Dormant season: every … days; blank pauses it</Text>
-              <Field
-                value={value.dormant}
-                onChangeText={(dormant) => onChange({ ...value, dormant })}
-                keyboardType="number-pad"
-                accessibilityLabel={`${CARE_COPY[type].label}, Dormant season, days`}
-              />
-            </>
+            <Field
+              label="Dormant season, every"
+              suffix="days"
+              // Blank pauses it for the season (CONTEXT.md, Paused).
+              placeholder="Paused"
+              value={value.dormant}
+              onChangeText={(dormant) => onChange({ ...value, dormant })}
+              keyboardType="number-pad"
+              accessibilityLabel={`${CARE_COPY[type].label}, Dormant season, days`}
+            />
           )}
         </>
       )}
@@ -216,9 +213,14 @@ function CareTypeSchedule({
 
 function Action({ label, hint, onPress }: { label: string; hint: string; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityHint={hint} hitSlop={8} onPress={onPress}>
-      <Text style={styles.link}>{label}</Text>
-      <Text style={[styles.hint, styles.centered]}>{hint}</Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint={hint}
+      onPress={onPress}
+      style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+    >
+      <Text style={styles.actionLabel}>{label}</Text>
+      <Text style={[text.subheadline, styles.centeredText]}>{hint}</Text>
     </Pressable>
   );
 }
@@ -231,12 +233,12 @@ function startingSchedule(
   plant: CareSchedule,
   defaults: CareSchedule | null,
 ): Record<CareType, CareTypeForm> {
-  const text = (value: number | null | undefined) => value?.toString() ?? '';
+  const asText = (value: number | null | undefined) => value?.toString() ?? '';
   const seasonal = (type: 'water' | 'fertilize'): CareTypeForm => {
     const { growing, dormant } = SEASONAL[type];
     const own = hasOverride(plant, type);
     const source = own ? plant : defaults;
-    return { own, growing: text(source?.[growing]), dormant: text(source?.[dormant]) };
+    return { own, growing: asText(source?.[growing]), dormant: asText(source?.[dormant]) };
   };
   const ownRepot = hasOverride(plant, 'repot');
   return {
@@ -244,7 +246,7 @@ function startingSchedule(
     fertilize: seasonal('fertilize'),
     repot: {
       own: ownRepot,
-      growing: text((ownRepot ? plant : defaults)?.repottingMonths),
+      growing: asText((ownRepot ? plant : defaults)?.repottingMonths),
       dormant: '',
     },
   };
@@ -267,13 +269,14 @@ function describeDefault(type: CareType, defaults: CareSchedule | null): string 
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 48 },
-  heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
-  label: { fontSize: 16, fontWeight: '600' },
-  hint: { fontSize: 14, color: '#666' },
-  centered: { textAlign: 'center' },
-  careType: { gap: 8 },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
-  actions: { marginTop: 24, gap: 24 },
-  delete: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
+  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
+  heading: { ...text.title3, marginTop: space.s },
+  careType: { gap: space.s },
+  careTypeHead: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  centered: { alignSelf: 'center' },
+  centeredText: { textAlign: 'center' },
+  actions: { marginTop: space.xxl, gap: space.xxl },
+  action: { alignItems: 'center', gap: space.xs, paddingVertical: space.s },
+  actionLabel: { ...text.body, color: colors.tint },
+  pressed: { opacity: 0.5 },
 });

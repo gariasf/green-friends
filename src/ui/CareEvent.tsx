@@ -1,15 +1,29 @@
+import type { SFSymbol } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
+import type { ColorValue } from 'react-native';
 
 import type { CareEvent, CareEventType } from '@/src/core/careLog';
 import { daysBetween } from '@/src/core/dates';
 import { Field, optionalNumber } from '@/src/ui/Form';
+import { colors } from '@/src/ui/theme';
 
-/** How each kind of Care Event reads: as a checklist row or a choice (label), and once logged (done). */
-export const CARE_COPY: Record<CareEventType, { icon: string; label: string; done: string }> = {
-  water: { icon: '💧', label: 'Water', done: 'Watered' },
-  fertilize: { icon: '✨', label: 'Fertilize', done: 'Fertilized' },
-  repot: { icon: '🪨', label: 'Repot', done: 'Repotted' },
-  note: { icon: '📝', label: 'Note', done: 'Note' },
+/**
+ * How each kind of Care Event reads: its symbol and hue, as a checklist row or a choice (label),
+ * and once logged (done).
+ */
+export const CARE_COPY: Record<
+  CareEventType,
+  { symbol: SFSymbol; hue: ColorValue; label: string; done: string }
+> = {
+  water: { symbol: 'drop.fill', hue: colors.water, label: 'Water', done: 'Watered' },
+  fertilize: {
+    symbol: 'sparkles',
+    hue: colors.fertilize,
+    label: 'Fertilize',
+    done: 'Fertilized',
+  },
+  repot: { symbol: 'shippingbox.fill', hue: colors.repot, label: 'Repot', done: 'Repotted' },
+  note: { symbol: 'note.text', hue: colors.note, label: 'Note', done: 'Note' },
 };
 
 /** How many plants Need Attention, as Today's summary and the Daily Digest's title put it. */
@@ -46,7 +60,8 @@ export function useCareEventDetails(type: CareEventType, event?: CareEvent) {
   if (type === 'note') {
     fields = (
       <Field
-        placeholder="What did you notice? Pests, a new leaf…"
+        label="What did you notice?"
+        placeholder="Pests, a new leaf…"
         value={note}
         onChangeText={setNote}
         multiline
@@ -59,12 +74,14 @@ export function useCareEventDetails(type: CareEventType, event?: CareEvent) {
     fields = (
       <>
         <Field
-          placeholder="New pot size in cm (optional)"
+          label="New pot size"
+          suffix="cm"
+          placeholder="Optional"
           value={potSizeCm}
           onChangeText={setPotSizeCm}
           keyboardType="decimal-pad"
         />
-        <Field placeholder="Soil (optional)" value={soil} onChangeText={setSoil} />
+        <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
       </>
     );
   }

@@ -14,8 +14,9 @@ import {
 import { listSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
-import { alertError, Field, optionalNumber, PrimaryButton } from '@/src/ui/Form';
+import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
+import { colors, group, space, text } from '@/src/ui/theme';
 
 /** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
 type Ago = { label: string; value: number | null };
@@ -51,12 +52,12 @@ const EMPTY_SCHEDULE: ScheduleForm = {
   fertilizingDormantDays: '',
   repottingMonths: '',
 };
-const INTERVAL_FIELDS: { key: keyof CareSchedule; label: string }[] = [
-  { key: 'wateringGrowingDays', label: 'Watering, Growing season (days)' },
-  { key: 'wateringDormantDays', label: 'Watering, Dormant season (days)' },
-  { key: 'fertilizingGrowingDays', label: 'Fertilizing, Growing season (days)' },
-  { key: 'fertilizingDormantDays', label: 'Fertilizing, Dormant season (days)' },
-  { key: 'repottingMonths', label: 'Repotting (months)' },
+const INTERVAL_FIELDS: { key: keyof CareSchedule; label: string; unit: string }[] = [
+  { key: 'wateringGrowingDays', label: 'Watering, Growing season', unit: 'days' },
+  { key: 'wateringDormantDays', label: 'Watering, Dormant season', unit: 'days' },
+  { key: 'fertilizingGrowingDays', label: 'Fertilizing, Growing season', unit: 'days' },
+  { key: 'fertilizingDormantDays', label: 'Fertilizing, Dormant season', unit: 'days' },
+  { key: 'repottingMonths', label: 'Repotting', unit: 'months' },
 ];
 
 /** New plant: one scrolling sheet where the Species pick is the only required input (spec #8). */
@@ -154,32 +155,36 @@ export default function NewPlantScreen() {
       ) : (
         <>
           <Field
+            // The heading above labels it; a search field shows what to type.
             placeholder="Search by name, e.g. monstera"
+            accessibilityLabel="Search species"
             value={query}
             onChangeText={setQuery}
             autoFocus
             autoCorrect={false}
           />
-          {matches.map((s) => (
+          {matches.map((s, index) => (
             <Pressable
               key={s.id}
               accessibilityRole="button"
-              style={styles.match}
+              style={({ pressed }) => [
+                styles.match,
+                index > 0 && group.divider,
+                pressed && styles.matchPressed,
+              ]}
               onPress={() => {
                 setSpecies(s);
                 setQuery('');
               }}
             >
-              <Text style={styles.matchName}>{s.colloquialName}</Text>
-              <Text style={styles.hint}>{s.scientificName}</Text>
+              <Text style={text.body}>{s.colloquialName}</Text>
+              <Text style={text.subheadline}>{s.scientificName}</Text>
             </Pressable>
           ))}
           {query.trim() !== '' && matches.length === 0 && (
-            <Text style={styles.hint}>Nothing in the catalog matches.</Text>
+            <Text style={text.subheadline}>Nothing in the catalog matches.</Text>
           )}
-          <Pressable accessibilityRole="button" onPress={() => setOwnSchedule(true)}>
-            <Text style={styles.link}>Add without a species</Text>
-          </Pressable>
+          <TextButton label="Add without a species" onPress={() => setOwnSchedule(true)} />
         </>
       )}
 
@@ -189,46 +194,49 @@ export default function NewPlantScreen() {
         <PhotoButton hasPhoto={prepared !== null} onPick={setPrepared} />
       </View>
       <Field
-        placeholder={ownSchedule ? 'Nickname (required)' : 'Nickname (optional)'}
+        label="Nickname"
+        placeholder={ownSchedule ? 'Required' : 'Optional'}
         value={nickname}
         onChangeText={setNickname}
       />
       <Field
-        placeholder="Pot size in cm (optional)"
+        label="Pot size"
+        suffix="cm"
+        placeholder="Optional"
         value={potSizeCm}
         onChangeText={setPotSizeCm}
         keyboardType="decimal-pad"
       />
-      <Field placeholder="Soil (optional)" value={soil} onChangeText={setSoil} />
+      <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
 
       {ownSchedule && (
         <>
           <Text style={styles.heading}>Care schedule</Text>
-          <Text style={styles.hint}>
+          <Text style={text.subheadline}>
             Days between waterings and feedings in the Growing and Dormant seasons, months between
             repots. Leave a care type blank if this plant never needs it, and a Dormant field blank
             to pause that care for the winter.
           </Text>
-          {INTERVAL_FIELDS.map(({ key, label }) => (
-            <View key={key} style={styles.row}>
-              <Text style={styles.label}>{label}</Text>
-              <Field
-                value={schedule[key]}
-                onChangeText={(value) => setSchedule((form) => ({ ...form, [key]: value }))}
-                keyboardType="number-pad"
-              />
-            </View>
+          {INTERVAL_FIELDS.map(({ key, label, unit }) => (
+            <Field
+              key={key}
+              label={label}
+              suffix={unit}
+              value={schedule[key]}
+              onChangeText={(value) => setSchedule((form) => ({ ...form, [key]: value }))}
+              keyboardType="number-pad"
+            />
           ))}
         </>
       )}
 
       <Text style={styles.heading}>When did you last…</Text>
-      <Text style={styles.hint}>
+      <Text style={text.subheadline}>
         Optional. Answers set the first due dates; the rest count from today.
       </Text>
       {CARE_TYPES.map((type) => (
         <View key={type} style={styles.row}>
-          <Text style={styles.label}>{LAST_DONE[type].label}</Text>
+          <Text style={text.body}>{LAST_DONE[type].label}</Text>
           <ChipGroup
             options={LAST_DONE[type].options}
             value={lastDone[type]}
@@ -256,33 +264,28 @@ function Picked({
   return (
     <View style={styles.picked}>
       <View style={styles.grow}>
-        <Text style={styles.matchName}>{title}</Text>
-        <Text style={styles.hint}>{subtitle}</Text>
+        <Text style={text.body}>{title}</Text>
+        <Text style={text.subheadline}>{subtitle}</Text>
       </View>
-      <Pressable accessibilityRole="button" onPress={onAction}>
-        <Text style={styles.link}>{action}</Text>
-      </Pressable>
+      <TextButton label={action} onPress={onAction} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 48 },
-  heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
-  hint: { fontSize: 14, color: '#666' },
-  label: { fontSize: 16, fontWeight: '500' },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
-  row: { gap: 8 },
-  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  grow: { flex: 1, gap: 2 },
-  match: { paddingVertical: 8, gap: 2, borderBottomWidth: 1, borderColor: '#eee' },
-  matchName: { fontSize: 16, fontWeight: '500' },
+  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
+  heading: { ...text.title3, marginTop: space.s },
+  row: { gap: space.s },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
+  grow: { flex: 1 },
+  match: { paddingVertical: space.s },
+  matchPressed: { backgroundColor: colors.fill },
   picked: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#e8f5e9',
+    gap: space.m,
+    padding: space.m,
+    borderRadius: 10,
+    backgroundColor: colors.tintSoft,
   },
 });

@@ -1,11 +1,14 @@
 import { uuid } from 'expo-modules-core';
-import { Link, router, Stack } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { router, Stack, ThemeProvider } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 
 import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
+import { TextButton } from '@/src/ui/Form';
+import { colors, navigationTheme, space } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
@@ -20,63 +23,67 @@ seedSpecies(db, bundledSpecies);
 
 /**
  * A native bottom sheet as tall as what it holds, for the plant sheet (prototype #6) and a Care
- * Event's edit sheet. Opaque: the iOS 26 glass default turns dark over the dimmed screen, under
- * text drawn for a light background.
+ * Event's edit sheet. Opaque: the iOS 26 glass default turns dark over the dimmed screen.
  */
 const SHEET = {
   presentation: 'formSheet',
   sheetAllowedDetents: 'fitToContents',
   headerShown: false,
-  contentStyle: { backgroundColor: '#fff' },
+  contentStyle: { backgroundColor: colors.sheet },
 } as const;
 
 export default function RootLayout() {
   useDigests();
   return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{
-          title: 'Today',
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-              <Link href="/garden" style={{ fontSize: 17 }}>
-                Garden
-              </Link>
-              <Link href="/settings" style={{ fontSize: 17 }}>
-                Settings
-              </Link>
-            </View>
-          ),
-        }}
-      />
-      <Stack.Screen
-        name="garden"
-        options={{
-          title: 'Garden',
-          headerRight: () => (
-            <Link href="/plants/new" accessibilityLabel="Add plant" style={{ fontSize: 28 }}>
-              +
-            </Link>
-          ),
-        }}
-      />
-      <Stack.Screen
-        name="plants/new"
-        options={{
-          title: 'New plant',
-          presentation: 'modal',
-          headerLeft: () => (
-            <Pressable accessibilityRole="button" onPress={() => router.back()}>
-              <Text style={{ fontSize: 17 }}>Cancel</Text>
-            </Pressable>
-          ),
-        }}
-      />
-      <Stack.Screen name="plants/[id]/index" options={SHEET} />
-      <Stack.Screen name="care-events/[id]" options={SHEET} />
-      <Stack.Screen name="archived" options={{ title: 'Archived' }} />
-      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-    </Stack>
+    <ThemeProvider value={navigationTheme(useColorScheme())}>
+      <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Screen
+          name="index"
+          options={{
+            title: 'Today',
+            headerRight: () => (
+              <View style={styles.headerButtons}>
+                <TextButton label="Garden" onPress={() => router.push('/garden')} />
+                <TextButton label="Settings" onPress={() => router.push('/settings')} />
+              </View>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="garden"
+          options={{
+            title: 'Garden',
+            headerRight: () => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add plant"
+                hitSlop={12}
+                onPress={() => router.push('/plants/new')}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <SymbolView name="plus" size={22} weight="semibold" tintColor={colors.tint} />
+              </Pressable>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="plants/new"
+          options={{
+            title: 'New plant',
+            presentation: 'modal',
+            headerLeft: () => <TextButton label="Cancel" onPress={() => router.back()} />,
+          }}
+        />
+        <Stack.Screen name="plants/[id]/index" options={SHEET} />
+        <Stack.Screen name="care-events/[id]" options={SHEET} />
+        <Stack.Screen name="archived" options={{ title: 'Archived' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  headerButtons: { flexDirection: 'row', gap: space.l },
+  pressed: { opacity: 0.5 },
+});

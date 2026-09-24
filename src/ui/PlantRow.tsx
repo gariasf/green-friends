@@ -1,6 +1,8 @@
+import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
+import { colors, group, space, text } from '@/src/ui/theme';
 
 /**
  * A plant's scientific name for the line beneath its name, or none where it would repeat the name,
@@ -10,16 +12,21 @@ export function scientificBeneath(name: string, scientificName: string | null): 
   return scientificName === name ? null : scientificName;
 }
 
-/** A plant in a list: its photo, Display Name and one line beneath; the whole row opens it. */
+/**
+ * A plant in a group of rows: its photo, Display Name and one line beneath; the whole row opens
+ * it. A group's `first` row has no divider above it.
+ */
 export function PlantRow({
   photo,
   name,
   detail,
+  first,
   onPress,
 }: {
   photo: string | null;
   name: string;
   detail: string | null;
+  first: boolean;
   onPress: () => void;
 }) {
   return (
@@ -29,28 +36,34 @@ export function PlantRow({
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <PlantPhoto uri={photoUri(photo)} size={44} />
-      <View style={styles.grow}>
-        <Text style={styles.name}>{name}</Text>
-        {detail && <Text style={styles.detail}>{detail}</Text>}
+      {/* The divider starts after the photo, as iOS insets it. */}
+      <View style={[styles.body, !first && group.divider]}>
+        <View style={styles.grow}>
+          <Text style={text.body}>{name}</Text>
+          {detail && <Text style={text.subheadline}>{detail}</Text>}
+        </View>
+        <SymbolView
+          name="chevron.right"
+          size={14}
+          weight="semibold"
+          tintColor={colors.tertiaryLabel}
+        />
       </View>
-      <Text style={styles.chevron}>›</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingLeft: space.l },
+  pressed: { backgroundColor: colors.fill },
+  body: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
+    gap: space.s,
+    minHeight: 64,
+    paddingVertical: space.s,
+    paddingRight: space.l,
   },
-  pressed: { backgroundColor: '#f2f2f7' },
-  grow: { flex: 1, gap: 2 },
-  name: { fontSize: 17, fontWeight: '500' },
-  detail: { fontSize: 14, color: '#666' },
-  chevron: { fontSize: 20, color: '#aeaeb5' },
+  grow: { flex: 1 },
 });

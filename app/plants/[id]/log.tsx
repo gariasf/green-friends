@@ -1,13 +1,15 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { careLogQuery, type CareEvent } from '@/src/core/careLog';
 import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, dayLabel } from '@/src/ui/CareEvent';
+import { colors, group, space, text } from '@/src/ui/theme';
 
 /** A plant's Care Log (spec #8): every Care Event, newest first; each opens to be edited or deleted. */
 export default function CareLogScreen() {
@@ -20,19 +22,31 @@ export default function CareLogScreen() {
     <>
       <Stack.Screen options={{ title: displayName }} />
       {updatedAt && (
-        <FlatList
-          data={events}
-          keyExtractor={(event) => event.id}
-          contentContainerStyle={events.length === 0 ? styles.empty : undefined}
-          ListEmptyComponent={<Text style={styles.hint}>Nothing logged yet.</Text>}
-          renderItem={({ item }) => <CareEventRow event={item} today={today} />}
-        />
+        <ScrollView contentContainerStyle={events.length === 0 ? styles.empty : styles.list}>
+          {events.length === 0 ? (
+            <Text style={text.subheadline}>Nothing logged yet.</Text>
+          ) : (
+            <View style={group.box}>
+              {events.map((event, index) => (
+                <CareEventRow key={event.id} event={event} today={today} first={index === 0} />
+              ))}
+            </View>
+          )}
+        </ScrollView>
       )}
     </>
   );
 }
 
-function CareEventRow({ event, today }: { event: CareEvent; today: string }) {
+function CareEventRow({
+  event,
+  today,
+  first,
+}: {
+  event: CareEvent;
+  today: string;
+  first: boolean;
+}) {
   const copy = CARE_COPY[event.type];
   const day = dayLabel(event.occurredOn, today);
   const detail = [event.potSizeCm !== null && `${event.potSizeCm} cm`, event.soil, event.note]
@@ -44,34 +58,27 @@ function CareEventRow({ event, today }: { event: CareEvent; today: string }) {
       accessibilityLabel={[copy.done, day, detail].filter(Boolean).join(', ')}
       accessibilityHint="Edit or delete"
       onPress={() => router.push({ pathname: '/care-events/[id]', params: { id: event.id } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      style={({ pressed }) => [group.row, !first && group.divider, pressed && styles.pressed]}
     >
-      <Text style={styles.icon}>{copy.icon}</Text>
+      <SymbolView name={copy.symbol} size={20} tintColor={copy.hue} />
       <View style={styles.grow}>
-        <Text style={styles.label}>{copy.done}</Text>
-        {detail ? <Text style={styles.hint}>{detail}</Text> : null}
+        <Text style={text.body}>{copy.done}</Text>
+        {detail ? <Text style={text.subheadline}>{detail}</Text> : null}
       </View>
-      <Text style={styles.hint}>{day}</Text>
-      <Text style={styles.chevron}>›</Text>
+      <Text style={text.subheadline}>{day}</Text>
+      <SymbolView
+        name="chevron.right"
+        size={14}
+        weight="semibold"
+        tintColor={colors.tertiaryLabel}
+      />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  rowPressed: { backgroundColor: '#f2f2f7' },
-  icon: { fontSize: 20 },
-  grow: { flex: 1, gap: 2 },
-  label: { fontSize: 17, fontWeight: '500' },
-  hint: { fontSize: 14, color: '#666' },
-  chevron: { fontSize: 20, color: '#aeaeb5' },
+  empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
+  list: { paddingVertical: space.l },
+  pressed: { backgroundColor: colors.fill },
+  grow: { flex: 1 },
 });

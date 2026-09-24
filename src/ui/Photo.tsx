@@ -1,10 +1,12 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSheetIOS, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { ActionSheetIOS, Image, StyleSheet, View } from 'react-native';
 
 import type { PhotoFiles } from '@/src/core/photos';
-import { alertError } from '@/src/ui/Form';
+import { alertError, TextButton } from '@/src/ui/Form';
+import { colors } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -58,11 +60,7 @@ export function PhotoButton({
       alertError('Could not add the photo', error);
     }
   };
-  return (
-    <Pressable accessibilityRole="button" hitSlop={8} onPress={choose}>
-      <Text style={styles.link}>{hasPhoto ? 'Replace photo' : 'Add photo'}</Text>
-    </Pressable>
-  );
+  return <TextButton label={hasPhoto ? 'Replace photo' : 'Add photo'} onPress={choose} />;
 }
 
 /**
@@ -118,24 +116,23 @@ function deleteIfThere(file: File): void {
   if (file.exists) file.delete();
 }
 
-/** A plant's photo as a rounded square, or a potted plant while it has none. */
+/** A plant's photo as a rounded square, or a leaf while it has none. */
 export function PlantPhoto({ uri, size }: { uri: string | null; size: number }) {
   return (
     <View accessibilityElementsHidden style={[styles.photo, { width: size, height: size }]}>
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} />
       ) : (
-        <Text style={{ fontSize: size / 2 }}>🪴</Text>
+        <SymbolView name="leaf.fill" size={size * 0.45} tintColor={colors.tint} />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
   photo: {
     borderRadius: 14,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: colors.tintSoft,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

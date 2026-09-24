@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
+import { TextButton } from '@/src/ui/Form';
 import { PlantRow, scientificBeneath } from '@/src/ui/PlantRow';
+import { group, space, text } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 function readGarden() {
@@ -21,51 +23,51 @@ export default function GardenScreen() {
   useAfterWrites(useCallback(() => setGarden(readGarden()), []));
 
   return (
-    <FlatList
-      data={plants}
-      keyExtractor={(plant) => plant.id}
-      contentContainerStyle={plants.length === 0 ? styles.empty : undefined}
-      ListEmptyComponent={
-        archivedCount > 0 ? (
-          <>
-            <Text style={styles.title}>No plants in care</Text>
-            <Text style={styles.hint}>Tap + to add one, or unarchive one below.</Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.title}>No plants yet</Text>
-            <Text style={styles.hint}>Tap + to add your first plant.</Text>
-          </>
-        )
-      }
-      ListFooterComponent={
-        archivedCount > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={() => router.push('/archived')}
-            style={styles.footer}
-          >
-            <Text style={styles.link}>Archived · {archivedCount} ›</Text>
-          </Pressable>
-        ) : null
-      }
-      renderItem={({ item }) => (
-        <PlantRow
-          photo={item.photo}
-          name={item.displayName}
-          detail={scientificBeneath(item.displayName, item.scientificName)}
-          onPress={() => router.push({ pathname: '/plants/[id]', params: { id: item.id } })}
+    <ScrollView contentContainerStyle={plants.length === 0 ? styles.empty : styles.list}>
+      {plants.length === 0 ? (
+        <>
+          <Text style={text.title2}>
+            {archivedCount > 0 ? 'No plants in care' : 'No plants yet'}
+          </Text>
+          <Text style={text.subheadline}>
+            {archivedCount > 0
+              ? 'Tap + to add one, or unarchive one below.'
+              : 'Tap + to add your first plant.'}
+          </Text>
+        </>
+      ) : (
+        <View style={group.box}>
+          {plants.map((plant, index) => (
+            <PlantRow
+              key={plant.id}
+              photo={plant.photo}
+              name={plant.displayName}
+              detail={scientificBeneath(plant.displayName, plant.scientificName)}
+              first={index === 0}
+              onPress={() => router.push({ pathname: '/plants/[id]', params: { id: plant.id } })}
+            />
+          ))}
+        </View>
+      )}
+      {archivedCount > 0 && (
+        <TextButton
+          label={`Archived · ${archivedCount}`}
+          onPress={() => router.push('/archived')}
+          style={styles.footer}
         />
       )}
-    />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
-  title: { fontSize: 22, fontWeight: '600' },
-  hint: { fontSize: 14, color: '#666' },
-  footer: { padding: 20, alignItems: 'center' },
-  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
+  list: { paddingVertical: space.l },
+  empty: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: space.xxl,
+    gap: space.s,
+  },
+  footer: { alignSelf: 'center', marginTop: space.xl },
 });

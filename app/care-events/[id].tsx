@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -6,7 +7,8 @@ import { deleteCareEvent, editCareEvent, getCareEvent } from '@/src/core/careLog
 import { localDay, shiftDays } from '@/src/core/dates';
 import { db } from '@/src/db/client';
 import { CARE_COPY, dayLabel, useCareEventDetails } from '@/src/ui/CareEvent';
-import { alertError, PrimaryButton } from '@/src/ui/Form';
+import { alertError, PrimaryButton, TextButton } from '@/src/ui/Form';
+import { colors, space, text } from '@/src/ui/theme';
 
 /**
  * One Care Event from the Care Log, to edit (its day, a Note's text, a repot's pot size and soil)
@@ -44,19 +46,20 @@ export default function CareEventSheet() {
 
   return (
     <View style={styles.sheet}>
-      <Text style={styles.title}>
-        {copy.icon} {copy.done}
-      </Text>
-      <Text style={styles.hint}>When did it happen?</Text>
+      <View style={styles.title}>
+        <SymbolView name={copy.symbol} size={22} tintColor={copy.hue} />
+        <Text style={text.title3}>{copy.done}</Text>
+      </View>
+      <Text style={text.subheadline}>When did it happen?</Text>
       <View style={styles.stepper}>
         <Step
-          label="‹"
+          symbol="chevron.left"
           accessibilityLabel="A day earlier"
           onPress={() => setOccurredOn(shiftDays(occurredOn, -1))}
         />
-        <Text style={styles.day}>{dayLabel(occurredOn, today)}</Text>
+        <Text style={text.headline}>{dayLabel(occurredOn, today)}</Text>
         <Step
-          label="›"
+          symbol="chevron.right"
           accessibilityLabel="A day later"
           disabled={occurredOn >= today}
           onPress={() => setOccurredOn(shiftDays(occurredOn, 1))}
@@ -64,20 +67,18 @@ export default function CareEventSheet() {
       </View>
       {details.fields}
       <PrimaryButton label="Save" disabled={!details.complete} onPress={save} />
-      <Pressable accessibilityRole="button" hitSlop={8} onPress={remove}>
-        <Text style={styles.delete}>Delete</Text>
-      </Pressable>
+      <TextButton label="Delete" destructive onPress={remove} style={styles.delete} />
     </View>
   );
 }
 
 function Step({
-  label,
+  symbol,
   accessibilityLabel,
   disabled = false,
   onPress,
 }: {
-  label: string;
+  symbol: SFSymbol;
   accessibilityLabel: string;
   disabled?: boolean;
   onPress: () => void;
@@ -88,31 +89,33 @@ function Step({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       disabled={disabled}
-      hitSlop={8}
+      // 40 pt across; this makes it a 48 pt target.
+      hitSlop={4}
       onPress={onPress}
-      style={[styles.step, disabled && styles.stepDisabled]}
+      style={({ pressed }) => [
+        styles.step,
+        pressed && styles.stepPressed,
+        disabled && styles.stepDisabled,
+      ]}
     >
-      <Text style={styles.stepText}>{label}</Text>
+      <SymbolView name={symbol} size={18} weight="semibold" tintColor={colors.tint} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { gap: 12, padding: 20, paddingTop: 28 },
-  title: { fontSize: 20, fontWeight: '800' },
-  hint: { fontSize: 14, color: '#666' },
+  sheet: { gap: space.m, padding: space.xl, paddingTop: space.xxl },
+  title: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  day: { fontSize: 17, fontWeight: '600' },
   step: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#bbb',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.fill,
   },
+  stepPressed: { opacity: 0.5 },
   stepDisabled: { opacity: 0.3 },
-  stepText: { fontSize: 22, fontWeight: '600' },
-  delete: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
+  delete: { alignSelf: 'center' },
 });
