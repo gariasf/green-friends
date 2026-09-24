@@ -1,3 +1,7 @@
+import { DatePicker, Host } from '@expo/ui/swift-ui';
+import { datePickerStyle, labelsHidden } from '@expo/ui/swift-ui/modifiers';
+import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useId } from 'react';
 import {
   Alert,
@@ -7,12 +11,15 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
   type StyleProp,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
 
+import { localDay, shiftDays } from '@/src/core/dates';
+import { ChipGroup } from '@/src/ui/Chip';
 import { colors, pressedStyle, space, text } from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
@@ -59,6 +66,96 @@ export function Field({
         </InputAccessoryView>
       )}
     </View>
+  );
+}
+
+/**
+ * When care happened, as a local calendar day (ADR-0005), labelled above like a Field: Today and
+ * Yesterday in one tap, any earlier day from iOS's compact date picker, which always shows the day
+ * chosen and never offers a future one. `optional` adds "Not sure", which picks null.
+ */
+export function WhenPicker({
+  label,
+  ...props
+}: { label: string } & (
+  | { optional?: false; value: string; onChange: (day: string) => void }
+  | { optional: true; value: string | null; onChange: (day: string | null) => void }
+)) {
+  const { fontScale } = useWindowDimensions();
+  const today = localDay(new Date());
+  const quick = [
+    ...(props.optional ? [{ label: 'Not sure', value: null }] : []),
+    { label: 'Today', value: today },
+    { label: 'Yesterday', value: shiftDays(today, -1) },
+  ];
+  const pick = (day: string | null) => {
+    if (day !== null) props.onChange(day);
+    else if (props.optional) props.onChange(null);
+  };
+  const chips = <ChipGroup options={quick} value={props.value} onChange={pick} />;
+  // Sized by its SwiftUI content both ways (the community datetime-picker drop-in only matches it
+  // vertically, and collapses in a row). A Host inside a row that wraps loses its place (@expo/ui
+  // 57), so it sits beside what may wrap, never within it. Left to SwiftUI's safe areas, its content
+  // rides up by the keyboard's inset while a sheet's keyboard is up.
+  const picker = (
+    <Host
+      matchContents
+      ignoreSafeArea="all"
+      seedColor={colors.tint}
+      style={props.value === null && styles.unset}
+    >
+      <DatePicker
+        selection={noon(props.value ?? today)}
+        range={{ end: noon(today) }}
+        onDateChange={(date) => pick(localDay(date))}
+        modifiers={[datePickerStyle('compact'), labelsHidden()]}
+      />
+    </Host>
+  );
+  return (
+    <View style={styles.fieldBlock}>
+      <Text style={styles.label}>{label}</Text>
+      {/* Beside the chips, the pill would squeeze them until words break at accessibility text
+          sizes, so there it takes a line of its own, as it always does beside "Not sure".
+          ponytail: a font-scale threshold (xxxLarge is 1.35, the first accessibility size 1.64),
+          not a measurement; measure the chips with onLayout if a longer date ever squeezes them. */}
+      {props.optional || fontScale > 1.5 ? (
+        <View style={styles.whenStack}>
+          {chips}
+          <View style={styles.pickerRow}>
+            <Text style={[text.subheadline, styles.grow]}>Or pick a day</Text>
+            {picker}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.pickerRow}>
+          <View style={styles.grow}>{chips}</View>
+          {picker}
+        </View>
+      )}
+    </View>
+  );
+}
+
+/** Local noon on `day`: the date picker works in instants, and noon is safely inside the day. */
+function noon(day: string): Date {
+  const [year, month, date] = day.split('-').map(Number);
+  return new Date(year, month - 1, date, 12);
+}
+
+/** Closes a sheet: iOS's grey ⓧ, top right. */
+export function CloseButton() {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Close"
+      // 30 pt across; this makes it a 44 pt target.
+      hitSlop={7}
+      onPress={() => router.back()}
+      style={({ pressed }) => pressed && pressedStyle.button}
+    >
+      <SymbolView name="xmark.circle.fill" size={30} tintColor={colors.tertiaryLabel} />
+    </Pressable>
   );
 }
 
@@ -136,6 +233,10 @@ export function optionalNumber(input: string): number | null {
 const styles = StyleSheet.create({
   fieldBlock: { gap: space.xs },
   label: { ...text.footnote, marginLeft: space.xs },
+  grow: { flex: 1 },
+  whenStack: { gap: space.s },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  unset: { opacity: 0.45 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -14,7 +14,7 @@ function readGarden() {
 }
 
 /**
- * Garden: every live plant by Display Name, with its photo, each opening its plant sheet; Archived
+ * Garden: every live plant by Display Name, with its photo, each opening its log sheet; Archived
  * plants have a view of their own. Read again after writes: a photo is a row of its own, which a
  * live query over plants would miss.
  */

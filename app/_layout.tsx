@@ -22,12 +22,13 @@ migrate(db);
 seedSpecies(db, bundledSpecies);
 
 /**
- * A native bottom sheet as tall as what it holds, for the plant sheet (prototype #6) and a Care
- * Event's edit sheet. Opaque: the iOS 26 glass default turns dark over the dimmed screen.
+ * A native bottom sheet as tall as what it holds, with a grabber, for logging care and editing a
+ * Care Event. Opaque: the iOS 26 glass default turns dark over the dimmed screen.
  */
 const SHEET = {
   presentation: 'formSheet',
   sheetAllowedDetents: 'fitToContents',
+  sheetGrabberVisible: true,
   headerShown: false,
   contentStyle: { backgroundColor: colors.sheet },
 } as const;

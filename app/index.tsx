@@ -29,7 +29,7 @@ type Undo = { message: string; eventIds: string[] };
 /**
  * Today (spec #8, prototype #6): one card per plant that Needs Attention, most Overdue first, with
  * a checklist row per Due care type that logs it as done today in one tap; the rest of the garden
- * dimmed below. A card's ⋯, or any plant's name or photo, opens its plant sheet. With no plant in
+ * dimmed below. A card's ⋯, or any plant's name or photo, opens its log sheet. With no plant in
  * care, as on a fresh install, it offers to add one. Cards and rows fade in and out as care is
  * logged or falls Due, and the rest move into place.
  */

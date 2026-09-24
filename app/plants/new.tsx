@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { localDay, shiftDays } from '@/src/core/dates';
 import { setPlantPhoto } from '@/src/core/photos';
 import {
   CARE_TYPES,
@@ -13,35 +12,22 @@ import {
 } from '@/src/core/plants';
 import { listSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import { ChipGroup } from '@/src/ui/Chip';
-import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
+import {
+  alertError,
+  Field,
+  optionalNumber,
+  PrimaryButton,
+  TextButton,
+  WhenPicker,
+} from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
-/** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
-type Ago = { label: string; value: number | null };
-const NOT_SURE: Ago = { label: 'Not sure', value: null };
-const DAYS_AGO: Ago[] = [
-  NOT_SURE,
-  { label: 'Today', value: 0 },
-  { label: 'Yesterday', value: 1 },
-  { label: '3 days ago', value: 3 },
-  { label: '1 week ago', value: 7 },
-  { label: '2 weeks ago', value: 14 },
-  { label: '1 month ago', value: 30 },
-];
-// Approximate day counts: a repot "about a year ago" needs no calendar-month arithmetic.
-const MONTHS_AGO: Ago[] = [
-  NOT_SURE,
-  { label: 'This month', value: 0 },
-  { label: '6 months ago', value: 182 },
-  { label: '1 year ago', value: 365 },
-  { label: '2 years ago', value: 730 },
-];
-const LAST_DONE: Record<CareType, { label: string; options: Ago[] }> = {
-  water: { label: 'Water it', options: DAYS_AGO },
-  fertilize: { label: 'Fertilize it', options: DAYS_AGO },
-  repot: { label: 'Repot it', options: MONTHS_AGO },
+/** "When did you last …?", per care type. */
+const LAST_DONE: Record<CareType, string> = {
+  water: 'Water it',
+  fertilize: 'Fertilize it',
+  repot: 'Repot it',
 };
 
 type ScheduleForm = Record<keyof CareSchedule, string>;
@@ -72,11 +58,8 @@ export default function NewPlantScreen() {
   /** The prepared photo's file, filed with the plant once it is added. */
   const [prepared, setPrepared] = useState<string | null>(null);
   const [schedule, setSchedule] = useState(EMPTY_SCHEDULE);
-  const [lastDone, setLastDone] = useState<Record<CareType, number | null>>({
-    water: null,
-    fertilize: null,
-    repot: null,
-  });
+  /** The day each care type was last done; unanswered ones count from the plant's creation. */
+  const [lastDone, setLastDone] = useState<Partial<Record<CareType, string>>>({});
 
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -93,12 +76,6 @@ export default function NewPlantScreen() {
   const canSave = species !== null || (ownSchedule && nickname.trim() !== '');
 
   const save = () => {
-    const today = localDay(new Date());
-    const lastDoneDays: Partial<Record<CareType, string>> = {};
-    for (const type of CARE_TYPES) {
-      const ago = lastDone[type];
-      if (ago !== null) lastDoneDays[type] = shiftDays(today, -ago);
-    }
     let plant: Plant;
     try {
       plant = createPlant(db, {
@@ -115,7 +92,7 @@ export default function NewPlantScreen() {
               repottingMonths: optionalNumber(schedule.repottingMonths),
             }
           : undefined,
-        lastDone: lastDoneDays,
+        lastDone,
       });
     } catch (error) {
       alertError('Could not add the plant', error);
@@ -235,14 +212,13 @@ export default function NewPlantScreen() {
         Optional. Answers set the first due dates; the rest count from today.
       </Text>
       {CARE_TYPES.map((type) => (
-        <View key={type} style={styles.row}>
-          <Text style={text.body}>{LAST_DONE[type].label}</Text>
-          <ChipGroup
-            options={LAST_DONE[type].options}
-            value={lastDone[type]}
-            onChange={(value) => setLastDone({ ...lastDone, [type]: value })}
-          />
-        </View>
+        <WhenPicker
+          key={type}
+          label={LAST_DONE[type]}
+          optional
+          value={lastDone[type] ?? null}
+          onChange={(day) => setLastDone({ ...lastDone, [type]: day ?? undefined })}
+        />
       ))}
 
       <PrimaryButton label="Add plant" disabled={!canSave} onPress={save} />
@@ -275,7 +251,6 @@ function Picked({
 const styles = StyleSheet.create({
   screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
   heading: { ...text.title3, marginTop: space.s },
-  row: { gap: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   grow: { flex: 1 },
   match: { paddingVertical: space.s },
