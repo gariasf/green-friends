@@ -10,7 +10,7 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "test": "jest",
-    "lint": "expo lint app src scripts",
+    "lint": "expo lint app src scripts plugins",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "db:generate": "drizzle-kit generate",
