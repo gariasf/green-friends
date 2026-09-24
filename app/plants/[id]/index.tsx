@@ -67,7 +67,11 @@ export default function PlantSheet() {
         <View style={styles.grow}>
           <Text style={styles.name}>{plant.displayName}</Text>
           {scientific && <Text style={styles.scientific}>{scientific}</Text>}
-          {plant.toxicToPets && <Text style={styles.toxic}>Toxic to pets</Text>}
+          {plant.toxicToPets !== null && (
+            <Text style={plant.toxicToPets ? styles.toxic : styles.hint}>
+              {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
+            </Text>
+          )}
           <PhotoButton
             hasPhoto={photo !== null}
             onPick={(prepared) =>
