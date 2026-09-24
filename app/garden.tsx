@@ -1,18 +1,24 @@
+import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 
-import { listPlants } from '@/src/core/plants';
+import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { PlantPhoto, photoUri } from '@/src/ui/Photo';
+import { PlantRow } from '@/src/ui/PlantRow';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
+function readGarden() {
+  return { plants: listPlants(db), archived: listArchivedPlants(db).length };
+}
+
 /**
- * Garden: every live plant by Display Name, with its photo, read again after writes: a photo is a
- * row of its own, which a live query over plants would miss.
+ * Garden: every live plant by Display Name, with its photo, each opening its plant sheet; Archived
+ * plants have a view of their own. Read again after writes: a photo is a row of its own, which a
+ * live query over plants would miss.
  */
 export default function GardenScreen() {
-  const [plants, setPlants] = useState(() => listPlants(db));
-  useAfterWrites(useCallback(() => setPlants(listPlants(db)), []));
+  const [{ plants, archived }, setGarden] = useState(readGarden);
+  useAfterWrites(useCallback(() => setGarden(readGarden()), []));
 
   return (
     <FlatList
@@ -25,14 +31,25 @@ export default function GardenScreen() {
           <Text style={styles.hint}>Tap + to add your first plant.</Text>
         </>
       }
+      ListFooterComponent={
+        archived > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => router.push('/archived')}
+            style={styles.footer}
+          >
+            <Text style={styles.link}>Archived · {archived} ›</Text>
+          </Pressable>
+        ) : null
+      }
       renderItem={({ item }) => (
-        <View style={styles.row}>
-          <PlantPhoto uri={photoUri(item.photo)} size={44} />
-          <View style={styles.grow}>
-            <Text style={styles.name}>{item.displayName}</Text>
-            {item.scientificName && <Text style={styles.hint}>{item.scientificName}</Text>}
-          </View>
-        </View>
+        <PlantRow
+          photo={item.photo}
+          name={item.displayName}
+          detail={item.scientificName}
+          onPress={() => router.push({ pathname: '/plants/[id]', params: { id: item.id } })}
+        />
       )}
     />
   );
@@ -41,16 +58,7 @@ export default function GardenScreen() {
 const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
   title: { fontSize: 22, fontWeight: '600' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  grow: { flex: 1, gap: 2 },
-  name: { fontSize: 17, fontWeight: '500' },
   hint: { fontSize: 14, color: '#666' },
+  footer: { padding: 20, alignItems: 'center' },
+  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
 });

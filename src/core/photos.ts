@@ -1,10 +1,12 @@
 import { and, eq, isNull } from 'drizzle-orm';
 
-import { photos } from '../db/schema';
+import { photos, plants } from '../db/schema';
 import type { Db } from '../db/types';
-import { getPlant } from './plants';
 
 export type Photo = typeof photos.$inferSelect;
+
+/** Joins a plant to its live photo, of which it has at most one. */
+export const livePhotoJoin = and(eq(photos.plantId, plants.id), isNull(photos.deletedAt));
 
 /**
  * The folder photo files live in, injected so the core stays plain TypeScript (ADR-0001): the app
@@ -30,7 +32,12 @@ export function setPlantPhoto(
   source: string,
   now: Date = new Date(),
 ): Photo {
-  getPlant(db, plantId);
+  const plant = db
+    .select({ id: plants.id })
+    .from(plants)
+    .where(and(eq(plants.id, plantId), isNull(plants.deletedAt)))
+    .get();
+  if (!plant) throw new Error(`No plant ${plantId}`);
   const stamp = now.toISOString();
   const id = crypto.randomUUID();
   const photo: Photo = {
@@ -41,23 +48,38 @@ export function setPlantPhoto(
     updatedAt: stamp,
     deletedAt: null,
   };
-  const live = and(eq(photos.plantId, plantId), isNull(photos.deletedAt));
-  const replaced = db.select({ filename: photos.filename }).from(photos).where(live).all();
   // The file goes in before its row and out after it, so no live row ever lacks its file.
   // ponytail: a failure in between leaves an orphan file; sweep the folder if orphans ever matter.
   files.store(source, photo.filename);
-  db.transaction((tx) => {
-    tx.update(photos).set({ updatedAt: stamp, deletedAt: stamp }).where(live).run();
+  const replaced = db.transaction((tx) => {
+    const old = tombstonePhotos(tx, plantId, stamp);
     tx.insert(photos).values(photo).run();
+    return old;
   });
-  for (const { filename } of replaced) {
+  removePhotoFiles(files, replaced);
+  return photo;
+}
+
+/**
+ * Deletes a plant's live photo within the caller's transaction, its row kept as a tombstone.
+ * Returns the filenames for removePhotoFiles once that transaction commits.
+ */
+export function tombstonePhotos(tx: Db, plantId: string, stamp: string): string[] {
+  const live = and(eq(photos.plantId, plantId), isNull(photos.deletedAt));
+  const filenames = tx.select({ filename: photos.filename }).from(photos).where(live).all();
+  tx.update(photos).set({ updatedAt: stamp, deletedAt: stamp }).where(live).run();
+  return filenames.map((row) => row.filename);
+}
+
+/** Removes the files of tombstoned photos; one the store cannot remove only takes space. */
+export function removePhotoFiles(files: PhotoFiles, filenames: string[]): void {
+  for (const filename of filenames) {
     try {
       files.remove(filename);
     } catch {
-      // The new photo is in; an old file left behind only takes space.
+      // The rows are tombstones already; nothing refers to the file.
     }
   }
-  return photo;
 }
 
 /** Every photo row, Deleted ones included as tombstones: the photos table an Export carries (ADR-0002). */

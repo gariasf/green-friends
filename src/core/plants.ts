@@ -1,9 +1,10 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 
 import { CARE_TYPES, careEvents, photos, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
 import type { CareEvent } from './careLog';
 import { checkPastOrToday, localDay } from './dates';
+import { livePhotoJoin, removePhotoFiles, tombstonePhotos, type PhotoFiles } from './photos';
 
 export { CARE_TYPES };
 
@@ -166,11 +167,38 @@ export function archivePlant(db: Db, id: string, now: Date = new Date()): Plant 
   return getPlant(db, id);
 }
 
+/** Brings an Archived plant back into care; due-ness picks up from its Care Log as it stands. */
+export function unarchivePlant(db: Db, id: string, now: Date = new Date()): Plant {
+  getPlant(db, id);
+  const stamp = now.toISOString();
+  db.update(plants).set({ archivedAt: null, updatedAt: stamp }).where(eq(plants.id, id)).run();
+  return getPlant(db, id);
+}
+
+/**
+ * Deletes a live plant, Archived or not (CONTEXT.md, Deleted): the plant, its Care Log and its
+ * photo stay as tombstones, so the deletion survives Export and Import (ADR-0002), and the photo's
+ * file is removed once they are in. Care Events Deleted earlier keep their own tombstones.
+ */
+export function deletePlant(db: Db, files: PhotoFiles, id: string, now: Date = new Date()): Plant {
+  getPlant(db, id);
+  const stamp = now.toISOString();
+  const tombstone = { updatedAt: stamp, deletedAt: stamp };
+  const { plant, filenames } = db.transaction((tx) => {
+    tx.update(careEvents)
+      .set(tombstone)
+      .where(and(eq(careEvents.plantId, id), isNull(careEvents.deletedAt)))
+      .run();
+    const filenames = tombstonePhotos(tx, id, stamp);
+    const plant = tx.update(plants).set(tombstone).where(eq(plants.id, id)).returning().get();
+    return { plant, filenames };
+  });
+  removePhotoFiles(files, filenames);
+  return plant;
+}
+
 /** The Display Name rule (CONTEXT.md) in SQL, for queries joining plants to species. */
 export const displayNameSql = sql<string>`coalesce(${plants.nickname}, ${species.colloquialName})`;
-
-/** Joins a plant to its live photo, of which it has at most one (src/core/photos.ts). */
-export const livePhotoJoin = and(eq(photos.plantId, plants.id), isNull(photos.deletedAt));
 
 /** A live plant's Display Name, Archived or not; throws for an unknown or Deleted one. */
 export function getDisplayName(db: Db, id: string): string {
@@ -185,18 +213,30 @@ export function getDisplayName(db: Db, id: string): string {
 }
 
 /** Live, non-Archived plants by Display Name, with their photo (CONTEXT.md: the default Garden view). */
-export function listPlants(db: Db) {
+export function listPlants(db: Db): PlantListItem[] {
+  return plantList(db, isNull(plants.archivedAt));
+}
+
+/** Archived plants by Display Name, with their photo and when they were Archived: the archived view. */
+export function listArchivedPlants(db: Db): PlantListItem[] {
+  return plantList(db, isNotNull(plants.archivedAt));
+}
+
+export type PlantListItem = ReturnType<typeof plantList>[number];
+
+function plantList(db: Db, archived: SQL) {
   return db
     .select({
       id: plants.id,
       displayName: displayNameSql.as('display_name'),
       scientificName: species.scientificName,
       photo: photos.filename,
+      archivedAt: plants.archivedAt,
     })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
     .leftJoin(photos, livePhotoJoin)
-    .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
+    .where(and(isNull(plants.deletedAt), archived))
     .orderBy(sql`${displayNameSql} COLLATE NOCASE`)
     .all();
 }

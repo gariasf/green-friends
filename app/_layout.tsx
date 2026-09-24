@@ -73,6 +73,7 @@ export default function RootLayout() {
       />
       <Stack.Screen name="plants/[id]/index" options={SHEET} />
       <Stack.Screen name="care-events/[id]" options={SHEET} />
+      <Stack.Screen name="archived" options={{ title: 'Archived' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );

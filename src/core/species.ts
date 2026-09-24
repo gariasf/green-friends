@@ -19,6 +19,11 @@ export function listSpecies(db: Db): Species[] {
     .all();
 }
 
+/** A catalog Species by ID; null for one the catalog doesn't know (an imported plant's, ADR-0002). */
+export function getSpecies(db: Db, id: string): Species | null {
+  return db.select().from(species).where(eq(species.id, id)).get() ?? null;
+}
+
 /** Version of the dataset the catalog was seeded from; 0 before the first seed. */
 export function getSpeciesDatasetVersion(db: Db): number {
   const row = db

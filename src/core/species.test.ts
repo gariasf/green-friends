@@ -1,7 +1,13 @@
 import bundled from '../../assets/species.json';
 import { openTestDb } from '../test/db';
 import { getSettings, updateSettings } from './settings';
-import { getSpeciesDatasetVersion, listSpecies, seedSpecies, type Species } from './species';
+import {
+  getSpecies,
+  getSpeciesDatasetVersion,
+  listSpecies,
+  seedSpecies,
+  type Species,
+} from './species';
 
 const monstera = (wateringGrowingDays: number): Species => ({
   id: 'Q161077',
@@ -68,5 +74,13 @@ describe('species catalog', () => {
 
     expect(listSpecies(db)).toEqual([monstera(9), pothos]);
     expect(getSpeciesDatasetVersion(db)).toBe(2);
+  });
+
+  test('a Species is found by its ID; one the catalog does not know is null', () => {
+    const db = openTestDb();
+    seedSpecies(db, { version: 1, species: [monstera(7), pothos] });
+
+    expect(getSpecies(db, pothos.id)).toEqual(pothos);
+    expect(getSpecies(db, 'Q1')).toBeNull();
   });
 });

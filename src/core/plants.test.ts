@@ -1,11 +1,17 @@
-import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb } from '../test/garden';
-import { listCareEvents } from './careLog';
+import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb, noon } from '../test/garden';
+import { photoStore } from '../test/photos';
+import { evaluateCare, listNeedsAttention } from './care';
+import { deleteCareEvent, listCareEventRows, listCareEvents, logCareEvent } from './careLog';
+import { listPhotoRows, setPlantPhoto } from './photos';
 import {
   archivePlant,
   createPlant,
+  deletePlant,
   getDisplayName,
   getPlant,
+  listArchivedPlants,
   listPlants,
+  unarchivePlant,
   updatePlant,
   type CareSchedule,
   type PlantPatch,
@@ -374,5 +380,148 @@ describe('archiving plants', () => {
     archivePlant(db, id);
 
     expect(listPlants(db)).toMatchObject([{ displayName: 'Pothos' }]);
+  });
+
+  test('an unarchived plant is back in the Garden and in care, due as its Care Log says', () => {
+    const db = gardenDb();
+    // Watered every 7 days from its creation on Sep 1: Due Sep 8, whatever happened in between.
+    const { id } = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
+    archivePlant(db, id, noon(2026, 9, 5));
+
+    unarchivePlant(db, id, new Date('2026-09-22T08:00:00.000Z'));
+
+    expect(getPlant(db, id)).toMatchObject({
+      archivedAt: null,
+      updatedAt: '2026-09-22T08:00:00.000Z',
+    });
+    expect(listPlants(db)).toMatchObject([{ id }]);
+    expect(listNeedsAttention(db, '2026-09-22')).toMatchObject([
+      { id, care: { water: { dueOn: '2026-09-08', daysOverdue: 14 } } },
+    ]);
+  });
+
+  test('the archived view lists Archived plants by Display Name, with their photo and Archive date', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const window = createPlant(db, { speciesId: MONSTERA, nickname: 'Window' });
+    const shelf = createPlant(db, { speciesId: POTHOS });
+    createPlant(db, { speciesId: MONSTERA, nickname: 'Desk' });
+    const { filename } = setPlantPhoto(db, store.files, window.id, 'file:///cache/window.jpg');
+
+    archivePlant(db, window.id, new Date('2026-09-22T08:00:00.000Z'));
+    archivePlant(db, shelf.id, new Date('2026-09-23T08:00:00.000Z'));
+
+    expect(listArchivedPlants(db)).toEqual([
+      {
+        id: shelf.id,
+        displayName: 'Pothos',
+        scientificName: 'Epipremnum aureum',
+        photo: null,
+        archivedAt: '2026-09-23T08:00:00.000Z',
+      },
+      {
+        id: window.id,
+        displayName: 'Window',
+        scientificName: 'Monstera deliciosa',
+        photo: filename,
+        archivedAt: '2026-09-22T08:00:00.000Z',
+      },
+    ]);
+  });
+});
+
+describe('deleting plants', () => {
+  test('a Deleted plant is gone from the Garden, Today, the archived view and its own screens', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const kept = createPlant(db, { speciesId: POTHOS }, noon(2026, 9, 1));
+    const { id } = createPlant(
+      db,
+      { speciesId: MONSTERA, lastDone: { water: '2026-09-01' } },
+      noon(2026, 9, 1),
+    );
+    const archived = createPlant(db, { speciesId: MONSTERA, nickname: 'Gone' }, noon(2026, 9, 1));
+    archivePlant(db, archived.id);
+
+    deletePlant(db, store.files, id);
+    deletePlant(db, store.files, archived.id);
+
+    expect(listPlants(db)).toMatchObject([{ id: kept.id }]);
+    expect(evaluateCare(db, '2026-09-22').map((plant) => plant.id)).toEqual([kept.id]);
+    expect(listArchivedPlants(db)).toEqual([]);
+    expect(listCareEvents(db, id)).toEqual([]);
+    expect(() => getPlant(db, id)).toThrow(/plant/i);
+    expect(() => getDisplayName(db, id)).toThrow(/plant/i);
+  });
+
+  test('deleting a plant leaves it, its Care Log and its photo as tombstones and removes the file', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const plant = createPlant(
+      db,
+      { speciesId: MONSTERA, lastDone: { water: '2026-09-20' } },
+      NOON_SEP_22,
+    );
+    logCareEvent(db, { plantId: plant.id, type: 'note', note: 'Thrips?' }, NOON_SEP_22);
+    const mistake = logCareEvent(db, { plantId: plant.id, type: 'fertilize' }, NOON_SEP_22);
+    const earlier = deleteCareEvent(db, mistake.id, NOON_SEP_22);
+    const photo = setPlantPhoto(db, store.files, plant.id, 'file:///cache/pick.jpg', NOON_SEP_22);
+    const live = listCareEvents(db, plant.id);
+    const later = noon(2026, 9, 23);
+    const stamp = later.toISOString();
+
+    expect(deletePlant(db, store.files, plant.id, later)).toEqual({
+      ...plant,
+      updatedAt: stamp,
+      deletedAt: stamp,
+    });
+    const rows = listCareEventRows(db);
+    expect(rows).toHaveLength(3);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        ...live.map((event) => ({ ...event, updatedAt: stamp, deletedAt: stamp })),
+        earlier,
+      ]),
+    );
+    expect(listPhotoRows(db)).toEqual([{ ...photo, updatedAt: stamp, deletedAt: stamp }]);
+    expect(store.stored()).toEqual({});
+  });
+
+  test("deleting one plant leaves every other plant's Care Log and photo alone", () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(
+      db,
+      { speciesId: MONSTERA, nickname: 'Monty', lastDone: { water: '2026-09-20' } },
+      NOON_SEP_22,
+    );
+    const pothos = createPlant(
+      db,
+      { speciesId: POTHOS, lastDone: { water: '2026-09-21' } },
+      NOON_SEP_22,
+    );
+    setPlantPhoto(db, store.files, monty.id, 'file:///cache/monty.jpg');
+    const kept = setPlantPhoto(db, store.files, pothos.id, 'file:///cache/pothos.jpg');
+
+    deletePlant(db, store.files, monty.id);
+
+    expect(listCareEvents(db, pothos.id)).toMatchObject([
+      { type: 'water', occurredOn: '2026-09-21' },
+    ]);
+    expect(listPlants(db)).toMatchObject([{ id: pothos.id, photo: kept.filename }]);
+    expect(store.stored()).toEqual({ [kept.filename]: 'file:///cache/pothos.jpg' });
+  });
+
+  test('only a live plant can be deleted, edited, archived or unarchived', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const { id } = createPlant(db, { speciesId: MONSTERA });
+    deletePlant(db, store.files, id);
+
+    expect(() => deletePlant(db, store.files, id)).toThrow(/plant/i);
+    expect(() => deletePlant(db, store.files, 'nope')).toThrow(/plant/i);
+    expect(() => updatePlant(db, id, { nickname: 'Ghost' })).toThrow(/plant/i);
+    expect(() => archivePlant(db, id)).toThrow(/plant/i);
+    expect(() => unarchivePlant(db, id)).toThrow(/plant/i);
   });
 });

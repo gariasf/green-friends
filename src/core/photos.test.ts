@@ -1,17 +1,8 @@
 import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb, noon } from '../test/garden';
+import { photoStore } from '../test/photos';
 import { evaluateCare } from './care';
 import { listPhotoRows, setPlantPhoto, type PhotoFiles } from './photos';
 import { createPlant, listPlants } from './plants';
-
-/** A fake photo store: which prepared JPEG was moved in under which filename. */
-function photoStore() {
-  const stored = new Map<string, string>();
-  const files: PhotoFiles = {
-    store: (source, filename) => void stored.set(filename, source),
-    remove: (filename) => void stored.delete(filename),
-  };
-  return { files, stored: () => Object.fromEntries(stored) };
-}
 
 describe('plant photos', () => {
   test('a photo is filed under its row UUID, stamped by the core clock', () => {

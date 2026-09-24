@@ -8,10 +8,10 @@ import {
   NO_SCHEDULE,
   SEASONAL,
   displayNameSql,
-  livePhotoJoin,
   type CareSchedule,
   type CareType,
 } from './plants';
+import { livePhotoJoin } from './photos';
 import { getSettings, type Settings } from './settings';
 
 /**

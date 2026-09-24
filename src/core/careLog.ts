@@ -38,6 +38,11 @@ export function listCareEvents(db: Db, plantId: string): CareEvent[] {
   return careLogQuery(db, plantId).all();
 }
 
+/** Every Care Event row, Deleted ones included as tombstones: the care_events table an Export carries (ADR-0002). */
+export function listCareEventRows(db: Db): CareEvent[] {
+  return db.select().from(careEvents).orderBy(careEvents.createdAt).all();
+}
+
 /**
  * Appends a Care Event to a live plant's Care Log. Due-ness derives from the log on the next
  * evaluation; nothing else is stored, except that a repot newer than every other repot sets the

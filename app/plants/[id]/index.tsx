@@ -28,7 +28,7 @@ const WHEN = [
 /**
  * The plant sheet (spec #8, prototype #6): logs any care type or a Note on a day up to three days
  * back, a repot with its new pot and soil, adds or replaces the plant's photo, and leads to the
- * plant's Care Log.
+ * plant's Care Log and its details.
  */
 export default function PlantSheet() {
   const { id } = useLocalSearchParams<'/plants/[id]'>();
@@ -82,14 +82,25 @@ export default function PlantSheet() {
         disabled={!details.complete}
         onPress={log}
       />
-      <Pressable
-        accessibilityRole="button"
-        hitSlop={8}
-        // Replace, not push: a screen pushed from a sheet would land beneath it.
-        onPress={() => router.replace({ pathname: '/plants/[id]/log', params: { id: plant.id } })}
-      >
-        <Text style={styles.link}>Care Log ›</Text>
-      </Pressable>
+      {/* Replace, not push: a screen pushed from a sheet would land beneath it. */}
+      <View style={styles.links}>
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={() => router.replace({ pathname: '/plants/[id]/log', params: { id: plant.id } })}
+        >
+          <Text style={styles.link}>Care Log ›</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={() =>
+            router.replace({ pathname: '/plants/[id]/edit', params: { id: plant.id } })
+          }
+        >
+          <Text style={styles.link}>Edit plant ›</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -101,5 +112,6 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '800' },
   scientific: { fontSize: 14, fontStyle: 'italic', color: '#666' },
   hint: { fontSize: 14, color: '#666' },
+  links: { flexDirection: 'row', justifyContent: 'center', gap: 32 },
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
 });
