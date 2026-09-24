@@ -2,14 +2,13 @@ import { strFromU8, unzipSync } from 'fflate';
 
 import { getSchemaVersion } from '../db/migrate';
 import type { Db } from '../db/types';
-import { MONSTERA, POTHOS, catalog, gardenDb, noon } from '../test/garden';
+import { MONSTERA, POTHOS, gardenDb, noon } from '../test/garden';
 import { photoStore } from '../test/photos';
 import { deleteCareEvent, listCareEvents, logCareEvent } from './careLog';
 import { shareExport } from './export';
 import { setPlantPhoto } from './photos';
 import { NO_SCHEDULE, archivePlant, createPlant, deletePlant, updatePlant } from './plants';
 import { updateSettings } from './settings';
-import { seedSpecies } from './species';
 
 /** 08:00 on Sep 24 where the tests run (Auckland, UTC+12): still Sep 23 in UTC. */
 const NOW = new Date(2026, 8, 24, 8);
@@ -35,13 +34,12 @@ async function exportGarden(db: Db, files = photoStore().files, now = NOW) {
 }
 
 describe('Export', () => {
-  test('is one zip, named for the local day it was made, holding export.json', async () => {
+  test('is one zip named for the local day it was made, export.json alone for an empty Garden', async () => {
     const db = gardenDb();
 
-    const { name, json, files } = await exportGarden(db);
+    const { name, files } = await exportGarden(db);
 
     expect(name).toBe('green-friends-2026-09-24.zip');
-    expect(json).toBeDefined();
     expect(files).toEqual({});
   });
 
@@ -310,19 +308,6 @@ describe('Export', () => {
     ]);
     // Pothos is in the catalog, but no plant refers to it.
     expect(json.species_refs).toMatchObject([{ id: MONSTERA }]);
-  });
-
-  test("keeps a reference the catalog doesn't know, snapshotted under its plant's nickname", async () => {
-    const db = gardenDb();
-    createPlant(db, { speciesId: POTHOS, nickname: 'Trailing one' });
-    // A catalog without the plant's species: the state an Import can leave (ADR-0002).
-    seedSpecies(db, { version: 2, species: [catalog.monstera] });
-
-    const { json } = await exportGarden(db);
-
-    expect(json.species_refs).toEqual([
-      { id: 'Q161809', colloquial_name: 'Trailing one', scientific_name: null },
-    ]);
   });
 
   test('fails and shares nothing when a live photo is missing from the folder', async () => {

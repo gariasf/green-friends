@@ -11,12 +11,12 @@ export const livePhotoJoin = and(eq(photos.plantId, plants.id), isNull(photos.de
 /**
  * The folder photo files live in, injected so the core stays plain TypeScript (ADR-0001): the app
  * hands in its documents directory, tests a fake. The core names the files and decides when they
- * come and go; the store only moves them.
+ * come and go; the store only moves and reads them.
  */
 export type PhotoFiles = {
   /** Moves the prepared JPEG at `source` into the folder as `filename`. */
   store(source: string, filename: string): void;
-  /** The contents of `filename` in the folder. */
+  /** The contents of `filename` in the folder; throws for a missing file. */
   read(filename: string): Uint8Array;
   /** Removes `filename` from the folder; a missing file is no error. */
   remove(filename: string): void;
