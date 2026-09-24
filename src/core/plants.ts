@@ -271,7 +271,7 @@ export const SEASONAL = {
  * and valid Override columns, which for a species-less plant are its whole schedule and must
  * cover at least one care type.
  */
-function validatePlant(db: Db, plant: Plant): void {
+export function validatePlant(db: Db, plant: Plant): void {
   if (!plant.nickname && !(plant.speciesId && getSpecies(db, plant.speciesId))) {
     throw new Error('A plant without a known species needs a nickname');
   }

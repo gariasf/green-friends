@@ -1,4 +1,4 @@
-import { eq, getTableColumns, type InferSelectModel } from 'drizzle-orm';
+import { eq, getTableColumns, isNotNull, type InferSelectModel } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { strToU8, zipSync, type Zippable } from 'fflate';
 
@@ -45,18 +45,18 @@ export async function shareExport(
     care_events: verbatim(careEvents, listCareEventRows(db)),
     photos: verbatim(photos, listPhotoRows(db)),
     settings: verbatim(settings, [getSettings(db)]),
-    // ponytail: catalog Species only. Import (#19) is the first to leave a plant with a Species
-    // the catalog doesn't know; it must keep that snapshot for here, since Import refuses an
-    // Export whose species_refs miss one (ADR-0002).
+    // A Species the catalog doesn't know, as an Import can leave, goes without names: its plant
+    // has a nickname, which that Import backfilled (ADR-0002).
     species_refs: db
       .selectDistinct({
-        id: species.id,
+        id: plants.speciesId,
         colloquial_name: species.colloquialName,
         scientific_name: species.scientificName,
       })
       .from(plants)
-      .innerJoin(species, eq(plants.speciesId, species.id))
-      .orderBy(species.id)
+      .leftJoin(species, eq(plants.speciesId, species.id))
+      .where(isNotNull(plants.speciesId))
+      .orderBy(plants.speciesId)
       .all(),
   };
   // Indented for whoever opens the zip; the deflate squeezes the whitespace out again.

@@ -13,11 +13,13 @@ const steps = migrationBundle.journal.entries.map((entry) => {
 });
 
 /**
- * Forward-only migrations. The schema version is SQLite's PRAGMA user_version: the number of
- * migrations applied. It is written into every Export header (ADR-0002).
+ * Forward-only migrations, up to schema version `to` (all of them by default). The schema version
+ * is SQLite's PRAGMA user_version: the number of migrations applied. It is written into every
+ * Export header, and an Import brings an older Export's rows forward through these same steps
+ * (ADR-0002).
  */
-export function migrate(db: Db): void {
-  for (let version = getSchemaVersion(db); version < steps.length; version++) {
+export function migrate(db: Db, to: number = steps.length): void {
+  for (let version = getSchemaVersion(db); version < to; version++) {
     db.transaction((tx) => {
       for (const statement of steps[version].split('--> statement-breakpoint')) {
         tx.run(sql.raw(statement));

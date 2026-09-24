@@ -23,7 +23,7 @@ export function getSettings(db: Db): Settings {
 
 /** Applies a validated patch, stamping updated_at from the core clock (UTC ISO-8601). */
 export function updateSettings(db: Db, patch: SettingsPatch, now: Date = new Date()): Settings {
-  validate(patch);
+  validateSettings(patch);
   db.update(settings)
     .set({ ...patch, updatedAt: now.toISOString() })
     .where(eq(settings.id, SETTINGS_ID))
@@ -60,7 +60,8 @@ export function eraseAllData(db: Db, files: PhotoFiles): void {
   files.removeAll();
 }
 
-function validate(patch: SettingsPatch): void {
+/** Season months from 1 to 12 and a digest time from 00:00 to 23:59, as far as `patch` sets them. */
+export function validateSettings(patch: SettingsPatch): void {
   for (const month of [patch.growingStartMonth, patch.growingEndMonth]) {
     if (month !== undefined && !(Number.isInteger(month) && month >= 1 && month <= 12)) {
       throw new Error(`Month must be an integer from 1 to 12, got ${month}`);

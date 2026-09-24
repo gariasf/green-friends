@@ -10,7 +10,12 @@ import type { Db } from '../db/types';
  * database behind the same Drizzle handle type the app uses.
  */
 export function openTestDb(): Db {
-  const db = drizzle(new Database(':memory:'), { schema });
+  const db = emptyDb();
   migrate(db);
   return db;
+}
+
+/** A fresh in-memory database, not yet migrated: schema version 0. */
+export function emptyDb(): Db {
+  return drizzle(new Database(':memory:'), { schema });
 }

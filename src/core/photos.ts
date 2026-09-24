@@ -16,6 +16,8 @@ export const livePhotoJoin = and(eq(photos.plantId, plants.id), isNull(photos.de
 export type PhotoFiles = {
   /** Moves the prepared JPEG at `source` into the folder as `filename`. */
   store(source: string, filename: string): void;
+  /** Writes `bytes` into the folder as `filename`, over any file of that name: an imported photo. */
+  write(filename: string, bytes: Uint8Array): void;
   /** The contents of `filename` in the folder; throws for a missing file. */
   read(filename: string): Uint8Array;
   /** Removes `filename` from the folder; a missing file is no error. */

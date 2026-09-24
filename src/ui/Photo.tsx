@@ -15,6 +15,10 @@ export const photoFiles: PhotoFiles = {
     folder.create({ intermediates: true, idempotent: true });
     new File(source).moveSync(new File(folder, filename));
   },
+  write(filename, bytes) {
+    folder.create({ intermediates: true, idempotent: true });
+    new File(folder, filename).write(bytes);
+  },
   read(filename) {
     return new File(folder, filename).bytesSync();
   },

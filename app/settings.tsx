@@ -6,6 +6,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { localTime } from '@/src/core/dates';
 import { shareExport, type ShareSheet } from '@/src/core/export';
+import { importExport } from '@/src/core/import';
 import {
   eraseAllData,
   getSettings,
@@ -13,7 +14,7 @@ import {
   type Settings,
   type SettingsPatch,
 } from '@/src/core/settings';
-import { db } from '@/src/db/client';
+import { db, withScratchDb } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
@@ -77,6 +78,30 @@ export default function SettingsScreen() {
     }
   };
 
+  // A second tap while the picker is up would present another.
+  const importing = useRef(false);
+  const importGarden = async () => {
+    if (importing.current) return;
+    importing.current = true;
+    try {
+      const picked = await File.pickFileAsync({ mimeTypes: 'application/zip' });
+      if (picked.canceled) return;
+      const zip = picked.result;
+      try {
+        withScratchDb((scratch) => importExport(db, photoFiles, scratch, zip.bytesSync()));
+      } finally {
+        // The picker's copy; the Export itself stays wherever the user keeps it.
+        if (zip.exists) zip.delete();
+      }
+      setSettings(getSettings(db));
+      Alert.alert('Garden imported');
+    } catch (error) {
+      alertError('Could not import', error);
+    } finally {
+      importing.current = false;
+    }
+  };
+
   const erase = () =>
     Alert.alert(
       'Erase all data?',
@@ -133,6 +158,15 @@ export default function SettingsScreen() {
       </Text>
       <Pressable accessibilityRole="button" hitSlop={8} onPress={exportGarden}>
         <Text style={styles.link}>Export garden</Text>
+      </Pressable>
+
+      <Text style={styles.heading}>Import</Text>
+      <Text style={styles.hint}>
+        Brings an export into this garden: where both have a plant, Care Event or photo, the newer
+        version wins, and nothing is erased. To go back to an export exactly, erase all data first.
+      </Text>
+      <Pressable accessibilityRole="button" hitSlop={8} onPress={importGarden}>
+        <Text style={styles.link}>Import garden</Text>
       </Pressable>
 
       <Pressable accessibilityRole="button" hitSlop={8} onPress={erase} style={styles.erase}>
