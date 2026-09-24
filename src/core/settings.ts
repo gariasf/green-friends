@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { careEvents, photos, plants, settings } from '../db/schema';
 import type { Db } from '../db/types';
-import { removePhotoFiles, type PhotoFiles } from './photos';
+import type { PhotoFiles } from './photos';
 
 /**
  * Settings are a single row. The fixed id makes two devices' settings the same row, so an
@@ -45,20 +45,19 @@ const FIRST_LAUNCH = {
 /**
  * Erase all data: every plant, Care Event and photo row goes, tombstones too, and the settings are
  * those of a first launch, so an Import afterwards restores its Export as it was (the hard reset of
- * ADR-0002). The Species catalog is not user data and stays. Photo files go once the rows have.
+ * ADR-0002). The Species catalog is not user data and stays. Every photo file goes once the rows
+ * have; should that fail, it throws with the rows already gone, and erasing again finishes.
  */
 export function eraseAllData(db: Db, files: PhotoFiles): void {
-  const filenames = db.transaction((tx) => {
-    const rows = tx.select({ filename: photos.filename }).from(photos).all();
+  db.transaction((tx) => {
     tx.delete(careEvents).run();
     tx.delete(photos).run();
     tx.delete(plants).run();
     // SQLite reports no row of a DELETE without WHERE to change listeners (the truncate
     // optimization): this update is what the screens and the digest projection hear.
     tx.update(settings).set(FIRST_LAUNCH).where(eq(settings.id, SETTINGS_ID)).run();
-    return rows.map((row) => row.filename);
   });
-  removePhotoFiles(files, filenames);
+  files.removeAll();
 }
 
 function validate(patch: SettingsPatch): void {

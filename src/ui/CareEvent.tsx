@@ -12,6 +12,11 @@ export const CARE_COPY: Record<CareEventType, { icon: string; label: string; don
   note: { icon: '📝', label: 'Note', done: 'Note' },
 };
 
+/** How many plants Need Attention, as Today's summary and the Daily Digest's title put it. */
+export function plantsNeedYou(count: number): string {
+  return count === 1 ? '1 plant needs you' : `${count} plants need you`;
+}
+
 /** A local calendar day as the Care Log shows it: Today, Yesterday, else its date. */
 export function dayLabel(day: string, today: string): string {
   const ago = daysBetween(day, today);

@@ -87,11 +87,13 @@ describe('Erase all data', () => {
     expect(listSpecies(db).map((species) => species.id)).toEqual([MONSTERA, POTHOS]);
   });
 
-  test('removes every photo file', () => {
+  test('removes every photo file, even one no photo row names', () => {
     const db = gardenDb();
     const store = photoStore();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
     setPlantPhoto(db, store.files, plant.id, 'file:///cache/pick.jpg');
+    // Left behind by a photo save interrupted between its file and its row.
+    store.files.store('file:///cache/lost.jpg', 'orphan.jpg');
 
     eraseAllData(db, store.files);
 

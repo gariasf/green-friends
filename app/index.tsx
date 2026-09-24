@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
-  AppState,
   LayoutAnimation,
   Pressable,
   ScrollView,
@@ -16,9 +15,9 @@ import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/cor
 import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY } from '@/src/ui/CareEvent';
+import { CARE_COPY, plantsNeedYou } from '@/src/ui/CareEvent';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { useAfterWrites } from '@/src/ui/useAfterWrites';
+import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 const UNDO_MS = 4000;
 
@@ -66,11 +65,7 @@ export default function TodayScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {needingAttention.length > 0 ? (
           <>
-            <Text style={styles.summary}>
-              {needingAttention.length === 1
-                ? '1 plant needs you'
-                : `${needingAttention.length} plants need you`}
-            </Text>
+            <Text style={styles.summary}>{plantsNeedYou(needingAttention.length)}</Text>
             {needingAttention.map((plant) => (
               <CareCard key={plant.id} plant={plant} onLog={log} />
             ))}
@@ -101,15 +96,9 @@ function usePlantCare() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPlants(evaluateCare(db));
   }, []);
-  useAfterWrites(refresh);
-  useEffect(() => {
-    // ponytail: left open across midnight, Today shows yesterday until the next write or
-    // foregrounding; add a timer for the next local midnight if that ever matters.
-    const foreground = AppState.addEventListener('change', (state) => {
-      if (state === 'active') refresh();
-    });
-    return () => foreground.remove();
-  }, [refresh]);
+  // ponytail: left open across midnight, Today shows yesterday until the next write or
+  // foregrounding; add a timer for the next local midnight if that ever matters.
+  useAfterWritesOrForeground(refresh);
   return [plants, refresh] as const;
 }
 

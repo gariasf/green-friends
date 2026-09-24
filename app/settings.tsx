@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { localTime } from '@/src/core/dates';
 import {
   eraseAllData,
   getSettings,
@@ -10,6 +11,7 @@ import {
 } from '@/src/core/settings';
 import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
+import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
 
 const MONTHS = [
@@ -31,13 +33,12 @@ const MONTHS = [
  * Daily Digest times on the hour, 06:00 to 22:00, labelled the way the phone shows times.
  * ponytail: whole hours only; a time picker the day someone wants 07:30.
  */
-const HOURS = Array.from({ length: 17 }, (_, index) => index + 6).map((hour) => ({
-  label: new Date(2000, 0, 1, hour).toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
+const HOURS = Array.from({ length: 17 }, (_, index) => new Date(2000, 0, 1, index + 6)).map(
+  (at) => ({
+    label: at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+    value: localTime(at),
   }),
-  value: `${String(hour).padStart(2, '0')}:00`,
-}));
+);
 
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
@@ -53,7 +54,11 @@ export default function SettingsScreen() {
           text: 'Erase',
           style: 'destructive',
           onPress: () => {
-            eraseAllData(db, photoFiles);
+            try {
+              eraseAllData(db, photoFiles);
+            } catch (error) {
+              alertError('Could not erase all data', error);
+            }
             setSettings(getSettings(db));
           },
         },

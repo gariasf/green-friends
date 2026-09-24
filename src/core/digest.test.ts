@@ -16,7 +16,7 @@ describe('Daily Digest planner', () => {
 
     const [first] = planDigests(db, at(9, 22, 18));
 
-    expect(first).toEqual({ day: '2026-09-29', time: '09:00', plants: ['Monstera'] });
+    expect(first).toEqual({ day: '2026-09-29', time: '09:00', displayNames: ['Monstera'] });
   });
 
   test('Overdue care keeps a digest on every day until it is logged, the soonest 64 at most', () => {
@@ -50,7 +50,7 @@ describe('Daily Digest planner', () => {
     expect(planDigests(db, at(9, 29, 8))[0]).toEqual({
       day: '2026-09-30',
       time: '07:30',
-      plants: ['Monstera'],
+      displayNames: ['Monstera'],
     });
   });
 
@@ -63,8 +63,11 @@ describe('Daily Digest planner', () => {
 
     const digests = planDigests(db, at(9, 22, 8));
 
-    expect(digests[0]).toMatchObject({ day: '2026-09-22', plants: ['Window', 'Shelf'] });
-    expect(digests[5]).toMatchObject({ day: '2026-09-27', plants: ['Window', 'Shelf', 'Desk'] });
+    expect(digests[0]).toMatchObject({ day: '2026-09-22', displayNames: ['Window', 'Shelf'] });
+    expect(digests[5]).toMatchObject({
+      day: '2026-09-27',
+      displayNames: ['Window', 'Shelf', 'Desk'],
+    });
   });
 
   test('logging the Due care leaves no digest until care falls Due again', () => {

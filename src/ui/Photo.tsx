@@ -18,6 +18,10 @@ export const photoFiles: PhotoFiles = {
   remove(filename) {
     deleteIfThere(new File(folder, filename));
   },
+  removeAll() {
+    // The folder goes with its files; the next store makes it again.
+    if (folder.exists) folder.delete();
+  },
 };
 
 /** Where a stored photo is on this install; the database keeps only its filename. */

@@ -1,6 +1,7 @@
 /**
  * Calendar days as 'YYYY-MM-DD' in the device's local timezone: Care Events are dated by day
  * (ADR-0005) and due-ness is day-granular (spec #8), so the core never reasons in instants here.
+ * The one time of day the core knows, the Daily Digest's, is a local 'HH:MM' likewise.
  */
 
 export function localDay(at: Date): string {

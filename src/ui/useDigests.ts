@@ -1,10 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
 
 import { scheduleDigests, type Digest, type PendingNotifications } from '@/src/core/digest';
 import { db } from '@/src/db/client';
-import { useAfterWrites } from '@/src/ui/useAfterWrites';
+import { plantsNeedYou } from '@/src/ui/CareEvent';
+import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 /** The phone's pending notifications, which hold the Daily Digests and nothing else. */
 const pending: PendingNotifications = {
@@ -26,15 +26,18 @@ async function allowed(): Promise<boolean> {
   return (await Notifications.requestPermissionsAsync(request)).granted;
 }
 
-function schedule({ day, time, plants }: Digest): Promise<string> {
+function schedule({ day, time, displayNames }: Digest): Promise<string> {
   const [year, month, date] = day.split('-').map(Number);
   const [hour, minute] = time.split(':').map(Number);
+  const last = displayNames.length - 1;
   return Notifications.scheduleNotificationAsync({
     identifier: `digest-${day}`,
     content: {
-      title: plants.length === 1 ? '1 plant needs you' : `${plants.length} plants need you`,
+      title: plantsNeedYou(displayNames.length),
       body:
-        plants.length === 1 ? plants[0] : `${plants.slice(0, -1).join(', ')} and ${plants.at(-1)}`,
+        last === 0
+          ? displayNames[0]
+          : `${displayNames.slice(0, last).join(', ')} and ${displayNames[last]}`,
     },
     // Calendar fields, not an instant: an instant already past is refused, while a day and time
     // keep to the local clock wherever the phone is.
@@ -49,11 +52,14 @@ function schedule({ day, time, plants }: Digest): Promise<string> {
   });
 }
 
-let projection = Promise.resolve();
+let lastReplan = Promise.resolve();
 
-/** Plans the digests again, each run after the last, so an older plan never lands on a newer one. */
-function project(): void {
-  projection = projection
+/**
+ * Plans the digests again once the last replan is done, so an older plan never lands on a newer
+ * one.
+ */
+function replan(): void {
+  lastReplan = lastReplan
     .then(() => scheduleDigests(db, pending))
     .catch((error) => console.warn('Could not schedule the Daily Digests', error));
 }
@@ -63,12 +69,6 @@ function project(): void {
  * after every burst of writes, and back in the foreground, where the day may have turned.
  */
 export function useDigests(): void {
-  useAfterWrites(project);
-  useEffect(() => {
-    project();
-    const foreground = AppState.addEventListener('change', (state) => {
-      if (state === 'active') project();
-    });
-    return () => foreground.remove();
-  }, []);
+  useAfterWritesOrForeground(replan);
+  useEffect(replan, []);
 }

@@ -6,6 +6,7 @@ export function photoStore() {
   const files: PhotoFiles = {
     store: (source, filename) => void stored.set(filename, source),
     remove: (filename) => void stored.delete(filename),
+    removeAll: () => stored.clear(),
   };
   return { files, stored: () => Object.fromEntries(stored) };
 }

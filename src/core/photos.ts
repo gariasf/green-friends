@@ -18,6 +18,8 @@ export type PhotoFiles = {
   store(source: string, filename: string): void;
   /** Removes `filename` from the folder; a missing file is no error. */
   remove(filename: string): void;
+  /** Removes every file from the folder, whatever names it. */
+  removeAll(): void;
 };
 
 /**

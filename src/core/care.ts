@@ -55,11 +55,12 @@ export function evaluateCare(db: Db, today: string = localDay(new Date())): Plan
 }
 
 /**
- * evaluateCare for any day, from one read of the database: the garden as it will be on that day
- * if nothing is logged or changed before then. The Daily Digest planner asks it day after day.
+ * evaluateCare for any day, from one read of the database: every plant in care as it will be on
+ * that day if nothing is logged or changed before then. The Daily Digest planner asks it day after
+ * day.
  */
 export function forecastCare(db: Db): (day: string) => PlantCare[] {
-  const months = getSettings(db);
+  const settings = getSettings(db);
   const lastDone = new Map<string, string>();
   const latest = db
     .select({ plantId: careEvents.plantId, type: careEvents.type, on: max(careEvents.occurredOn) })
@@ -69,7 +70,7 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
     .all();
   for (const row of latest) if (row.on) lastDone.set(`${row.plantId}/${row.type}`, row.on);
 
-  const garden = db
+  const inCare = db
     .select({ plant: plants, species, displayName: displayNameSql, photo: photos.filename })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
@@ -80,9 +81,9 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
       const schedule = effectiveSchedule(plant, species);
       // A care type never logged anchors to the local day of creation (ADR-0005).
       const anchor = localDay(new Date(plant.createdAt));
-      const next = {} as Record<CareType, NextDue>;
+      const dueDays = {} as Record<CareType, DueBySeason>;
       for (const type of CARE_TYPES) {
-        next[type] = nextDue(type, schedule, lastDone.get(`${plant.id}/${type}`) ?? anchor);
+        dueDays[type] = dueBySeason(type, schedule, lastDone.get(`${plant.id}/${type}`) ?? anchor);
       }
       return {
         plant: {
@@ -91,7 +92,7 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
           scientificName: species?.scientificName ?? null,
           photo,
         },
-        next,
+        dueDays,
       };
     })
     // By Display Name once, so that each day only ranks by Overdue.
@@ -99,18 +100,17 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
 
   return (day) => {
     if (!isCalendarDay(day)) throw new Error(`Not a calendar day: ${day}`);
-    const season = seasonOn(day, months);
-    const evaluated = garden.map(({ plant, next }): PlantCare => {
-      const care = {} as Record<CareType, CareStatus>;
-      for (const type of CARE_TYPES) care[type] = statusOn(next[type], day, season);
-      return { ...plant, care };
-    });
-    const worst = evaluated.map(worstOverdue);
-    // Most Overdue first; equals keep their Display Name order (the rank).
-    return evaluated
-      .map((_, rank) => rank)
-      .sort((a, b) => worst[b] - worst[a] || a - b)
-      .map((rank) => evaluated[rank]);
+    const season = seasonOn(day, settings);
+    // Most Overdue first; the sort is stable, so equals keep their Display Name order.
+    return inCare
+      .map(({ plant, dueDays }) => {
+        const care = {} as Record<CareType, CareStatus>;
+        for (const type of CARE_TYPES) care[type] = statusOn(dueDays[type], day, season);
+        const evaluated: PlantCare = { ...plant, care };
+        return { evaluated, worst: worstOverdue(evaluated) };
+      })
+      .sort((a, b) => b.worst - a.worst)
+      .map(({ evaluated }) => evaluated);
   };
 }
 
@@ -161,17 +161,17 @@ function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): C
 }
 
 /**
- * When a care type comes Due, from its last Care Event (or the creation anchor) and its effective
- * schedule, before any Season clamps it: repotting on one day, watering and fertilizing on one day
- * per Season, a null Dormant day meaning Paused; null for no schedule. All of due-ness that does
- * not depend on the day evaluated, so a forecast works it out once.
+ * When a care type comes Due by Season, from its last Care Event (or the creation anchor) and its
+ * effective schedule, before the clamp to the Season's first day: repotting on one day, watering
+ * and fertilizing on one day per Season, a null Dormant day meaning Paused; null for no schedule.
+ * All of due-ness that does not depend on the day evaluated, so a forecast works it out once.
  */
-type NextDue =
+type DueBySeason =
   | { seasonal: false; on: string }
   | { seasonal: true; growing: string; dormant: string | null }
   | null;
 
-function nextDue(type: CareType, schedule: CareSchedule, lastDone: string): NextDue {
+function dueBySeason(type: CareType, schedule: CareSchedule, lastDone: string): DueBySeason {
   if (type === 'repot') {
     const months = schedule.repottingMonths;
     return months === null ? null : { seasonal: false, on: shiftMonths(lastDone, months) };
@@ -192,17 +192,17 @@ function nextDue(type: CareType, schedule: CareSchedule, lastDone: string): Next
  * interval for today's Season, never earlier than the first day of that Season; repotting runs on
  * months with no seasonal variant and so is never clamped.
  */
-function statusOn(next: NextDue, today: string, season: SeasonOn): CareStatus {
-  if (next === null) return { state: 'unscheduled' };
+function statusOn(due: DueBySeason, today: string, season: SeasonOn): CareStatus {
+  if (due === null) return { state: 'unscheduled' };
   let dueOn: string;
-  if (!next.seasonal) {
-    dueOn = next.on;
+  if (!due.seasonal) {
+    dueOn = due.on;
   } else {
     if (season.season === 'dormant') {
-      if (next.dormant === null) return { state: 'paused', until: season.resumesOn };
-      dueOn = next.dormant;
+      if (due.dormant === null) return { state: 'paused', until: season.resumesOn };
+      dueOn = due.dormant;
     } else {
-      dueOn = next.growing;
+      dueOn = due.growing;
     }
     if (season.startsOn !== null && dueOn < season.startsOn) dueOn = season.startsOn;
   }

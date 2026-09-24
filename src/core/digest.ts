@@ -22,10 +22,10 @@ const DIGEST_CAP = 64;
 const HORIZON_DAYS = 366;
 
 /**
- * One Daily Digest: the day it fires, at `time` ('HH:MM', local), and the Display Names of the
- * plants that Need Attention that day, most Overdue first.
+ * One Daily Digest: the day it fires, at `time` ('HH:MM', local), for the plants that Need
+ * Attention that day, most Overdue first.
  */
-export type Digest = { day: string; time: string; plants: string[] };
+export type Digest = { day: string; time: string; displayNames: string[] };
 
 /**
  * The Daily Digests to have pending at `now`: the soonest DIGEST_CAP days ahead on which at least
@@ -36,13 +36,16 @@ export function planDigests(db: Db, now: Date = new Date()): Digest[] {
   const { digestTime: time } = getSettings(db);
   const careOn = forecastCare(db);
   const today = localDay(now);
+  // ponytail: nothing records whether today's digest has fired, so moving the digest time later
+  // on the same day brings a second one and moving it earlier drops today's; fine while nobody
+  // retimes it daily.
   let day = localTime(now) < time ? today : shiftDays(today, 1);
   const digests: Digest[] = [];
   for (let n = 0; n < HORIZON_DAYS && digests.length < DIGEST_CAP; n++, day = shiftDays(day, 1)) {
-    const plants = careOn(day).filter(needsAttention);
-    if (plants.length > 0) {
-      digests.push({ day, time, plants: plants.map((plant) => plant.displayName) });
-    }
+    const displayNames = careOn(day)
+      .filter(needsAttention)
+      .map((plant) => plant.displayName);
+    if (displayNames.length > 0) digests.push({ day, time, displayNames });
   }
   return digests;
 }
