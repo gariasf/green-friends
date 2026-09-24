@@ -24,7 +24,7 @@ import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /** "When did you last …?", per care type. */
-const LAST_DONE: Record<CareType, string> = {
+const LAST_DONE_LABEL: Record<CareType, string> = {
   water: 'Water it',
   fertilize: 'Fertilize it',
   repot: 'Repot it',
@@ -214,7 +214,7 @@ export default function NewPlantScreen() {
       {CARE_TYPES.map((type) => (
         <WhenPicker
           key={type}
-          label={LAST_DONE[type]}
+          label={LAST_DONE_LABEL[type]}
           optional
           value={lastDone[type] ?? null}
           onChange={(day) => setLastDone({ ...lastDone, [type]: day ?? undefined })}

@@ -11,7 +11,7 @@ import { setPlantPhoto } from '@/src/core/photos';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { alertError, CloseButton, PrimaryButton, TextButton, WhenPicker } from '@/src/ui/Form';
-import { PhotoButton, photoFiles } from '@/src/ui/Photo';
+import { PhotoButton, PlantPhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { colors, space, text } from '@/src/ui/theme';
 
 /**
@@ -49,11 +49,12 @@ export default function LogCareSheet() {
   return (
     <View style={styles.sheet}>
       <View style={styles.header}>
+        <PlantPhoto uri={photoUri(photo)} size={44} />
         <View style={styles.grow}>
           <Text style={text.footnote}>
             {plant.displayName}
             {plant.toxicToPets !== null && (
-              <Text style={plant.toxicToPets && styles.toxic}>
+              <Text style={plant.toxicToPets ? styles.toxic : text.footnote}>
                 {plant.toxicToPets ? ' · Toxic to pets' : ' · Non-toxic to pets'}
               </Text>
             )}
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    // Apart by their hitSlop and more, however they wrap.
+    // Twice their hitSlop, so their targets never overlap, however they wrap.
     gap: space.xxl,
   },
 });

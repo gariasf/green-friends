@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import type { ColorValue } from 'react-native';
 
 import type { CareEvent, CareEventType } from '@/src/core/careLog';
-import { daysBetween } from '@/src/core/dates';
+import { daysBetween, localNoon } from '@/src/core/dates';
 import { Field, optionalNumber } from '@/src/ui/Form';
 import { colors } from '@/src/ui/theme';
 
@@ -42,8 +42,7 @@ export function dayLabel(day: string, today: string): string {
   const ago = daysBetween(day, today);
   if (ago === 0) return 'Today';
   if (ago === 1) return 'Yesterday';
-  const [year, month, date] = day.split('-').map(Number);
-  return new Date(year, month - 1, date, 12).toLocaleDateString(undefined, {
+  return localNoon(day).toLocaleDateString(undefined, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

@@ -31,7 +31,7 @@ export function Chip({
   );
 }
 
-/** A wrapping row of chips where exactly one option is selected; a new pick ticks like a picker. */
+/** A wrapping row of chips where at most one option is selected; a new pick ticks like a picker. */
 export function ChipGroup<T>({
   options,
   value,

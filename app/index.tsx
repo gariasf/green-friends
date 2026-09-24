@@ -117,7 +117,7 @@ function usePlantCare() {
   return [plants, refresh] as const;
 }
 
-function openPlantSheet(plant: PlantCare) {
+function openLogSheet(plant: PlantCare) {
   router.push({ pathname: '/plants/[id]', params: { id: plant.id } });
 }
 
@@ -142,7 +142,7 @@ function CareCard({
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
       <Pressable
         accessible={false}
-        onPress={() => openPlantSheet(plant)}
+        onPress={() => openLogSheet(plant)}
         style={({ pressed }) => pressed && pressedStyle.button}
       >
         <PlantPhoto uri={photoUri(plant.photo)} size={64} />
@@ -153,7 +153,7 @@ function CareCard({
             accessibilityRole="button"
             // A one-line name is about 20 pt tall; this makes it a 44 pt target.
             hitSlop={12}
-            onPress={() => openPlantSheet(plant)}
+            onPress={() => openLogSheet(plant)}
             style={({ pressed }) => [styles.grow, pressed && pressedStyle.button]}
           >
             <Text style={text.headline}>{plant.displayName}</Text>
@@ -171,7 +171,7 @@ function CareCard({
             accessibilityLabel={`More for ${plant.displayName}`}
             // 32 pt across; this makes it a 44 pt target.
             hitSlop={6}
-            onPress={() => openPlantSheet(plant)}
+            onPress={() => openLogSheet(plant)}
             style={({ pressed }) => [styles.more, pressed && pressedStyle.button]}
           >
             <SymbolView name="ellipsis" size={16} weight="bold" tintColor={colors.secondaryLabel} />
@@ -232,7 +232,7 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
             key={plant.id}
             accessibilityRole="button"
             accessibilityLabel={`${plant.displayName}, all good`}
-            onPress={() => openPlantSheet(plant)}
+            onPress={() => openLogSheet(plant)}
             style={({ pressed }) => [styles.restPlant, pressed && styles.restPlantPressed]}
           >
             <PlantPhoto uri={photoUri(plant.photo)} size={56} />

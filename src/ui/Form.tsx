@@ -18,7 +18,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { localDay, shiftDays } from '@/src/core/dates';
+import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
 import { colors, pressedStyle, space, text } from '@/src/ui/theme';
 
@@ -96,7 +96,8 @@ export function WhenPicker({
   // Sized by its SwiftUI content both ways (the community datetime-picker drop-in only matches it
   // vertically, and collapses in a row). A Host inside a row that wraps loses its place (@expo/ui
   // 57), so it sits beside what may wrap, never within it. Left to SwiftUI's safe areas, its content
-  // rides up by the keyboard's inset while a sheet's keyboard is up.
+  // rides up by the keyboard's inset while a sheet's keyboard is up. With "Not sure" it shows today,
+  // dimmed; picking today there changes nothing, so it fires nothing: the Today chip does that.
   const picker = (
     <Host
       matchContents
@@ -105,8 +106,8 @@ export function WhenPicker({
       style={props.value === null && styles.unset}
     >
       <DatePicker
-        selection={noon(props.value ?? today)}
-        range={{ end: noon(today) }}
+        selection={localNoon(props.value ?? today)}
+        range={{ end: localNoon(today) }}
         onDateChange={(date) => pick(localDay(date))}
         modifiers={[datePickerStyle('compact'), labelsHidden()]}
       />
@@ -135,12 +136,6 @@ export function WhenPicker({
       )}
     </View>
   );
-}
-
-/** Local noon on `day`: the date picker works in instants, and noon is safely inside the day. */
-function noon(day: string): Date {
-  const [year, month, date] = day.split('-').map(Number);
-  return new Date(year, month - 1, date, 12);
 }
 
 /** Closes a sheet: iOS's grey ⓧ, top right. */

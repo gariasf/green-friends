@@ -8,6 +8,15 @@ export function localDay(at: Date): string {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
 }
 
+/**
+ * Local noon on `day`, for what takes an instant rather than a day (a date picker, date
+ * formatting): noon is far enough from either midnight that no DST change moves it off the day.
+ */
+export function localNoon(day: string): Date {
+  const [year, month, date] = day.split('-').map(Number);
+  return new Date(year, month - 1, date, 12);
+}
+
 /** The local time of day at `at`, as 'HH:MM' (the Daily Digest time's format). */
 export function localTime(at: Date): string {
   return `${pad(at.getHours())}:${pad(at.getMinutes())}`;

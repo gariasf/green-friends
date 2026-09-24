@@ -1,4 +1,4 @@
-import { daysBetween, localDay, shiftDays, shiftMonths } from './dates';
+import { daysBetween, localDay, localNoon, shiftDays, shiftMonths } from './dates';
 
 describe('calendar days', () => {
   test('localDay is the calendar day where the device is, not the UTC day', () => {
@@ -6,6 +6,15 @@ describe('calendar days', () => {
     // least one of these wrong in any timezone off UTC (tests run in Pacific/Auckland).
     expect(localDay(new Date(2026, 8, 22, 0, 30))).toBe('2026-09-22');
     expect(localDay(new Date(2026, 8, 22, 23, 30))).toBe('2026-09-22');
+  });
+
+  test('localNoon is noon of the calendar day where the device is, its day unmoved by DST', () => {
+    // Pacific/Auckland enters DST on 2026-09-27, a 23-hour day.
+    for (const day of ['2026-09-26', '2026-09-27', '2026-12-31']) {
+      const noon = localNoon(day);
+      expect(localDay(noon)).toBe(day);
+      expect(noon.getHours()).toBe(12);
+    }
   });
 
   test('shiftDays crosses month and year boundaries', () => {
