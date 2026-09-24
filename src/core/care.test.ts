@@ -268,6 +268,18 @@ describe('effective schedule', () => {
     expect(careOn(db, '2026-11-15').water).toMatchObject({ state: 'due', dueOn: '2026-11-01' });
   });
 
+  test('a repotting Override moves the repot due date of a plant with a species, and clearing it falls back', () => {
+    const db = gardenDb();
+    // Monstera repots every 24 months; this one every 12, both from its creation on Sep 22.
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 22));
+
+    updatePlant(db, plant.id, { repottingMonths: 12 });
+    expect(careOn(db, '2027-09-21').repot).toEqual({ state: 'upcoming', dueOn: '2027-09-22' });
+
+    updatePlant(db, plant.id, { repottingMonths: null });
+    expect(careOn(db, '2027-09-22').repot).toEqual({ state: 'upcoming', dueOn: '2028-09-22' });
+  });
+
   test('a catalog update flows through to plants without an Override for that care type', () => {
     const db = gardenDb();
     const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 22));

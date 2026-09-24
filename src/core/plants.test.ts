@@ -1,4 +1,4 @@
-import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb, noon } from '../test/garden';
+import { MONSTERA, NOON_SEP_22, POTHOS, catalog, gardenDb, noon } from '../test/garden';
 import { photoStore } from '../test/photos';
 import { evaluateCare, listNeedsAttention } from './care';
 import { deleteCareEvent, listCareEventRows, listCareEvents, logCareEvent } from './careLog';
@@ -10,12 +10,14 @@ import {
   getDisplayName,
   getPlant,
   listArchivedPlants,
+  listPlantRows,
   listPlants,
   unarchivePlant,
   updatePlant,
   type CareSchedule,
   type PlantPatch,
 } from './plants';
+import { seedSpecies } from './species';
 
 /** Watered every 4 days (7 in the Dormant season), fed monthly, never in winter; repotted every 18 months. */
 const FERN_SCHEDULE: CareSchedule = {
@@ -293,6 +295,17 @@ describe('editing plants', () => {
     expect(getPlant(db, id)).toMatchObject({ nickname: 'Air plant', wateringGrowingDays: 7 });
   });
 
+  test('a plant whose species the catalog does not know keeps its nickname', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: POTHOS, nickname: 'Trailing one' });
+    // A catalog without the plant's species: the state an Import can leave (ADR-0002).
+    seedSpecies(db, { version: 2, species: [catalog.monstera] });
+
+    expect(() => updatePlant(db, id, { nickname: ' ' })).toThrow(/nickname/i);
+
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Trailing one' }]);
+  });
+
   test('an undefined patch entry leaves the field as it is', () => {
     const db = gardenDb();
     const { id } = createPlant(db, { speciesId: MONSTERA, nickname: 'Big Monty', potSizeCm: 21 });
@@ -382,7 +395,7 @@ describe('archiving plants', () => {
     expect(listPlants(db)).toMatchObject([{ displayName: 'Pothos' }]);
   });
 
-  test('an unarchived plant is back in the Garden and in care, due as its Care Log says', () => {
+  test('an unarchived plant is back in the default Garden view and in care, due as its Care Log says', () => {
     const db = gardenDb();
     // Watered every 7 days from its creation on Sep 1: Due Sep 8, whatever happened in between.
     const { id } = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
@@ -470,11 +483,9 @@ describe('deleting plants', () => {
     const later = noon(2026, 9, 23);
     const stamp = later.toISOString();
 
-    expect(deletePlant(db, store.files, plant.id, later)).toEqual({
-      ...plant,
-      updatedAt: stamp,
-      deletedAt: stamp,
-    });
+    const tombstone = { ...plant, updatedAt: stamp, deletedAt: stamp };
+    expect(deletePlant(db, store.files, plant.id, later)).toEqual(tombstone);
+    expect(listPlantRows(db)).toEqual([tombstone]);
     const rows = listCareEventRows(db);
     expect(rows).toHaveLength(3);
     expect(rows).toEqual(

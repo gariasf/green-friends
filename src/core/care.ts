@@ -8,6 +8,7 @@ import {
   NO_SCHEDULE,
   SEASONAL,
   displayNameSql,
+  hasOverride,
   type CareSchedule,
   type CareType,
 } from './plants';
@@ -126,15 +127,15 @@ function worstOverdue(plant: PlantCare): number {
  */
 function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): CareSchedule {
   const fallback = species ?? NO_SCHEDULE;
-  const source = (growing: keyof CareSchedule) => (plant[growing] !== null ? plant : fallback);
-  const water = source('wateringGrowingDays');
-  const fertilize = source('fertilizingGrowingDays');
+  const source = (type: CareType) => (hasOverride(plant, type) ? plant : fallback);
+  const water = source('water');
+  const fertilize = source('fertilize');
   return {
     wateringGrowingDays: water.wateringGrowingDays,
     wateringDormantDays: water.wateringDormantDays,
     fertilizingGrowingDays: fertilize.fertilizingGrowingDays,
     fertilizingDormantDays: fertilize.fertilizingDormantDays,
-    repottingMonths: source('repottingMonths').repottingMonths,
+    repottingMonths: source('repot').repottingMonths,
   };
 }
 

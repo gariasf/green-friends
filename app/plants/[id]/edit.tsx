@@ -8,6 +8,7 @@ import {
   deletePlant,
   getDisplayName,
   getPlant,
+  hasOverride,
   SEASONAL,
   unarchivePlant,
   updatePlant,
@@ -24,9 +25,9 @@ import { photoFiles } from '@/src/ui/Photo';
 
 /**
  * One care type's schedule as the form holds it: an Override while `own`, else the Species
- * default. Repotting uses `growing` alone, in months.
+ * default. `growing` is the Growing interval, or repotting's only one, in months (ADR-0003).
  */
-type Interval = { own: boolean; growing: string; dormant: string };
+type CareTypeForm = { own: boolean; growing: string; dormant: string };
 
 /**
  * A plant's details (spec #8): its nickname and Current Pot, per care type the Species default or
@@ -43,6 +44,16 @@ export default function EditPlantScreen() {
   const [schedule, setSchedule] = useState(() => startingSchedule(plant, defaults));
 
   const save = () => {
+    // A blank Growing interval would clear the Override (ADR-0003), not keep an own schedule.
+    const blank = CARE_TYPES.find((type) => schedule[type].own && !schedule[type].growing.trim());
+    if (blank) {
+      const fallback = defaults ? 'Species default' : 'None';
+      alertError(
+        'Could not save the plant',
+        new Error(`${CARE_COPY[blank].label}: enter how often, or pick ${fallback}.`),
+      );
+      return;
+    }
     const patch: PlantPatch = { nickname, potSizeCm: optionalNumber(potSizeCm), soil };
     for (const type of ['water', 'fertilize'] as const) {
       const { own, growing, dormant } = schedule[type];
@@ -86,9 +97,7 @@ export default function EditPlantScreen() {
       <Text style={styles.hint}>Nickname</Text>
       <Field
         // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).
-        placeholder={
-          plant.speciesId ? (defaults?.colloquialName ?? 'Optional') : 'Required without a species'
-        }
+        placeholder={defaults?.colloquialName ?? 'Required without a known species'}
         value={nickname}
         onChangeText={setNickname}
         accessibilityLabel="Nickname"
@@ -137,7 +146,7 @@ export default function EditPlantScreen() {
         ) : (
           <Action
             label="Archive"
-            hint="Died or given away: it leaves Today and the Garden, its Care Log and photo kept."
+            hint="Died or given away: it moves to Archived, its Care Log and photo kept."
             onPress={() => {
               archivePlant(db, plant.id);
               router.back();
@@ -159,9 +168,9 @@ function CareTypeSchedule({
   onChange,
 }: {
   type: CareType;
-  value: Interval;
+  value: CareTypeForm;
   defaults: CareSchedule | null;
-  onChange: (value: Interval) => void;
+  onChange: (value: CareTypeForm) => void;
 }) {
   return (
     <View style={styles.careType}>
@@ -221,15 +230,15 @@ function Action({ label, hint, onPress }: { label: string; hint: string; onPress
 function startingSchedule(
   plant: CareSchedule,
   defaults: CareSchedule | null,
-): Record<CareType, Interval> {
+): Record<CareType, CareTypeForm> {
   const text = (value: number | null | undefined) => value?.toString() ?? '';
-  const seasonal = (type: 'water' | 'fertilize'): Interval => {
+  const seasonal = (type: 'water' | 'fertilize'): CareTypeForm => {
     const { growing, dormant } = SEASONAL[type];
-    const own = plant[growing] !== null;
+    const own = hasOverride(plant, type);
     const source = own ? plant : defaults;
     return { own, growing: text(source?.[growing]), dormant: text(source?.[dormant]) };
   };
-  const ownRepot = plant.repottingMonths !== null;
+  const ownRepot = hasOverride(plant, 'repot');
   return {
     water: seasonal('water'),
     fertilize: seasonal('fertilize'),
@@ -254,7 +263,7 @@ function describeDefault(type: CareType, defaults: CareSchedule | null): string 
   if (growing === null) return 'Never.';
   return dormant === null
     ? `Every ${growing} days, paused in the Dormant season.`
-    : `Every ${growing} days, every ${dormant} in the Dormant season.`;
+    : `Every ${growing} days, every ${dormant} days in the Dormant season.`;
 }
 
 const styles = StyleSheet.create({

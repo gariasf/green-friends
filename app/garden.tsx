@@ -8,7 +8,7 @@ import { PlantRow } from '@/src/ui/PlantRow';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 function readGarden() {
-  return { plants: listPlants(db), archived: listArchivedPlants(db).length };
+  return { plants: listPlants(db), archivedCount: listArchivedPlants(db).length };
 }
 
 /**
@@ -17,7 +17,7 @@ function readGarden() {
  * live query over plants would miss.
  */
 export default function GardenScreen() {
-  const [{ plants, archived }, setGarden] = useState(readGarden);
+  const [{ plants, archivedCount }, setGarden] = useState(readGarden);
   useAfterWrites(useCallback(() => setGarden(readGarden()), []));
 
   return (
@@ -26,20 +26,27 @@ export default function GardenScreen() {
       keyExtractor={(plant) => plant.id}
       contentContainerStyle={plants.length === 0 ? styles.empty : undefined}
       ListEmptyComponent={
-        <>
-          <Text style={styles.title}>No plants yet</Text>
-          <Text style={styles.hint}>Tap + to add your first plant.</Text>
-        </>
+        archivedCount > 0 ? (
+          <>
+            <Text style={styles.title}>No plants in care</Text>
+            <Text style={styles.hint}>Tap + to add one, or unarchive one below.</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.title}>No plants yet</Text>
+            <Text style={styles.hint}>Tap + to add your first plant.</Text>
+          </>
+        )
       }
       ListFooterComponent={
-        archived > 0 ? (
+        archivedCount > 0 ? (
           <Pressable
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => router.push('/archived')}
             style={styles.footer}
           >
-            <Text style={styles.link}>Archived · {archived} ›</Text>
+            <Text style={styles.link}>Archived · {archivedCount} ›</Text>
           </Pressable>
         ) : null
       }

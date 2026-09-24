@@ -4,7 +4,8 @@ import { CARE_TYPES, careEvents, photos, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
 import type { CareEvent } from './careLog';
 import { checkPastOrToday, localDay } from './dates';
-import { livePhotoJoin, removePhotoFiles, tombstonePhotos, type PhotoFiles } from './photos';
+import { deletePhotos, livePhotoJoin, removePhotoFiles, type PhotoFiles } from './photos';
+import { getSpecies } from './species';
 
 export { CARE_TYPES };
 
@@ -77,10 +78,10 @@ export function createPlant(db: Db, input: NewPlant, now: Date = new Date()): Pl
   if (speciesId && input.schedule) {
     throw new Error('A plant with a species inherits its care schedule from the species');
   }
-  if (speciesId && !speciesExists(db, speciesId)) {
+  if (speciesId && !getSpecies(db, speciesId)) {
     throw new Error(`Unknown species ${speciesId}`);
   }
-  validatePlant(plant);
+  validatePlant(db, plant);
   const today = localDay(now);
   const seeded: CareEvent[] = CARE_TYPES.flatMap((type) => {
     const occurredOn = input.lastDone?.[type];
@@ -151,7 +152,7 @@ export function updatePlant(db: Db, id: string, patch: PlantPatch, now: Date = n
   }
   next.nickname = trimToNull(next.nickname);
   next.soil = trimToNull(next.soil);
-  validatePlant(next);
+  validatePlant(db, next);
   db.update(plants).set(next).where(eq(plants.id, id)).run();
   return getPlant(db, id);
 }
@@ -189,12 +190,22 @@ export function deletePlant(db: Db, files: PhotoFiles, id: string, now: Date = n
       .set(tombstone)
       .where(and(eq(careEvents.plantId, id), isNull(careEvents.deletedAt)))
       .run();
-    const filenames = tombstonePhotos(tx, id, stamp);
+    const filenames = deletePhotos(tx, id, stamp);
     const plant = tx.update(plants).set(tombstone).where(eq(plants.id, id)).returning().get();
     return { plant, filenames };
   });
   removePhotoFiles(files, filenames);
   return plant;
+}
+
+/** Every plant row, Deleted ones included as tombstones: the plants table an Export carries (ADR-0002). */
+export function listPlantRows(db: Db): Plant[] {
+  return db.select().from(plants).orderBy(plants.createdAt).all();
+}
+
+/** Whether a plant's Override for `type` is set (ADR-0003): its Growing interval, or repotting's months, is. */
+export function hasOverride(plant: CareSchedule, type: CareType): boolean {
+  return (type === 'repot' ? plant.repottingMonths : plant[SEASONAL[type].growing]) !== null;
 }
 
 /** The Display Name rule (CONTEXT.md) in SQL, for queries joining plants to species. */
@@ -224,7 +235,7 @@ export function listArchivedPlants(db: Db): PlantListItem[] {
 
 export type PlantListItem = ReturnType<typeof plantList>[number];
 
-function plantList(db: Db, archived: SQL) {
+function plantList(db: Db, scope: SQL) {
   return db
     .select({
       id: plants.id,
@@ -236,7 +247,7 @@ function plantList(db: Db, archived: SQL) {
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
     .leftJoin(photos, livePhotoJoin)
-    .where(and(isNull(plants.deletedAt), archived))
+    .where(and(isNull(plants.deletedAt), scope))
     .orderBy(sql`${displayNameSql} COLLATE NOCASE`)
     .all();
 }
@@ -255,13 +266,14 @@ export const SEASONAL = {
 >;
 
 /**
- * What every stored Plant row satisfies: the Display Name rule (a nickname when there is no
- * species), a positive pot size, and valid Override columns, which for a species-less plant are
- * its whole schedule and must cover at least one care type.
+ * What every stored Plant row satisfies: the Display Name rule (a nickname unless the catalog
+ * knows the plant's species; an Import can leave one it doesn't, ADR-0002), a positive pot size,
+ * and valid Override columns, which for a species-less plant are its whole schedule and must
+ * cover at least one care type.
  */
-function validatePlant(plant: Plant): void {
-  if (!plant.speciesId && !plant.nickname) {
-    throw new Error('A plant without a species needs a nickname');
+function validatePlant(db: Db, plant: Plant): void {
+  if (!plant.nickname && !(plant.speciesId && getSpecies(db, plant.speciesId))) {
+    throw new Error('A plant without a known species needs a nickname');
   }
   checkPotSize(plant.potSizeCm);
   validateSchedule(plant, plant.speciesId === null);
@@ -302,10 +314,6 @@ export function checkPotSize(value: number | null): void {
   if (value !== null && !(Number.isFinite(value) && value > 0)) {
     throw new Error(`Pot size must be positive, got ${value}`);
   }
-}
-
-function speciesExists(db: Db, id: string): boolean {
-  return !!db.select({ id: species.id }).from(species).where(eq(species.id, id)).get();
 }
 
 /** Free text as stored: trimmed, and null when blank or missing. */

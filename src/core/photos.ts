@@ -52,7 +52,7 @@ export function setPlantPhoto(
   // ponytail: a failure in between leaves an orphan file; sweep the folder if orphans ever matter.
   files.store(source, photo.filename);
   const replaced = db.transaction((tx) => {
-    const old = tombstonePhotos(tx, plantId, stamp);
+    const old = deletePhotos(tx, plantId, stamp);
     tx.insert(photos).values(photo).run();
     return old;
   });
@@ -64,7 +64,7 @@ export function setPlantPhoto(
  * Deletes a plant's live photo within the caller's transaction, its row kept as a tombstone.
  * Returns the filenames for removePhotoFiles once that transaction commits.
  */
-export function tombstonePhotos(tx: Db, plantId: string, stamp: string): string[] {
+export function deletePhotos(tx: Db, plantId: string, stamp: string): string[] {
   const live = and(eq(photos.plantId, plantId), isNull(photos.deletedAt));
   const filenames = tx.select({ filename: photos.filename }).from(photos).where(live).all();
   tx.update(photos).set({ updatedAt: stamp, deletedAt: stamp }).where(live).run();
