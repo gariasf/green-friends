@@ -15,13 +15,21 @@ import { space, text } from '@/src/ui/theme';
 
 /**
  * The log sheet (spec #22): logs any care type or a Note on any day up to today, a repot with its
- * new pot and soil. Opens preset to the care type in its `type` param, else the first one Due.
+ * new pot and soil. Opens preset to the care type in its `type` param, else the first one Due. An
+ * Archived plant is out of care, so for one it only adds a Note.
  */
 export default function LogCareSheet() {
   const { id, type: preset } = useLocalSearchParams<'/plants/[id]/log', { type?: string }>();
   const [displayName] = useState(() => getDisplayName(db, id));
-  const [type, setType] = useState<CareEventType>(
-    () => CARE_EVENT_TYPES.find((option) => option === preset) ?? firstDue(id) ?? 'water',
+  // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants, a core read
+  // of one plant by id at hundreds.
+  const [inCare] = useState(() => evaluateCare(db).find((candidate) => candidate.id === id));
+  const [type, setType] = useState<CareEventType>(() =>
+    inCare
+      ? (CARE_EVENT_TYPES.find((option) => option === preset) ??
+        dueCare(inCare)[0]?.type ??
+        'water')
+      : 'note',
   );
   const [day, setDay] = useState(() => localDay(new Date()));
   const details = useCareEventDetails(type);
@@ -45,14 +53,16 @@ export default function LogCareSheet() {
         </View>
         <CloseButton />
       </View>
-      <SegmentedControl
-        values={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
-        selectedIndex={CARE_EVENT_TYPES.indexOf(type)}
-        onChange={({ nativeEvent }) => {
-          Haptics.selectionAsync();
-          setType(CARE_EVENT_TYPES[nativeEvent.selectedSegmentIndex]);
-        }}
-      />
+      {inCare && (
+        <SegmentedControl
+          values={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
+          selectedIndex={CARE_EVENT_TYPES.indexOf(type)}
+          onChange={({ nativeEvent }) => {
+            Haptics.selectionAsync();
+            setType(CARE_EVENT_TYPES[nativeEvent.selectedSegmentIndex]);
+          }}
+        />
+      )}
       <WhenPicker label="When did it happen?" value={day} onChange={setDay} />
       {details.fields}
       <PrimaryButton
@@ -62,13 +72,6 @@ export default function LogCareSheet() {
       />
     </View>
   );
-}
-
-/** The plant's first Due care type; none for an Archived plant, which is out of care. */
-function firstDue(id: string): CareEventType | undefined {
-  // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants.
-  const plant = evaluateCare(db).find((candidate) => candidate.id === id);
-  return plant && dueCare(plant)[0]?.type;
 }
 
 const styles = StyleSheet.create({

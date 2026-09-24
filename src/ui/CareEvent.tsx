@@ -37,13 +37,18 @@ export function plantsNeedYou(count: number): string {
   return count === 1 ? '1 plant needs you' : `${count} plants need you`;
 }
 
-/** A local calendar day as the Care Log shows it: Today, Yesterday, else its date. */
+/** A local calendar day as the Care Log shows it: Today, Yesterday, else its date with its weekday. */
 export function dayLabel(day: string, today: string): string {
   const ago = daysBetween(day, today);
   if (ago === 0) return 'Today';
   if (ago === 1) return 'Yesterday';
+  return dateLabel(day, today, 'short');
+}
+
+/** A local calendar day's date ("Sep 22", or with a weekday "Tue, Sep 22"), its year only when not today's. */
+export function dateLabel(day: string, today: string, weekday?: 'short'): string {
   return localNoon(day).toLocaleDateString(undefined, {
-    weekday: 'short',
+    weekday,
     day: 'numeric',
     month: 'short',
     year: day.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric',

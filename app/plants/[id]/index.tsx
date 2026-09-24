@@ -13,8 +13,13 @@ import {
 } from 'react-native';
 
 import { evaluateCare, type CareStatus } from '@/src/core/care';
-import { listCareEvents, logCareEvent, type CareEvent } from '@/src/core/careLog';
-import { daysBetween, localDay, localNoon } from '@/src/core/dates';
+import {
+  listCareEvents,
+  logCareEvent,
+  type CareEvent,
+  type CareEventType,
+} from '@/src/core/careLog';
+import { daysBetween, localDay } from '@/src/core/dates';
 import { setPlantPhoto } from '@/src/core/photos';
 import {
   CARE_TYPES,
@@ -24,14 +29,15 @@ import {
   listPlants,
   unarchivePlant,
   type CareType,
+  type Plant,
 } from '@/src/core/plants';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import { CARE_COPY, CareSymbol, dayLabel } from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol, dateLabel, dayLabel } from '@/src/ui/CareEvent';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import { colors, headerItem, pressedStyle, space, text } from '@/src/ui/theme';
+import { accessibilitySize, colors, pressedStyle, space, target, text } from '@/src/ui/theme';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 /**
@@ -52,7 +58,7 @@ export default function PlantScreen() {
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
   const uri = photoUri(photo);
   const lastDone = (type: CareType) => events.find((event) => event.type === type)?.occurredOn;
-  const openLog = (type: CareType | 'note') =>
+  const openLog = (type: CareEventType) =>
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
 
   return (
@@ -63,7 +69,7 @@ export default function PlantScreen() {
             <TextButton
               label="Edit"
               onPress={() => router.push({ pathname: '/plants/[id]/edit', params: { id } })}
-              style={headerItem.text}
+              style={target.text}
             />
           ),
         }}
@@ -104,8 +110,9 @@ export default function PlantScreen() {
 
       {care && (
         // Three abreast, words break mid-word at accessibility text sizes, so there they stack.
-        // ponytail: WhenPicker's font-scale threshold, not a measurement.
-        <View style={[styles.tiles, fontScale > 1.5 && styles.tilesStacked]}>
+        // ponytail: WhenPicker's font-scale threshold, not a measurement; measure the tiles' words
+        // with onLayout if a longer label ever breaks at a standard size.
+        <View style={[styles.tiles, accessibilitySize(fontScale) && styles.tilesStacked]}>
           {CARE_TYPES.map((type) => (
             <CareTile
               key={type}
@@ -127,8 +134,8 @@ export default function PlantScreen() {
         <Text style={styles.logHeading}>Care Log</Text>
         <TextButton label="Add note" onPress={() => openLog('note')} />
       </View>
-      {/* ponytail: renders every Care Event at once; a FlatList if a Care Log ever runs into the
-          thousands. */}
+      {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
+          all above it its header, if one ever runs into the thousands. */}
       <View style={styles.timeline}>
         {events.length === 0 && <Text style={text.subheadline}>Nothing logged yet.</Text>}
         {events.map((event, index) => (
@@ -144,9 +151,7 @@ export default function PlantScreen() {
       <View style={styles.chips}>
         {row.potSizeCm !== null && <Text style={styles.chip}>{row.potSizeCm} cm pot</Text>}
         {row.soil !== null && <Text style={styles.chip}>{row.soil}</Text>}
-        <Text style={styles.chip}>
-          {CARE_TYPES.some((type) => hasOverride(row, type)) ? 'Own schedule' : 'Species schedule'}
-        </Text>
+        <Text style={styles.chip}>{whoseSchedule(row)}</Text>
       </View>
     </ScrollView>
   );
@@ -172,7 +177,8 @@ function usePlant(id: string) {
 
 /** Null once the plant is Deleted. */
 function readPlant(id: string) {
-  // ponytail: reads the whole garden to find one plant; fine at dozens of plants.
+  // ponytail: reads the whole garden to find one plant; fine at dozens of plants, a core read of
+  // one plant by id at hundreds.
   const listed = [...listPlants(db), ...listArchivedPlants(db)].find(
     (candidate) => candidate.id === id,
   );
@@ -204,8 +210,8 @@ function Toxicity({ toxic }: { toxic: boolean }) {
 }
 
 /**
- * One care type at a glance: when it's next Due or how late it is, and when it was last done. A tap
- * logs it on a day of the user's choosing; once Due, Done logs it today.
+ * One care type at a glance: when it's next Due or how long it has been Overdue, and when it was
+ * last done. A tap logs it on a day of the user's choosing; once Due, Done logs it today.
  */
 function CareTile({
   type,
@@ -249,8 +255,8 @@ function CareTile({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${label}, done today`}
-          // About 30 pt tall; this makes it a 44 pt target.
-          hitSlop={{ top: 7, bottom: 7 }}
+          // 26 pt tall; this makes it a 44 pt target.
+          hitSlop={{ top: 9, bottom: 9 }}
           onPress={onDone}
           style={({ pressed }) => [styles.done, pressed && pressedStyle.button]}
         >
@@ -262,7 +268,10 @@ function CareTile({
   );
 }
 
-/** A tile's short value ("5d", "17mo", "Today", "1d late", "Paused", "—"), and in words. */
+/**
+ * A tile's short value ("5d", "17mo", "Today", "Paused", "—"; Overdue as the spec words it, "1d
+ * late"), and the same in words.
+ */
 function tileValue(status: CareStatus, today: string): [short: string, spoken: string] {
   switch (status.state) {
     case 'unscheduled':
@@ -292,12 +301,19 @@ function lastLine(day: string | undefined, today: string): string {
   const ago = daysBetween(day, today);
   if (ago === 0) return 'Done today';
   if (ago === 1) return 'Done yesterday';
-  const date = localNoon(day).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: day.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric',
-  });
-  return `Last ${date}`;
+  return `Last ${dateLabel(day, today)}`;
+}
+
+/**
+ * Whose schedule the plant follows: its Species' default, its own (the Overrides, ADR-0003), or its
+ * own for some care types only.
+ */
+function whoseSchedule(plant: Plant): string {
+  const own = CARE_TYPES.filter((type) => hasOverride(plant, type));
+  if (own.length === 0) return 'Species schedule';
+  // A plant without a Species has its own schedule or none, care type by care type.
+  if (plant.speciesId === null || own.length === CARE_TYPES.length) return 'Own schedule';
+  return `Own schedule for ${own.map((type) => CARE_COPY[type].label).join(' and ')}`;
 }
 
 /** A Care Event on the timeline, a dot in its hue; a tap opens it to be edited or deleted. */
@@ -366,7 +382,8 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: 'transparent',
+    // The surface until Due, so a Due tile's border moves nothing.
+    borderColor: colors.surface,
     backgroundColor: colors.surface,
   },
   tileOverdue: { borderColor: colors.danger },

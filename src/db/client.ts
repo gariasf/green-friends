@@ -6,8 +6,8 @@ import type { Db } from './types';
 
 /**
  * The app's single on-device database. Only src/core mutation functions may write to it.
- * The change listener is what lets screens re-read after those writes: Drizzle's useLiveQuery,
- * and useAfterWrites (src/ui) for screens over several tables.
+ * The change listener is what lets screens re-read after those writes, through useAfterWrites
+ * (src/ui).
  */
 const expo = openDatabaseSync('green-friends.db', { enableChangeListener: true });
 export const db: Db = drizzle(expo, { schema });

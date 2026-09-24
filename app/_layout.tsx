@@ -1,5 +1,6 @@
 import { uuid } from 'expo-modules-core';
 import { router, Stack, ThemeProvider } from 'expo-router';
+import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
 import { useColorScheme } from 'react-native';
 
 import bundledSpecies from '@/assets/species.json';
@@ -7,7 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
-import { colors, headerItem, navigationTheme } from '@/src/ui/theme';
+import { colors, navigationTheme, target } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
@@ -32,10 +33,17 @@ const SHEET = {
   contentStyle: { backgroundColor: colors.sheet },
 } as const;
 
+/** Each tab's title, as the tabs' layout labels it, by its route. */
+const TAB_TITLES: Record<string, string> = {
+  '(today)': 'Today',
+  garden: 'Garden',
+  settings: 'Settings',
+};
+
 /**
  * The tabs, and above them what covers the tab bar: a Plant screen, its sheets, Edit plant,
- * Archived and New plant. Back buttons are chevrons only; a screen over the tabs would otherwise
- * be labelled "(tabs)".
+ * Archived and New plant. Back buttons are chevrons only. Long-pressed, one lists the screens
+ * beneath by title, where the tabs go by the tab showing rather than "(tabs)".
  */
 export default function RootLayout() {
   useDigests();
@@ -47,14 +55,20 @@ export default function RootLayout() {
           headerBackButtonDisplayMode: 'minimal',
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(tabs)"
+          options={({ route }) => ({
+            headerShown: false,
+            title: TAB_TITLES[getFocusedRouteNameFromRoute(route) ?? '(today)'],
+          })}
+        />
         <Stack.Screen
           name="plants/new"
           options={{
             title: 'New plant',
             presentation: 'modal',
             headerLeft: () => (
-              <TextButton label="Cancel" onPress={() => router.back()} style={headerItem.text} />
+              <TextButton label="Cancel" onPress={() => router.back()} style={target.text} />
             ),
           }}
         />

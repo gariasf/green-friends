@@ -20,7 +20,7 @@ import {
 
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
-import { colors, pressedStyle, space, text } from '@/src/ui/theme';
+import { accessibilitySize, colors, pressedStyle, space, text } from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
 
@@ -118,9 +118,9 @@ export function WhenPicker({
       <Text style={styles.label}>{label}</Text>
       {/* Beside the chips, the pill would squeeze them until words break at accessibility text
           sizes, so there it takes a line of its own, as it always does beside "Not sure".
-          ponytail: a font-scale threshold (xxxLarge is 1.35, the first accessibility size 1.64),
-          not a measurement; measure the chips with onLayout if a longer date ever squeezes them. */}
-      {props.optional || fontScale > 1.5 ? (
+          ponytail: a font-scale threshold, not a measurement; measure the chips with onLayout if a
+          longer date ever squeezes them. */}
+      {props.optional || accessibilitySize(fontScale) ? (
         <View style={styles.whenStack}>
           {chips}
           <View style={styles.pickerRow}>

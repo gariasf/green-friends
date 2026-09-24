@@ -77,13 +77,23 @@ export const text = StyleSheet.create({
 });
 
 /**
- * A header button, a 44 pt target by its own size: UIKit, not React Native, decides which touches
- * reach a header item, so hitSlop past its edges can't be counted on.
+ * A 44 pt target by its own size, for a control that UIKit or SwiftUI hit-tests rather than React
+ * Native, such as a header button or the view inside a MenuView: hitSlop past its edges can't be
+ * counted on there.
  */
-export const headerItem = StyleSheet.create({
-  text: { minHeight: 44, justifyContent: 'center' },
+export const target = StyleSheet.create({
+  text: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
+
+/**
+ * Whether text is at one of iOS's accessibility sizes, where a row of controls that fits at every
+ * standard size runs out of room: xxxLarge scales text by 1.35, the first accessibility size by
+ * 1.64.
+ */
+export function accessibilitySize(fontScale: number): boolean {
+  return fontScale > 1.5;
+}
 
 /** What a Pressable shows while pressed: a button fades, a row fills. */
 export const pressedStyle = StyleSheet.create({

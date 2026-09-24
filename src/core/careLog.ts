@@ -22,20 +22,14 @@ export type NewCareEvent = {
   soil?: string | null;
 };
 
-/**
- * A plant's Care Log (CONTEXT.md): its live Care Events, newest first, as a query so the UI can
- * subscribe with useLiveQuery; listCareEvents runs it.
- */
-export function careLogQuery(db: Db, plantId: string) {
+/** A plant's Care Log (CONTEXT.md): its live Care Events, newest first. */
+export function listCareEvents(db: Db, plantId: string): CareEvent[] {
   return db
     .select()
     .from(careEvents)
     .where(and(eq(careEvents.plantId, plantId), isNull(careEvents.deletedAt)))
-    .orderBy(desc(careEvents.occurredOn), desc(careEvents.createdAt));
-}
-
-export function listCareEvents(db: Db, plantId: string): CareEvent[] {
-  return careLogQuery(db, plantId).all();
+    .orderBy(desc(careEvents.occurredOn), desc(careEvents.createdAt))
+    .all();
 }
 
 /** Every Care Event row, Deleted ones included as tombstones: the care_events table an Export carries (ADR-0002). */

@@ -20,7 +20,7 @@ import { CARE_COPY, CareSymbol, plantsNeedYou } from '@/src/ui/CareEvent';
 import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 const UNDO_MS = 4000;
@@ -131,7 +131,8 @@ const MORE = [
   { id: 'edit', title: 'Edit plant', image: 'pencil' },
 ] satisfies MenuAction[];
 
-function more({ id }: PlantCare, action: string) {
+/** Opens what was picked from a card's ⋯. */
+function openPicked({ id }: PlantCare, action: string) {
   switch (action) {
     case 'log':
       // With no type, the log sheet opens on the first Due care type.
@@ -192,12 +193,11 @@ function CareCard({
           <MenuView
             title={plant.displayName}
             actions={MORE}
-            onPressAction={({ nativeEvent }) => more(plant, nativeEvent.event)}
+            onPressAction={({ nativeEvent }) => openPicked(plant, nativeEvent.event)}
             // Drawn where the 32 pt circle was, its 44 pt target around it.
             style={styles.moreMenu}
           >
-            {/* The menu, not React Native, takes the touch, so the target is the view's own size. */}
-            <View accessibilityLabel={`More for ${plant.displayName}`} style={styles.moreTarget}>
+            <View accessibilityLabel={`More for ${plant.displayName}`} style={target.icon}>
               <View style={styles.more}>
                 <SymbolView
                   name="ellipsis"
@@ -325,7 +325,6 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },
   scientific: { ...text.caption, fontStyle: 'italic' },
   moreMenu: { margin: -6 },
-  moreTarget: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   more: {
     width: 32,
     height: 32,
