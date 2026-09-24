@@ -54,7 +54,7 @@ const shareSheet: ShareSheet = {
     if (folder.exists) folder.delete();
     folder.create();
     const zip = new File(folder, name);
-    zip.write(bytes);
+    await zip.write(bytes);
     await shareAsync(zip.uri);
   },
 };

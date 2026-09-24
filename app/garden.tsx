@@ -48,7 +48,7 @@ export default function GardenScreen() {
           >
             <Text style={styles.link}>Archived · {archivedCount} ›</Text>
           </Pressable>
-        ) : null
+        ) : undefined
       }
       renderItem={({ item }) => (
         <PlantRow

@@ -21,8 +21,7 @@
           "photosPermission": false,
           "microphonePermission": false
         }
-      ],
-      "./plugins/withSceneLifecycle"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

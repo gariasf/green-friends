@@ -1,4 +1,4 @@
-import { uuid } from 'expo-modules-core';
+import { uuid } from 'expo';
 import { Link, router, Stack } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
