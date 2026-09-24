@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import Constants from 'expo-constants';
+import { Directory, File, Paths } from 'expo-file-system';
+import { shareAsync } from 'expo-sharing';
+import { useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localTime } from '@/src/core/dates';
+import { shareExport, type ShareSheet } from '@/src/core/export';
 import {
   eraseAllData,
   getSettings,
@@ -40,9 +44,38 @@ const HOURS = Array.from({ length: 17 }, (_, index) => new Date(2000, 0, 1, inde
   }),
 );
 
+/** The iOS share sheet, offering an Export as a zip file in the cache folder. */
+const shareSheet: ShareSheet = {
+  async share(name, bytes) {
+    // One Export in the cache at a time: the last goes when the next is made, never while it may
+    // still be on its way somewhere.
+    const folder = new Directory(Paths.cache, 'export');
+    if (folder.exists) folder.delete();
+    folder.create();
+    const zip = new File(folder, name);
+    zip.write(bytes);
+    await shareAsync(zip.uri);
+  },
+};
+
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
   const save = (patch: SettingsPatch) => setSettings(updateSettings(db, patch));
+
+  // A second tap while the zip is being built would share another over the first.
+  const exporting = useRef(false);
+  const exportGarden = async () => {
+    if (exporting.current) return;
+    exporting.current = true;
+    try {
+      const appVersion = Constants.expoConfig?.version ?? 'unknown';
+      await shareExport(db, photoFiles, shareSheet, appVersion);
+    } catch (error) {
+      alertError('Could not export', error);
+    } finally {
+      exporting.current = false;
+    }
+  };
 
   const erase = () =>
     Alert.alert(
@@ -93,6 +126,15 @@ export default function SettingsScreen() {
         onChange={(digestTime) => save({ digestTime })}
       />
 
+      <Text style={styles.heading}>Export</Text>
+      <Text style={styles.hint}>
+        Every plant, Archived ones too, with its Care Log and photo, and these settings, in one zip
+        file to keep wherever you like.
+      </Text>
+      <Pressable accessibilityRole="button" hitSlop={8} onPress={exportGarden}>
+        <Text style={styles.link}>Export garden</Text>
+      </Pressable>
+
       <Pressable accessibilityRole="button" hitSlop={8} onPress={erase} style={styles.erase}>
         <Text style={styles.danger}>Erase all data</Text>
       </Pressable>
@@ -123,6 +165,7 @@ const styles = StyleSheet.create({
   hint: { fontSize: 14, color: '#666' },
   row: { gap: 8 },
   label: { fontSize: 16, fontWeight: '500' },
+  link: { fontSize: 16, color: '#2e7d32', fontWeight: '600' },
   erase: { marginTop: 32 },
   danger: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
 });
