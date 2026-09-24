@@ -3,7 +3,7 @@ import { and, desc, eq, isNull, max } from 'drizzle-orm';
 import { CARE_EVENT_TYPES, careEvents, plants } from '../db/schema';
 import type { Db } from '../db/types';
 import { checkPastOrToday, isCalendarDay, localDay } from './dates';
-import { checkPotSize, getPlant, trimToNull } from './plants';
+import { checkPotSize, checkTrimmed, getPlant, trimToNull } from './plants';
 
 export { CARE_EVENT_TYPES };
 
@@ -63,7 +63,8 @@ export function logCareEvent(db: Db, input: NewCareEvent, now: Date = new Date()
     updatedAt: stamp,
     deletedAt: null,
   };
-  validateCareEvent(event, today);
+  checkPastOrToday(event.occurredOn, today);
+  validateCareEvent(event);
   const plant = getPlant(db, event.plantId);
   const { potSizeCm, soil } = event;
   const setsCurrentPot =
@@ -126,27 +127,25 @@ export function editCareEvent(
   next.note = trimToNull(next.note);
   next.soil = trimToNull(next.soil);
   next.updatedAt = now.toISOString();
-  validateCareEvent(next, localDay(now));
+  checkPastOrToday(next.occurredOn, localDay(now));
+  validateCareEvent(next);
   db.update(careEvents).set(next).where(eq(careEvents.id, id)).run();
   return next;
 }
 
-/** The rules a Care Event is logged and edited under: checkCareEvent's, on a day no later than today. */
-function validateCareEvent(event: CareEvent, today: string): void {
-  checkPastOrToday(event.occurredOn, today);
-  checkCareEvent(event);
-}
-
 /**
- * What every stored Care Event satisfies: a known type, a real calendar day, text on a Note, and
- * a pot size or soil only on a repot, the size positive. An Import checks no more, since an Export
- * from a timezone ahead may carry a day that is still tomorrow here.
+ * What every stored Care Event satisfies: a known type, a real calendar day, trimmed text, text on
+ * a Note, and a pot size or soil only on a repot, the size positive. Logging and editing also keep
+ * the day out of the future; an Import doesn't, since an Export from a timezone ahead may carry a
+ * day that is still tomorrow here.
  */
-export function checkCareEvent(event: CareEvent): void {
+export function validateCareEvent(event: CareEvent): void {
   if (!CARE_EVENT_TYPES.includes(event.type)) {
     throw new Error(`Not a Care Event type: ${event.type}`);
   }
   if (!isCalendarDay(event.occurredOn)) throw new Error(`Not a calendar day: ${event.occurredOn}`);
+  checkTrimmed('Note', event.note);
+  checkTrimmed('Soil', event.soil);
   if (event.type === 'note' && event.note === null) throw new Error('A Note needs some text');
   if (event.type !== 'repot' && (event.potSizeCm !== null || event.soil !== null)) {
     throw new Error(`Only a repot records a pot size or soil, not a ${event.type}`);

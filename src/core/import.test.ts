@@ -30,13 +30,19 @@ import {
 import { eraseAllData, getSettings, updateSettings } from './settings';
 import { seedSpecies } from './species';
 
-type Store = ReturnType<typeof photoStore>;
-
 /** 08:00 on Sep 24 where the tests run (Auckland). */
 const NOW = new Date(2026, 8, 24, 8);
 
-/** The zip an Export of the Garden in `db` hands the share sheet. */
-async function exportOf(db: Db, store: Store, now = NOW): Promise<Uint8Array> {
+/** One install of the app: its database and its photo folder. */
+type Device = { db: Db; store: ReturnType<typeof photoStore> };
+
+/** A device as after first launch, with the pinned catalog, unless given another database. */
+function device(db: Db = gardenDb()): Device {
+  return { db, store: photoStore() };
+}
+
+/** The zip an Export of the device's Garden hands the share sheet. */
+async function exportOf({ db, store }: Device, now = NOW): Promise<Uint8Array> {
   const zips: Uint8Array[] = [];
   await shareExport(
     db,
@@ -48,9 +54,9 @@ async function exportOf(db: Db, store: Store, now = NOW): Promise<Uint8Array> {
   return zips[0];
 }
 
-/** Imports `zip` into the Garden in `db`, bringing it forward in a fresh scratch database. */
-function importInto(db: Db, store: Store, zip: Uint8Array, now = NOW): void {
-  importExport(db, store.files, emptyDb(), zip, now);
+/** Imports `zip` into the device's Garden, bringing it forward in a fresh scratch database. */
+function importInto({ db, store }: Device, zip: Uint8Array, files = store.files): void {
+  importExport(db, files, emptyDb(), zip, NOW);
 }
 
 /**
@@ -66,8 +72,8 @@ function spoiled(
   return edit(json, files) ?? zipSync({ 'export.json': strToU8(JSON.stringify(json)), ...files });
 }
 
-/** Everything an Import may change: every row, tombstones included, and the photo files. */
-function contents(db: Db, store: Store) {
+/** Everything an Import may change on a device: every row, tombstones included, and the photo files. */
+function contents({ db, store }: Device) {
   return {
     plants: listPlantRows(db),
     careEvents: listCareEventRows(db),
@@ -82,7 +88,7 @@ function contents(db: Db, store: Store) {
  * backdated watering, a Note, a repot, a Deleted feed) and a replaced photo, an Archived
  * species-less plant with an Override, a Deleted plant, and edited settings.
  */
-function plantGarden(db: Db, store: Store) {
+function plantGarden({ db, store }: Device) {
   const monty = createPlant(
     db,
     { speciesId: MONSTERA, nickname: 'Monty', potSizeCm: 14, lastDone: { water: '2026-09-18' } },
@@ -113,60 +119,94 @@ function plantGarden(db: Db, store: Store) {
   return { monty, fern, pothos };
 }
 
+/** The phone's Garden, and a tablet restored from its Export. */
+async function phoneAndTablet() {
+  const phone = device();
+  const garden = plantGarden(phone);
+  const tablet = device();
+  importInto(tablet, await exportOf(phone));
+  const note = listCareEvents(phone.db, garden.monty.id).find((event) => event.type === 'note')!;
+  return { phone, tablet, ...garden, note };
+}
+
+/**
+ * A tablet restored from the phone, which then gave Fern a photo, planted Ivy with a photo and a
+ * watering, and moved the digest: the phone's Export now would change the tablet in every table.
+ */
+async function tabletBehindPhone() {
+  const { phone, tablet, fern } = await phoneAndTablet();
+  const later = noon(2026, 9, 23);
+  setPlantPhoto(phone.db, phone.store.files, fern.id, 'file:///cache/fern.jpg', later);
+  const ivy = createPlant(
+    phone.db,
+    { nickname: 'Ivy', schedule: { ...NO_SCHEDULE, wateringGrowingDays: 5 } },
+    later,
+  );
+  setPlantPhoto(phone.db, phone.store.files, ivy.id, 'file:///cache/ivy.jpg', later);
+  logCareEvent(phone.db, { plantId: ivy.id, type: 'water' }, later);
+  updateSettings(phone.db, { digestTime: '08:00' }, later);
+  return { phone, tablet };
+}
+
 describe('Import', () => {
   test('into an empty install restores the whole Export: plants, Care Log, photos, settings', async () => {
-    const [phone, phoneStore] = [gardenDb(), photoStore()];
-    plantGarden(phone, phoneStore);
-    const [fresh, freshStore] = [gardenDb(), photoStore()];
+    const phone = device();
+    plantGarden(phone);
+    const fresh = device();
 
-    importInto(fresh, freshStore, await exportOf(phone, phoneStore));
+    importInto(fresh, await exportOf(phone));
 
-    expect(contents(fresh, freshStore)).toEqual(contents(phone, phoneStore));
+    expect(contents(fresh)).toEqual(contents(phone));
   });
 
   test('after Erase all data, restores the Garden as it was at the Export', async () => {
-    const [phone, phoneStore] = [gardenDb(), photoStore()];
-    const { monty } = plantGarden(phone, phoneStore);
-    const backup = await exportOf(phone, phoneStore);
-    const then = contents(phone, phoneStore);
-    updatePlant(phone, monty.id, { nickname: 'Big Monty' }, noon(2026, 9, 23));
-    createPlant(phone, { speciesId: POTHOS }, noon(2026, 9, 23));
+    const phone = device();
+    const { monty } = plantGarden(phone);
+    const backup = await exportOf(phone);
+    const then = contents(phone);
+    updatePlant(phone.db, monty.id, { nickname: 'Big Monty' }, noon(2026, 9, 23));
+    createPlant(phone.db, { speciesId: POTHOS }, noon(2026, 9, 23));
 
-    eraseAllData(phone, phoneStore.files);
-    importInto(phone, phoneStore, backup);
+    eraseAllData(phone.db, phone.store.files);
+    importInto(phone, backup);
 
-    expect(contents(phone, phoneStore)).toEqual(then);
+    expect(contents(phone)).toEqual(then);
   });
 
   test('leaves out of the photo folder every file in the zip no live photo names', async () => {
-    const [phone, phoneStore] = [gardenDb(), photoStore()];
-    plantGarden(phone, phoneStore);
-    const zip = spoiled(await exportOf(phone, phoneStore), (json, files) => {
+    const phone = device();
+    plantGarden(phone);
+    const zip = spoiled(await exportOf(phone), (json, files) => {
       const replaced = json.photos.find((photo: any) => photo.deleted_at !== null);
       files[`photos/${replaced.filename}`] = strToU8('file:///cache/1.jpg');
       files['photos/5f0c7c8e-3b1a-4d2e-9f6a-0b1c2d3e4f50.jpg'] = strToU8('stray');
       files['notes.txt'] = strToU8('hello');
     });
-    const [fresh, freshStore] = [gardenDb(), photoStore()];
+    const fresh = device();
 
-    importInto(fresh, freshStore, zip);
+    importInto(fresh, zip);
 
-    expect(freshStore.stored()).toEqual(phoneStore.stored());
+    expect(fresh.store.stored()).toEqual(phone.store.stored());
+  });
+
+  test('keeps a Care Event on a day still to come here, from an Export made in a timezone ahead', async () => {
+    const phone = device();
+    plantGarden(phone);
+    const zip = spoiled(await exportOf(phone), (json) => {
+      json.care_events.find((event: any) => event.type === 'note').occurred_on = '2026-09-25';
+    });
+    const fresh = device();
+
+    importInto(fresh, zip);
+
+    expect(listCareEventRows(fresh.db)).toContainEqual(
+      expect.objectContaining({ type: 'note', occurredOn: '2026-09-25' }),
+    );
   });
 
   describe('merges row by row, the newer edit winning', () => {
-    /** The phone's Garden, and a tablet restored from its Export. */
-    async function phoneAndTablet() {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      const { monty } = plantGarden(phone, phoneStore);
-      const [tablet, tabletStore] = [gardenDb(), photoStore()];
-      importInto(tablet, tabletStore, await exportOf(phone, phoneStore));
-      const note = listCareEvents(phone, monty.id).find((event) => event.type === 'note')!;
-      return { phone, phoneStore, tablet, tabletStore, monty, note };
-    }
-
     /** Edits every table a day after plantGarden's last write. */
-    function editEverything(db: Db, store: Store, plantId: string, noteId: string) {
+    function editEverything({ db, store }: Device, plantId: string, noteId: string) {
       updatePlant(db, plantId, { nickname: 'Big Monty' }, noon(2026, 9, 23));
       editCareEvent(db, noteId, { note: 'Mites gone' }, noon(2026, 9, 23));
       logCareEvent(db, { plantId, type: 'water' }, noon(2026, 9, 23));
@@ -175,167 +215,165 @@ describe('Import', () => {
     }
 
     test("an older Export never undoes this device's newer edits", async () => {
-      const { phone, phoneStore, monty, note } = await phoneAndTablet();
-      const backup = await exportOf(phone, phoneStore);
-      editEverything(phone, phoneStore, monty.id, note.id);
-      const before = contents(phone, phoneStore);
+      const { phone, monty, note } = await phoneAndTablet();
+      const backup = await exportOf(phone);
+      editEverything(phone, monty.id, note.id);
+      const before = contents(phone);
 
-      importInto(phone, phoneStore, backup);
+      importInto(phone, backup);
 
-      expect(contents(phone, phoneStore)).toEqual(before);
+      expect(contents(phone)).toEqual(before);
     });
 
     test("a newer Export's edits replace this device's older rows", async () => {
-      const { phone, phoneStore, tablet, tabletStore, monty, note } = await phoneAndTablet();
-      editEverything(phone, phoneStore, monty.id, note.id);
+      const { phone, tablet, monty, note } = await phoneAndTablet();
+      editEverything(phone, monty.id, note.id);
 
-      importInto(tablet, tabletStore, await exportOf(phone, phoneStore));
+      importInto(tablet, await exportOf(phone));
 
-      expect(contents(tablet, tabletStore)).toEqual(contents(phone, phoneStore));
+      expect(contents(tablet)).toEqual(contents(phone));
     });
 
     test("a newer Export's deletion beats older rows: the plant goes with its Care Log and photo", async () => {
-      const { phone, phoneStore, tablet, tabletStore, monty } = await phoneAndTablet();
-      deletePlant(phone, phoneStore.files, monty.id, noon(2026, 9, 23));
+      const { phone, tablet, monty } = await phoneAndTablet();
+      deletePlant(phone.db, phone.store.files, monty.id, noon(2026, 9, 23));
 
-      importInto(tablet, tabletStore, await exportOf(phone, phoneStore));
+      importInto(tablet, await exportOf(phone));
 
-      expect(contents(tablet, tabletStore)).toEqual(contents(phone, phoneStore));
+      expect(contents(tablet)).toEqual(contents(phone));
     });
 
     test('an older Export never brings back what this device Deleted since', async () => {
-      const { phone, phoneStore, monty } = await phoneAndTablet();
-      const backup = await exportOf(phone, phoneStore);
-      deletePlant(phone, phoneStore.files, monty.id, noon(2026, 9, 23));
-      const before = contents(phone, phoneStore);
+      const { phone, monty } = await phoneAndTablet();
+      const backup = await exportOf(phone);
+      deletePlant(phone.db, phone.store.files, monty.id, noon(2026, 9, 23));
+      const before = contents(phone);
 
-      importInto(phone, phoneStore, backup);
+      importInto(phone, backup);
 
-      expect(contents(phone, phoneStore)).toEqual(before);
+      expect(contents(phone)).toEqual(before);
     });
 
     test("an edit on this device newer than the Export's deletion survives it", async () => {
-      const { phone, phoneStore, tablet, tabletStore, note } = await phoneAndTablet();
-      deleteCareEvent(phone, note.id, noon(2026, 9, 23));
-      editCareEvent(tablet, note.id, { note: 'Mites gone' }, new Date(2026, 8, 23, 18));
+      const { phone, tablet, note } = await phoneAndTablet();
+      deleteCareEvent(phone.db, note.id, noon(2026, 9, 23));
+      editCareEvent(tablet.db, note.id, { note: 'Mites gone' }, new Date(2026, 8, 23, 18));
 
-      importInto(tablet, tabletStore, await exportOf(phone, phoneStore));
+      importInto(tablet, await exportOf(phone));
 
-      expect(listCareEventRows(tablet).find((event) => event.id === note.id)).toMatchObject({
-        note: 'Mites gone',
-        deletedAt: null,
-      });
+      expect(listCareEventRows(tablet.db)).toContainEqual(
+        expect.objectContaining({ id: note.id, note: 'Mites gone', deletedAt: null }),
+      );
     });
 
     test('never rewrites the file of a photo live here: a photo row names one picture for good', async () => {
-      const { phone, phoneStore, tablet, tabletStore } = await phoneAndTablet();
-      const zip = spoiled(await exportOf(phone, phoneStore), (json, files) => {
+      const { phone, tablet } = await phoneAndTablet();
+      const zip = spoiled(await exportOf(phone), (json, files) => {
         const live = json.photos.find((photo: any) => photo.deleted_at === null);
         live.updated_at = '2026-09-23T00:00:00.000Z';
         files[`photos/${live.filename}`] = strToU8('file:///cache/other.jpg');
       });
-      const before = tabletStore.stored();
+      const before = tablet.store.stored();
 
-      importInto(tablet, tabletStore, zip);
+      importInto(tablet, zip);
 
-      expect(tabletStore.stored()).toEqual(before);
+      expect(tablet.store.stored()).toEqual(before);
     });
 
     test('a plant given a new photo on each device keeps the newer, as if it were taken last', async () => {
-      const { phone, phoneStore, tablet, tabletStore, monty } = await phoneAndTablet();
-      setPlantPhoto(phone, phoneStore.files, monty.id, 'file:///cache/4.jpg', noon(2026, 9, 23));
+      const { phone, tablet, monty } = await phoneAndTablet();
+      setPlantPhoto(
+        phone.db,
+        phone.store.files,
+        monty.id,
+        'file:///cache/4.jpg',
+        noon(2026, 9, 23),
+      );
       const later = new Date(2026, 8, 23, 18);
       const newer = setPlantPhoto(
-        tablet,
-        tabletStore.files,
+        tablet.db,
+        tablet.store.files,
         monty.id,
         'file:///cache/5.jpg',
         later,
       );
 
-      importInto(tablet, tabletStore, await exportOf(phone, phoneStore));
+      importInto(tablet, await exportOf(phone));
 
-      expect(listPlants(tablet)).toEqual([
+      expect(listPlants(tablet.db)).toEqual([
         expect.objectContaining({ id: monty.id, photo: newer.filename }),
       ]);
-      expect(tabletStore.stored()).toEqual({ [newer.filename]: 'file:///cache/5.jpg' });
+      expect(tablet.store.stored()).toEqual({ [newer.filename]: 'file:///cache/5.jpg' });
     });
   });
 
   describe('changes nothing when writing the Export fails', () => {
-    test('a photo file that cannot be written: the files written before it go again', async () => {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      const { fern } = plantGarden(phone, phoneStore);
-      setPlantPhoto(phone, phoneStore.files, fern.id, 'file:///cache/5.jpg', noon(2026, 9, 23));
-      const zip = await exportOf(phone, phoneStore);
-      const [fresh, freshStore] = [gardenDb(), photoStore()];
-      const before = contents(fresh, freshStore);
+    test('a photo file that fails partway: the files written before it and its part go again', async () => {
+      const { phone, tablet } = await tabletBehindPhone();
+      const zip = await exportOf(phone);
+      const before = contents(tablet);
       let writes = 0;
       const full: PhotoFiles = {
-        ...freshStore.files,
+        ...tablet.store.files,
         write(filename, bytes) {
-          if (++writes === 2) throw new Error('No space left on device');
-          freshStore.files.write(filename, bytes);
+          if (++writes < 2) return tablet.store.files.write(filename, bytes);
+          tablet.store.files.write(filename, bytes.slice(0, 4));
+          throw new Error('No space left on device');
         },
       };
 
-      expect(() => importExport(fresh, full, emptyDb(), zip, NOW)).toThrow(
-        'No space left on device',
-      );
+      expect(() => importInto(tablet, zip, full)).toThrow('No space left on device');
 
-      expect(contents(fresh, freshStore)).toEqual(before);
+      expect(contents(tablet)).toEqual(before);
     });
 
     test('a row the database refuses: no row goes in, nor any photo file', async () => {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      plantGarden(phone, phoneStore);
-      const zip = await exportOf(phone, phoneStore);
-      const [fresh, freshStore] = [gardenDb(), photoStore()];
-      const before = contents(fresh, freshStore);
-      fresh.run(
-        sql`CREATE TRIGGER full BEFORE INSERT ON care_events BEGIN SELECT RAISE(ABORT, 'database or disk is full'); END`,
+      const { phone, tablet } = await tabletBehindPhone();
+      const zip = await exportOf(phone);
+      const before = contents(tablet);
+      // The photos go in after the plants and their Care Log, in the same transaction.
+      tablet.db.run(
+        sql`CREATE TRIGGER full BEFORE INSERT ON photos BEGIN SELECT RAISE(ABORT, 'database or disk is full'); END`,
       );
 
-      expect(() => importInto(fresh, freshStore, zip)).toThrow('database or disk is full');
+      expect(() => importInto(tablet, zip)).toThrow('database or disk is full');
 
-      expect(contents(fresh, freshStore)).toEqual(before);
+      expect(contents(tablet)).toEqual(before);
     });
   });
 
   describe('takes an Export of any schema version up to its own', () => {
     test('one from a newer version of the app is refused, to import after an update', async () => {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      plantGarden(phone, phoneStore);
-      const zip = spoiled(await exportOf(phone, phoneStore), (json) => {
+      const { phone, tablet } = await tabletBehindPhone();
+      const zip = spoiled(await exportOf(phone), (json) => {
         json.schema_version += 1;
       });
-      const [fresh, freshStore] = [gardenDb(), photoStore()];
-      const before = contents(fresh, freshStore);
+      const before = contents(tablet);
 
-      expect(() => importInto(fresh, freshStore, zip)).toThrow(
+      expect(() => importInto(tablet, zip)).toThrow(
         'This export is from a newer version of Green Friends. Update the app to import it',
       );
 
-      expect(contents(fresh, freshStore)).toEqual(before);
+      expect(contents(tablet)).toEqual(before);
     });
 
     test('an older one comes forward through the migrations', async () => {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      plantGarden(phone, phoneStore);
+      const phone = device();
+      plantGarden(phone);
       // Schema version 3: plants and their Care Log, before Archive (4) and photos (5).
-      const v3 = spoiled(await exportOf(phone, phoneStore), (json, files) => {
+      const v3 = spoiled(await exportOf(phone), (json, files) => {
         json.schema_version = 3;
         delete json.photos;
         for (const plant of json.plants) delete plant.archived_at;
         for (const path of Object.keys(files)) delete files[path];
       });
-      const [fresh, freshStore] = [gardenDb(), photoStore()];
+      const fresh = device();
 
-      importInto(fresh, freshStore, v3);
+      importInto(fresh, v3);
 
-      expect(contents(fresh, freshStore)).toEqual({
-        ...contents(phone, phoneStore),
-        plants: listPlantRows(phone).map((plant) => ({ ...plant, archivedAt: null })),
+      expect(contents(fresh)).toEqual({
+        ...contents(phone),
+        plants: listPlantRows(phone.db).map((plant) => ({ ...plant, archivedAt: null })),
         photos: [],
         files: {},
       });
@@ -344,32 +382,35 @@ describe('Import', () => {
 
   describe('keeps a Species this catalog lacks, which a newer one on the exporting device has', () => {
     /** A device still on the catalog before Pothos. */
-    function olderCatalogDb() {
+    function olderCatalogDevice(): Device {
       const db = openTestDb();
       seedSpecies(db, { version: 1, species: [catalog.monstera] });
-      return db;
+      return device(db);
     }
 
-    /** A Pothos with no nickname, watered on its own Override, exported and imported where the catalog lacks Pothos. */
+    /** A Pothos with no nickname, watered on its own Override, imported where the catalog lacks Pothos. */
     async function driftedPothos() {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      const pothos = createPlant(phone, { speciesId: POTHOS }, noon(2026, 9, 20));
-      updatePlant(phone, pothos.id, { wateringGrowingDays: 3 }, noon(2026, 9, 20));
-      const [tablet, tabletStore] = [olderCatalogDb(), photoStore()];
-      importInto(tablet, tabletStore, await exportOf(phone, phoneStore));
-      return { pothos, tablet, tabletStore };
+      const phone = device();
+      const pothos = createPlant(phone.db, { speciesId: POTHOS }, noon(2026, 9, 20));
+      updatePlant(phone.db, pothos.id, { wateringGrowingDays: 3 }, noon(2026, 9, 20));
+      const tablet = olderCatalogDevice();
+      importInto(tablet, await exportOf(phone));
+      return { pothos, tablet };
     }
 
     test("the plant keeps the reference and takes the snapshot's name as its nickname", async () => {
       const { pothos, tablet } = await driftedPothos();
 
-      expect(getPlant(tablet, pothos.id)).toMatchObject({ speciesId: POTHOS, nickname: 'Pothos' });
+      expect(getPlant(tablet.db, pothos.id)).toMatchObject({
+        speciesId: POTHOS,
+        nickname: 'Pothos',
+      });
     });
 
     test('its Care Schedule is its Overrides alone', async () => {
       const { tablet } = await driftedPothos();
 
-      expect(evaluateCare(tablet, '2026-09-24')).toMatchObject([
+      expect(evaluateCare(tablet.db, '2026-09-24')).toMatchObject([
         {
           displayName: 'Pothos',
           scientificName: null,
@@ -385,32 +426,32 @@ describe('Import', () => {
     test('it picks up the Species defaults once a later catalog ships the Species', async () => {
       const { tablet } = await driftedPothos();
 
-      seedSpecies(tablet, { version: 2, species: Object.values(catalog) });
+      seedSpecies(tablet.db, { version: 2, species: Object.values(catalog) });
 
-      expect(evaluateCare(tablet, '2026-09-24')[0].care.fertilize).toEqual({
+      expect(evaluateCare(tablet.db, '2026-09-24')[0].care.fertilize).toEqual({
         state: 'upcoming',
         dueOn: '2026-10-20',
       });
     });
 
     test('an Export made where the catalog lacks the Species imports on another device lacking it', async () => {
-      const { pothos, tablet, tabletStore } = await driftedPothos();
-      const [other, otherStore] = [olderCatalogDb(), photoStore()];
+      const { pothos, tablet } = await driftedPothos();
+      const other = olderCatalogDevice();
 
-      importInto(other, otherStore, await exportOf(tablet, tabletStore));
+      importInto(other, await exportOf(tablet));
 
-      expect(getDisplayName(other, pothos.id)).toBe('Pothos');
+      expect(getDisplayName(other.db, pothos.id)).toBe('Pothos');
     });
 
     test('a plant with no nickname and a Species neither the export nor the catalog names is refused', async () => {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      createPlant(phone, { speciesId: POTHOS }, noon(2026, 9, 20));
-      const zip = spoiled(await exportOf(phone, phoneStore), (json) => {
+      const phone = device();
+      createPlant(phone.db, { speciesId: POTHOS }, noon(2026, 9, 20));
+      const zip = spoiled(await exportOf(phone), (json) => {
         json.species_refs = [{ id: POTHOS, colloquial_name: null, scientific_name: null }];
       });
-      const [tablet, tabletStore] = [olderCatalogDb(), photoStore()];
+      const tablet = olderCatalogDevice();
 
-      expect(() => importInto(tablet, tabletStore, zip)).toThrow(
+      expect(() => importInto(tablet, zip)).toThrow(
         'A plant without a known species needs a nickname',
       );
     });
@@ -418,18 +459,18 @@ describe('Import', () => {
 
   describe('refuses, changing nothing, an Export it cannot import whole', () => {
     const NOT_AN_EXPORT = 'This file is not a Green Friends export';
-    // plantGarden's rows in its Export.
+    // Rows of tabletBehindPhone's Export.
     const livePhoto = (json: any) => json.photos.find((photo: any) => photo.deleted_at === null);
     const plantNamed = (json: any, nickname: string) =>
       json.plants.find((plant: any) => plant.nickname === nickname);
     const note = (json: any) => json.care_events.find((event: any) => event.type === 'note');
-    /** Files the live photo under `filename`, in its row and in the zip. */
+    /** Files the first live photo under `filename`, in its row and in the zip. */
     const refile = (json: any, files: Unzipped, filename: string) => {
       const photo = livePhoto(json);
       files[`photos/${filename}`] = files[`photos/${photo.filename}`];
       photo.filename = filename;
     };
-    test.each<[string, (json: any, files: Unzipped) => Uint8Array | void, string]>([
+    test.each<[string, (json: any, files: Unzipped) => Uint8Array | void, string | RegExp]>([
       ['a file that is no zip', () => strToU8('PK?'), NOT_AN_EXPORT],
       ['a zip without export.json', (_, files) => zipSync(files), NOT_AN_EXPORT],
       [
@@ -487,6 +528,16 @@ describe('Import', () => {
         'A plant without a known species needs a nickname',
       ],
       [
+        'a nickname of nothing but spaces',
+        (json) => void (plantNamed(json, 'Monty').nickname = '   '),
+        'Nickname must not be blank or have spaces around it',
+      ],
+      [
+        'a Note of nothing but spaces',
+        (json) => void (note(json).note = '   '),
+        'Note must not be blank or have spaces around it',
+      ],
+      [
         'a Care Event on no calendar day',
         (json) => void (note(json).occurred_on = '2026-02-30'),
         'Not a calendar day: 2026-02-30',
@@ -502,10 +553,11 @@ describe('Import', () => {
         'Month must be an integer from 1 to 12, got 13',
       ],
       [
-        'settings in a second row',
+        'settings in a row of their own',
         (json) => void (json.settings[0].id = '5f0c7c8e-3b1a-4d2e-9f6a-0b1c2d3e4f50'),
-        'Not the settings row: 5f0c7c8e',
+        'Settings must be one row',
       ],
+      ['no settings', (json) => void (json.settings = []), 'Settings must be one row'],
       [
         'a time that is not UTC ISO-8601',
         (json) => void (plantNamed(json, 'Monty').updated_at = '2026-09-22'),
@@ -514,23 +566,21 @@ describe('Import', () => {
       [
         'a column its schema version does not have',
         (json) => void (plantNamed(json, 'Monty').colour = 'green'),
-        'has no column named colour',
+        /^This export is damaged\. .*colour/,
       ],
       [
         'a row without a column that must be set',
         (json) => void delete plantNamed(json, 'Monty').created_at,
-        'NOT NULL constraint failed: plants.created_at',
+        /^This export is damaged\. .*created_at/,
       ],
     ])('%s', async (_, edit, message) => {
-      const [phone, phoneStore] = [gardenDb(), photoStore()];
-      plantGarden(phone, phoneStore);
-      const zip = spoiled(await exportOf(phone, phoneStore), edit);
-      const [fresh, freshStore] = [gardenDb(), photoStore()];
-      const before = contents(fresh, freshStore);
+      const { phone, tablet } = await tabletBehindPhone();
+      const zip = spoiled(await exportOf(phone), edit);
+      const before = contents(tablet);
 
-      expect(() => importInto(fresh, freshStore, zip)).toThrow(message);
+      expect(() => importInto(tablet, zip)).toThrow(message);
 
-      expect(contents(fresh, freshStore)).toEqual(before);
+      expect(contents(tablet)).toEqual(before);
     });
   });
 });

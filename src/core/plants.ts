@@ -266,12 +266,14 @@ export const SEASONAL = {
 >;
 
 /**
- * What every stored Plant row satisfies: the Display Name rule (a nickname unless the catalog
- * knows the plant's species; an Import can leave one it doesn't, ADR-0002), a positive pot size,
- * and valid Override columns, which for a species-less plant are its whole schedule and must
+ * What every stored Plant row satisfies: trimmed text, the Display Name rule (a nickname unless
+ * the catalog knows the plant's species; an Import can leave one it doesn't, ADR-0002), a positive
+ * pot size, and valid Override columns, which for a species-less plant are its whole schedule and must
  * cover at least one care type.
  */
 export function validatePlant(db: Db, plant: Plant): void {
+  checkTrimmed('Nickname', plant.nickname);
+  checkTrimmed('Soil', plant.soil);
   if (!plant.nickname && !(plant.speciesId && getSpecies(db, plant.speciesId))) {
     throw new Error('A plant without a known species needs a nickname');
   }
@@ -320,4 +322,11 @@ export function checkPotSize(value: number | null): void {
 export function trimToNull(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+/** Throws unless `value` is free text as stored (trimToNull's), for a row the core did not write. */
+export function checkTrimmed(label: string, value: string | null): void {
+  if (value !== trimToNull(value)) {
+    throw new Error(`${label} must not be blank or have spaces around it: "${value}"`);
+  }
 }

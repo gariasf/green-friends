@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { photos, plants } from '../db/schema';
 import type { Db } from '../db/types';
@@ -91,4 +91,49 @@ export function removePhotoFiles(files: PhotoFiles, filenames: string[]): void {
 /** Every photo row, Deleted ones included as tombstones: the photos table an Export carries (ADR-0002). */
 export function listPhotoRows(db: Db): Photo[] {
   return db.select().from(photos).orderBy(photos.createdAt).all();
+}
+
+/** The filenames of every live photo. */
+export function livePhotoFiles(db: Db): Set<string> {
+  const live = db
+    .select({ filename: photos.filename })
+    .from(photos)
+    .where(isNull(photos.deletedAt));
+  return new Set(live.all().map((photo) => photo.filename));
+}
+
+/**
+ * What every stored photo row satisfies: its file is named `<its id>.jpg`, as setPlantPhoto names
+ * it. With a UUID for an id, that name is a bare one, inside the photo folder.
+ */
+export function validatePhoto(photo: Photo): void {
+  if (photo.filename !== `${photo.id}.jpg`) {
+    throw new Error(`A photo's file must be named <its id>.jpg, not ${photo.filename}`);
+  }
+}
+
+/**
+ * At most one live photo per plant, within the caller's transaction: where an Import left a plant
+ * more than one, each device having given it a new photo, the newest stays, as if it were taken
+ * last, and the others are Deleted, their rows kept as tombstones and their files for the caller
+ * to remove once the transaction commits (ADR-0002).
+ */
+export function keepNewestPhotos(tx: Db, stamp: string): void {
+  const live = tx
+    .select()
+    .from(photos)
+    .where(isNull(photos.deletedAt))
+    .orderBy(desc(photos.createdAt), desc(photos.id))
+    .all();
+  const kept = new Set<string>();
+  for (const photo of live) {
+    if (!kept.has(photo.plantId)) {
+      kept.add(photo.plantId);
+      continue;
+    }
+    tx.update(photos)
+      .set({ updatedAt: stamp, deletedAt: stamp })
+      .where(eq(photos.id, photo.id))
+      .run();
+  }
 }

@@ -1,13 +1,20 @@
-import { desc, eq, getTableName, isNull, sql } from 'drizzle-orm';
+import { getTableName, sql } from 'drizzle-orm';
 import type { SQLiteUpdateSetSource } from 'drizzle-orm/sqlite-core';
 import { strFromU8, unzipSync, type Unzipped } from 'fflate';
 
 import { getSchemaVersion, migrate } from '../db/migrate';
 import { careEvents, photos, plants, settings } from '../db/schema';
 import type { Db } from '../db/types';
-import { checkCareEvent, listCareEventRows } from './careLog';
-import { listPhotoRows, removePhotoFiles, type PhotoFiles } from './photos';
-import { listPlantRows, validatePlant } from './plants';
+import { listCareEventRows, validateCareEvent } from './careLog';
+import {
+  keepNewestPhotos,
+  listPhotoRows,
+  livePhotoFiles,
+  removePhotoFiles,
+  validatePhoto,
+  type PhotoFiles,
+} from './photos';
+import { listPlantRows, validatePlant, type Plant } from './plants';
 import { SETTINGS_ID, getSettings, validateSettings } from './settings';
 import { getSpecies } from './species';
 
@@ -36,11 +43,7 @@ export function importExport(
       'This export is from a newer version of Green Friends. Update the app to import it',
     );
   }
-  const incoming = checked(() => {
-    const rows = bringForward(scratch, json);
-    validate(db, rows, json.species_refs, archive);
-    return rows;
-  });
+  const incoming = readRows(db, scratch, json, archive);
   const winners = {
     plants: newer(listPlantRows(db), incoming.plants),
     careEvents: newer(listCareEventRows(db), incoming.careEvents),
@@ -54,8 +57,9 @@ export function importExport(
     for (const { filename, deletedAt } of winners.photos) {
       // A photo live here has its file already: a photo row names one picture for good.
       if (deletedAt !== null || liveBefore.has(filename)) continue;
-      files.write(filename, archive[`photos/${filename}`]);
+      // Listed first, so that a write failing halfway leaves no part of a file behind.
       written.push(filename);
+      files.write(filename, archive[`photos/${filename}`]);
     }
     db.transaction((tx) => {
       upsert(tx, plants, winners.plants);
@@ -88,10 +92,19 @@ function openExport(zip: Uint8Array) {
   throw new Error('This file is not a Green Friends export');
 }
 
-/** What `read` returns; its error, should it throw, is the one an Import reports for the Export. */
-function checked<T>(read: () => T): T {
+type ExportJson = { schema_version: number; [key: string]: unknown };
+
+/**
+ * The Export's rows as the core holds them, checked before any is written; whatever is wrong
+ * with them is reported as one error, the Export being damaged.
+ */
+function readRows(db: Db, scratch: Db, json: ExportJson, archive: Unzipped): ExportRows {
   try {
-    return read();
+    const rows = bringForward(scratch, json);
+    const names = speciesNames(json.species_refs);
+    nameDriftedPlants(db, rows.plants, names);
+    validate(db, rows, names, archive);
+    return rows;
   } catch (error) {
     throw new Error(`This export is damaged. ${reason(error)}`);
   }
@@ -107,7 +120,7 @@ function reason(error: unknown): string {
  * The Export's rows as the current schema holds them: loaded into `scratch` at the Export's schema
  * version, then brought forward by the same migrations as the database (ADR-0002).
  */
-function bringForward(scratch: Db, json: { schema_version: number; [table: string]: unknown }) {
+function bringForward(scratch: Db, json: ExportJson) {
   migrate(scratch, json.schema_version);
   for (const table of TABLES) {
     const name = getTableName(table);
@@ -140,41 +153,62 @@ function bringForward(scratch: Db, json: { schema_version: number; [table: strin
   };
 }
 
-type Rows = ReturnType<typeof bringForward>;
+type ExportRows = ReturnType<typeof bringForward>;
+
+/**
+ * The colloquial name species_refs snapshots for each Species the Export names: null where the
+ * exporting catalog lacked the Species too (ADR-0002).
+ */
+function speciesNames(speciesRefs: unknown): Map<string, string | null> {
+  if (!Array.isArray(speciesRefs)) throw new Error('No species_refs');
+  return new Map(
+    speciesRefs.map((ref) => {
+      const name = ref?.colloquial_name;
+      return [ref?.id, typeof name === 'string' ? name : null];
+    }),
+  );
+}
+
+/**
+ * Species drift (ADR-0002): a plant whose Species this catalog lacks keeps the reference, for a
+ * later catalog to resolve, and takes the snapshot's name as its nickname where it has none, so
+ * the Display Name rule holds without the catalog.
+ */
+function nameDriftedPlants(db: Db, rows: Plant[], names: Map<string, string | null>): void {
+  for (const plant of rows) {
+    const { speciesId } = plant;
+    if (speciesId === null || plant.nickname !== null || getSpecies(db, speciesId)) continue;
+    plant.nickname = names.get(speciesId) ?? null;
+  }
+}
 
 /**
  * What an Export must hold before any of it is written: rows the core could have written itself,
  * and what ADR-0002 checks, every Species a plant refers to named in species_refs, a file for
- * every live photo and at most one live photo per plant. On the way, a plant whose Species this
- * catalog lacks gets its nickname from the Export's snapshot where it has none (ADR-0002).
+ * every live photo and at most one live photo per plant.
  */
-function validate(db: Db, rows: Rows, speciesRefs: unknown, archive: Unzipped): void {
+function validate(
+  db: Db,
+  rows: ExportRows,
+  names: Map<string, string | null>,
+  archive: Unzipped,
+): void {
   for (const row of [...rows.plants, ...rows.careEvents, ...rows.photos, ...rows.settings]) {
     checkRow(row);
   }
-  if (!Array.isArray(speciesRefs)) throw new Error('No species_refs');
-  const snapshots = new Map(speciesRefs.map((ref) => [ref?.id, ref?.colloquial_name]));
   for (const plant of rows.plants) {
-    const { speciesId } = plant;
-    if (speciesId !== null) {
-      if (!snapshots.has(speciesId)) {
-        throw new Error(`Plant ${plant.id} refers to Species ${speciesId}, which it does not name`);
-      }
-      // The Display Name rule holds without the catalog; the reference stays for a later one.
-      const snapshot = snapshots.get(speciesId);
-      if (plant.nickname === null && typeof snapshot === 'string' && !getSpecies(db, speciesId)) {
-        plant.nickname = snapshot;
-      }
+    if (plant.speciesId !== null && !names.has(plant.speciesId)) {
+      throw new Error(
+        `Plant ${plant.id} refers to Species ${plant.speciesId}, which it does not name`,
+      );
     }
     validatePlant(db, plant);
   }
-  for (const event of rows.careEvents) checkCareEvent(event);
+  for (const event of rows.careEvents) validateCareEvent(event);
   const photographed = new Set<string>();
   for (const photo of rows.photos) {
-    // The name is a path in the photo folder, where the row's UUID alone may place a file.
-    if (photo.filename !== `${photo.id}.jpg`) {
-      throw new Error(`A photo's file must be named <its id>.jpg, not ${photo.filename}`);
-    }
+    // With its UUID id, the file name keeps the file inside the photo folder.
+    validatePhoto(photo);
     if (photo.deletedAt !== null) continue;
     if (photographed.has(photo.plantId)) throw new Error(`Plant ${photo.plantId} has two photos`);
     photographed.add(photo.plantId);
@@ -182,10 +216,11 @@ function validate(db: Db, rows: Rows, speciesRefs: unknown, archive: Unzipped): 
       throw new Error(`No file for photo ${photo.filename}`);
     }
   }
-  for (const row of rows.settings) {
-    if (row.id !== SETTINGS_ID) throw new Error(`Not the settings row: ${row.id}`);
-    validateSettings(row);
+  const [row, ...others] = rows.settings;
+  if (row?.id !== SETTINGS_ID || others.length > 0) {
+    throw new Error(`Settings must be one row, ${SETTINGS_ID}`);
   }
+  validateSettings(row);
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -227,36 +262,4 @@ function upsert<T extends Table>(tx: Db, table: T, rows: T['$inferSelect'][]): v
     const set = row as SQLiteUpdateSetSource<T>;
     tx.insert(table).values(row).onConflictDoUpdate({ target: table.id, set }).run();
   }
-}
-
-/**
- * A plant keeps at most one live photo: when each device gave it a new one, the newest stays, as
- * if it were taken last, and the others are Deleted.
- */
-function keepNewestPhotos(tx: Db, stamp: string): void {
-  const live = tx
-    .select()
-    .from(photos)
-    .where(isNull(photos.deletedAt))
-    .orderBy(desc(photos.createdAt), desc(photos.id))
-    .all();
-  const kept = new Set<string>();
-  for (const photo of live) {
-    if (!kept.has(photo.plantId)) {
-      kept.add(photo.plantId);
-      continue;
-    }
-    tx.update(photos)
-      .set({ updatedAt: stamp, deletedAt: stamp })
-      .where(eq(photos.id, photo.id))
-      .run();
-  }
-}
-
-function livePhotoFiles(db: Db): Set<string> {
-  const live = db
-    .select({ filename: photos.filename })
-    .from(photos)
-    .where(isNull(photos.deletedAt));
-  return new Set(live.all().map((photo) => photo.filename));
 }

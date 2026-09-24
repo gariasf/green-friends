@@ -162,8 +162,9 @@ export default function SettingsScreen() {
 
       <Text style={styles.heading}>Import</Text>
       <Text style={styles.hint}>
-        Brings an export into this garden: where both have a plant, Care Event or photo, the newer
-        version wins, and nothing is erased. To go back to an export exactly, erase all data first.
+        Brings an export into this garden. For each plant, Care Event and photo, the newer version
+        wins, deletions too, and nothing is wiped. To go back to an export exactly, erase all data
+        first.
       </Text>
       <Pressable accessibilityRole="button" hitSlop={8} onPress={importGarden}>
         <Text style={styles.link}>Import garden</Text>
