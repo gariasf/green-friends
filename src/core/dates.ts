@@ -7,6 +7,11 @@ export function localDay(at: Date): string {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
 }
 
+/** The local time of day at `at`, as 'HH:MM' (the Daily Digest time's format). */
+export function localTime(at: Date): string {
+  return `${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+
 /** The day `days` after `day` (before, when negative). */
 export function shiftDays(day: string, days: number): string {
   const [year, month, date] = day.split('-').map(Number);

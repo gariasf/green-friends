@@ -6,6 +6,7 @@ import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
+import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
 // (ADR-0001); Hermes has no WebCrypto, so it gets Expo's native generator here. Then bring the
@@ -30,6 +31,7 @@ const SHEET = {
 } as const;
 
 export default function RootLayout() {
+  useDigests();
   return (
     <Stack>
       <Stack.Screen

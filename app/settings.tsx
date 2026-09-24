@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
+  eraseAllData,
   getSettings,
   updateSettings,
   type Settings,
@@ -9,6 +10,7 @@ import {
 } from '@/src/core/settings';
 import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
+import { photoFiles } from '@/src/ui/Photo';
 
 const MONTHS = [
   'Jan',
@@ -25,9 +27,38 @@ const MONTHS = [
   'Dec',
 ].map((label, index) => ({ label, value: index + 1 }));
 
+/**
+ * Daily Digest times on the hour, 06:00 to 22:00, labelled the way the phone shows times.
+ * ponytail: whole hours only; a time picker the day someone wants 07:30.
+ */
+const HOURS = Array.from({ length: 17 }, (_, index) => index + 6).map((hour) => ({
+  label: new Date(2000, 0, 1, hour).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }),
+  value: `${String(hour).padStart(2, '0')}:00`,
+}));
+
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
   const save = (patch: SettingsPatch) => setSettings(updateSettings(db, patch));
+
+  const erase = () =>
+    Alert.alert(
+      'Erase all data?',
+      'All plants, Archived ones too, with their Care Logs and photos, and these settings are erased from this iPhone. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Erase',
+          style: 'destructive',
+          onPress: () => {
+            eraseAllData(db, photoFiles);
+            setSettings(getSettings(db));
+          },
+        },
+      ],
+    );
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -46,6 +77,20 @@ export default function SettingsScreen() {
         value={settings.growingEndMonth}
         onChange={(growingEndMonth) => save({ growingEndMonth })}
       />
+
+      <Text style={styles.heading}>Daily digest</Text>
+      <Text style={styles.hint}>
+        One notification at this time, and only on days a plant needs you.
+      </Text>
+      <ChipGroup
+        options={HOURS}
+        value={settings.digestTime}
+        onChange={(digestTime) => save({ digestTime })}
+      />
+
+      <Pressable accessibilityRole="button" hitSlop={8} onPress={erase} style={styles.erase}>
+        <Text style={styles.danger}>Erase all data</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -68,9 +113,11 @@ function MonthRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12 },
+  screen: { padding: 16, gap: 12, paddingBottom: 48 },
   heading: { fontSize: 20, fontWeight: '600', marginTop: 8 },
   hint: { fontSize: 14, color: '#666' },
   row: { gap: 8 },
   label: { fontSize: 16, fontWeight: '500' },
+  erase: { marginTop: 32 },
+  danger: { fontSize: 16, color: '#e0342b', fontWeight: '600', textAlign: 'center' },
 });

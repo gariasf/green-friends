@@ -51,8 +51,15 @@ type SeasonOn =
  * day), plants with the most Overdue care first, then by Display Name.
  */
 export function evaluateCare(db: Db, today: string = localDay(new Date())): PlantCare[] {
-  if (!isCalendarDay(today)) throw new Error(`Not a calendar day: ${today}`);
-  const season = seasonOn(today, getSettings(db));
+  return forecastCare(db)(today);
+}
+
+/**
+ * evaluateCare for any day, from one read of the database: the garden as it will be on that day
+ * if nothing is logged or changed before then. The Daily Digest planner asks it day after day.
+ */
+export function forecastCare(db: Db): (day: string) => PlantCare[] {
+  const months = getSettings(db);
   const lastDone = new Map<string, string>();
   const latest = db
     .select({ plantId: careEvents.plantId, type: careEvents.type, on: max(careEvents.occurredOn) })
@@ -62,35 +69,49 @@ export function evaluateCare(db: Db, today: string = localDay(new Date())): Plan
     .all();
   for (const row of latest) if (row.on) lastDone.set(`${row.plantId}/${row.type}`, row.on);
 
-  const rows = db
+  const garden = db
     .select({ plant: plants, species, displayName: displayNameSql, photo: photos.filename })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
     .leftJoin(photos, livePhotoJoin)
     .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
-    .all();
-
-  return rows
-    .map(({ plant, species, displayName, photo }): PlantCare => {
+    .all()
+    .map(({ plant, species, displayName, photo }) => {
       const schedule = effectiveSchedule(plant, species);
       // A care type never logged anchors to the local day of creation (ADR-0005).
       const anchor = localDay(new Date(plant.createdAt));
-      const care = {} as Record<CareType, CareStatus>;
+      const next = {} as Record<CareType, NextDue>;
       for (const type of CARE_TYPES) {
-        const last = lastDone.get(`${plant.id}/${type}`) ?? anchor;
-        care[type] = statusOn(type, schedule, last, today, season);
+        next[type] = nextDue(type, schedule, lastDone.get(`${plant.id}/${type}`) ?? anchor);
       }
       return {
-        id: plant.id,
-        displayName,
-        scientificName: species?.scientificName ?? null,
-        photo,
-        care,
+        plant: {
+          id: plant.id,
+          displayName,
+          scientificName: species?.scientificName ?? null,
+          photo,
+        },
+        next,
       };
     })
-    .sort(
-      (a, b) => worstOverdue(b) - worstOverdue(a) || a.displayName.localeCompare(b.displayName),
-    );
+    // By Display Name once, so that each day only ranks by Overdue.
+    .sort((a, b) => a.plant.displayName.localeCompare(b.plant.displayName));
+
+  return (day) => {
+    if (!isCalendarDay(day)) throw new Error(`Not a calendar day: ${day}`);
+    const season = seasonOn(day, months);
+    const evaluated = garden.map(({ plant, next }): PlantCare => {
+      const care = {} as Record<CareType, CareStatus>;
+      for (const type of CARE_TYPES) care[type] = statusOn(next[type], day, season);
+      return { ...plant, care };
+    });
+    const worst = evaluated.map(worstOverdue);
+    // Most Overdue first; equals keep their Display Name order (the rank).
+    return evaluated
+      .map((_, rank) => rank)
+      .sort((a, b) => worst[b] - worst[a] || a - b)
+      .map((rank) => evaluated[rank]);
+  };
 }
 
 /** Plants that Need Attention (CONTEXT.md): at least one care type Due or Overdue on `today`. */
@@ -140,31 +161,48 @@ function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): C
 }
 
 /**
+ * When a care type comes Due, from its last Care Event (or the creation anchor) and its effective
+ * schedule, before any Season clamps it: repotting on one day, watering and fertilizing on one day
+ * per Season, a null Dormant day meaning Paused; null for no schedule. All of due-ness that does
+ * not depend on the day evaluated, so a forecast works it out once.
+ */
+type NextDue =
+  | { seasonal: false; on: string }
+  | { seasonal: true; growing: string; dormant: string | null }
+  | null;
+
+function nextDue(type: CareType, schedule: CareSchedule, lastDone: string): NextDue {
+  if (type === 'repot') {
+    const months = schedule.repottingMonths;
+    return months === null ? null : { seasonal: false, on: shiftMonths(lastDone, months) };
+  }
+  const { growing, dormant } = SEASONAL[type];
+  const growingDays = schedule[growing];
+  const dormantDays = schedule[dormant];
+  if (growingDays === null) return null;
+  return {
+    seasonal: true,
+    growing: shiftDays(lastDone, growingDays),
+    dormant: dormantDays === null ? null : shiftDays(lastDone, dormantDays),
+  };
+}
+
+/**
  * Due (CONTEXT.md): next due is the last matching Care Event (or the creation anchor) plus the
  * interval for today's Season, never earlier than the first day of that Season; repotting runs on
  * months with no seasonal variant and so is never clamped.
  */
-function statusOn(
-  type: CareType,
-  schedule: CareSchedule,
-  lastDone: string,
-  today: string,
-  season: SeasonOn,
-): CareStatus {
+function statusOn(next: NextDue, today: string, season: SeasonOn): CareStatus {
+  if (next === null) return { state: 'unscheduled' };
   let dueOn: string;
-  if (type === 'repot') {
-    if (schedule.repottingMonths === null) return { state: 'unscheduled' };
-    dueOn = shiftMonths(lastDone, schedule.repottingMonths);
+  if (!next.seasonal) {
+    dueOn = next.on;
   } else {
-    const { growing, dormant } = SEASONAL[type];
-    const growingDays = schedule[growing];
-    if (growingDays === null) return { state: 'unscheduled' };
     if (season.season === 'dormant') {
-      const dormantDays = schedule[dormant];
-      if (dormantDays === null) return { state: 'paused', until: season.resumesOn };
-      dueOn = shiftDays(lastDone, dormantDays);
+      if (next.dormant === null) return { state: 'paused', until: season.resumesOn };
+      dueOn = next.dormant;
     } else {
-      dueOn = shiftDays(lastDone, growingDays);
+      dueOn = next.growing;
     }
     if (season.startsOn !== null && dueOn < season.startsOn) dueOn = season.startsOn;
   }
