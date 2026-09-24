@@ -15,11 +15,11 @@ import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/cor
 import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, plantsNeedYou } from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol, plantsNeedYou } from '@/src/ui/CareEvent';
 import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import { colors, group, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 const UNDO_MS = 4000;
@@ -143,7 +143,7 @@ function CareCard({
       <Pressable
         accessible={false}
         onPress={() => openPlantSheet(plant)}
-        style={({ pressed }) => pressed && styles.pressed}
+        style={({ pressed }) => pressed && pressedStyle.button}
       >
         <PlantPhoto uri={photoUri(plant.photo)} size={64} />
       </Pressable>
@@ -154,19 +154,25 @@ function CareCard({
             // A one-line name is about 20 pt tall; this makes it a 44 pt target.
             hitSlop={12}
             onPress={() => openPlantSheet(plant)}
-            style={({ pressed }) => [styles.grow, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.grow, pressed && pressedStyle.button]}
           >
             <Text style={text.headline}>{plant.displayName}</Text>
             {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           </Pressable>
-          {due.length > 1 && <TextButton label="Log all" onPress={() => onLog(plant, dueTypes)} />}
+          {due.length > 1 && (
+            <TextButton
+              label="Log all"
+              accessibilityLabel={`Log all due care for ${plant.displayName}`}
+              onPress={() => onLog(plant, dueTypes)}
+            />
+          )}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`More for ${plant.displayName}`}
             // 32 pt across; this makes it a 44 pt target.
             hitSlop={6}
             onPress={() => openPlantSheet(plant)}
-            style={({ pressed }) => [styles.more, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.more, pressed && pressedStyle.button]}
           >
             <SymbolView name="ellipsis" size={16} weight="bold" tintColor={colors.secondaryLabel} />
           </Pressable>
@@ -181,11 +187,7 @@ function CareCard({
                 exiting={FadeOut}
                 style={[styles.row, index > 0 && group.divider]}
               >
-                <SymbolView
-                  name={CARE_COPY[type].symbol}
-                  size={20}
-                  tintColor={CARE_COPY[type].hue}
-                />
+                <CareSymbol type={type} size={20} />
                 <View style={styles.grow}>
                   <Text style={styles.rowLabel}>{CARE_COPY[type].label}</Text>
                   <Text style={[styles.status, overdue ? styles.overdue : styles.dueToday]}>
@@ -263,7 +265,6 @@ const styles = StyleSheet.create({
   emptyAction: { marginTop: space.s },
   hint: { ...text.body, color: colors.secondaryLabel, textAlign: 'center' },
   grow: { flex: 1 },
-  pressed: { opacity: 0.5 },
   card: {
     flexDirection: 'row',
     gap: space.m,

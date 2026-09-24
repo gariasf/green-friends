@@ -74,6 +74,12 @@ export const text = StyleSheet.create({
   caption: { fontSize: 12, color: colors.secondaryLabel },
 });
 
+/** What a Pressable shows while pressed: a button fades, a row fills. */
+export const pressedStyle = StyleSheet.create({
+  button: { opacity: 0.5 },
+  row: { backgroundColor: colors.fill },
+});
+
 /** Rows grouped on the background, as iOS Settings draws them. */
 export const group = StyleSheet.create({
   /** A rounded group of rows, inset from the screen's edges. */

@@ -13,7 +13,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, space, text } from '@/src/ui/theme';
+import { colors, pressedStyle, space, text } from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
 
@@ -30,7 +30,12 @@ export function Field({
   const numberPad = NUMBER_PADS.includes(props.keyboardType);
   return (
     <View style={styles.fieldBlock}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {/* The input carries the label for VoiceOver. */}
+      {label && (
+        <Text accessibilityElementsHidden style={styles.label}>
+          {label}
+        </Text>
+      )}
       <View style={styles.field}>
         <TextInput
           style={[styles.input, props.multiline && styles.multiline]}
@@ -76,7 +81,7 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.button,
         disabled && styles.buttonDisabled,
-        pressed && styles.pressed,
+        pressed && pressedStyle.button,
       ]}
     >
       <Text style={[styles.buttonLabel, disabled && styles.buttonLabelDisabled]}>{label}</Text>
@@ -84,25 +89,31 @@ export function PrimaryButton({
   );
 }
 
-/** A button that is only its label, in the tint, or in red when it destroys something. */
+/**
+ * A button that is only its label, in the tint, or in red when it destroys something;
+ * `accessibilityLabel` names it for VoiceOver where the label alone is ambiguous.
+ */
 export function TextButton({
   label,
   destructive = false,
+  accessibilityLabel,
   onPress,
   style,
 }: {
   label: string;
   destructive?: boolean;
+  accessibilityLabel?: string;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       // A line of body text is about 20 pt tall; this makes it a 44 pt target.
       hitSlop={12}
       onPress={onPress}
-      style={({ pressed }) => [style, pressed && styles.pressed]}
+      style={({ pressed }) => [style, pressed && pressedStyle.button]}
     >
       <Text style={[styles.textButton, destructive && styles.destructive]}>{label}</Text>
     </Pressable>
@@ -117,8 +128,8 @@ export function alertError(title: string, error: unknown, then?: () => void): vo
 }
 
 /** Blank means not given; anything else goes to the core as a number for it to validate. */
-export function optionalNumber(text: string): number | null {
-  const trimmed = text.trim();
+export function optionalNumber(input: string): number | null {
+  const trimmed = input.trim();
   return trimmed === '' ? null : Number(trimmed.replace(',', '.'));
 }
 
@@ -158,5 +169,4 @@ const styles = StyleSheet.create({
   buttonLabelDisabled: { color: colors.tertiaryLabel },
   textButton: { ...text.body, color: colors.tint },
   destructive: { color: colors.danger },
-  pressed: { opacity: 0.5 },
 });

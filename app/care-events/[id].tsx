@@ -6,9 +6,9 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { deleteCareEvent, editCareEvent, getCareEvent } from '@/src/core/careLog';
 import { localDay, shiftDays } from '@/src/core/dates';
 import { db } from '@/src/db/client';
-import { CARE_COPY, dayLabel, useCareEventDetails } from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol, dayLabel, useCareEventDetails } from '@/src/ui/CareEvent';
 import { alertError, PrimaryButton, TextButton } from '@/src/ui/Form';
-import { colors, space, text } from '@/src/ui/theme';
+import { colors, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**
  * One Care Event from the Care Log, to edit (its day, a Note's text, a repot's pot size and soil)
@@ -47,7 +47,7 @@ export default function CareEventSheet() {
   return (
     <View style={styles.sheet}>
       <View style={styles.title}>
-        <SymbolView name={copy.symbol} size={22} tintColor={copy.hue} />
+        <CareSymbol type={event.type} size={22} />
         <Text style={text.title3}>{copy.done}</Text>
       </View>
       <Text style={text.subheadline}>When did it happen?</Text>
@@ -94,7 +94,7 @@ function Step({
       onPress={onPress}
       style={({ pressed }) => [
         styles.step,
-        pressed && styles.stepPressed,
+        pressed && pressedStyle.button,
         disabled && styles.stepDisabled,
       ]}
     >
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.fill,
   },
-  stepPressed: { opacity: 0.5 },
   stepDisabled: { opacity: 0.3 },
   delete: { alignSelf: 'center' },
 });

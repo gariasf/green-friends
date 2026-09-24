@@ -1,5 +1,4 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -19,11 +18,11 @@ import {
 } from '@/src/core/plants';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import { CARE_COPY } from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
-import { colors, space, text } from '@/src/ui/theme';
+import { colors, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**
  * One care type's schedule as the form holds it: an Override while `own`, else the Species
@@ -171,7 +170,7 @@ function CareTypeSchedule({
   return (
     <View style={styles.careType}>
       <View style={styles.careTypeHead}>
-        <SymbolView name={CARE_COPY[type].symbol} size={18} tintColor={CARE_COPY[type].hue} />
+        <CareSymbol type={type} size={18} />
         <Text style={text.headline}>{CARE_COPY[type].label}</Text>
       </View>
       <ChipGroup
@@ -194,16 +193,18 @@ function CareTypeSchedule({
             accessibilityLabel={`${CARE_COPY[type].label}, ${type === 'repot' ? 'months' : 'Growing season, days'}`}
           />
           {type !== 'repot' && (
-            <Field
-              label="Dormant season, every"
-              suffix="days"
-              // Blank pauses it for the season (CONTEXT.md, Paused).
-              placeholder="Paused"
-              value={value.dormant}
-              onChangeText={(dormant) => onChange({ ...value, dormant })}
-              keyboardType="number-pad"
-              accessibilityLabel={`${CARE_COPY[type].label}, Dormant season, days`}
-            />
+            <>
+              <Field
+                label="Dormant season, every"
+                suffix="days"
+                placeholder="Paused"
+                value={value.dormant}
+                onChangeText={(dormant) => onChange({ ...value, dormant })}
+                keyboardType="number-pad"
+                accessibilityLabel={`${CARE_COPY[type].label}, Dormant season, days`}
+              />
+              <Text style={text.footnote}>Blank pauses it in the Dormant season.</Text>
+            </>
           )}
         </>
       )}
@@ -217,7 +218,7 @@ function Action({ label, hint, onPress }: { label: string; hint: string; onPress
       accessibilityRole="button"
       accessibilityHint={hint}
       onPress={onPress}
-      style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.action, pressed && pressedStyle.button]}
     >
       <Text style={styles.actionLabel}>{label}</Text>
       <Text style={[text.subheadline, styles.centeredText]}>{hint}</Text>
@@ -278,5 +279,4 @@ const styles = StyleSheet.create({
   actions: { marginTop: space.xxl, gap: space.xxl },
   action: { alignItems: 'center', gap: space.xs, paddingVertical: space.s },
   actionLabel: { ...text.body, color: colors.tint },
-  pressed: { opacity: 0.5 },
 });

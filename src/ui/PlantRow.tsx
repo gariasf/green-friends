@@ -2,7 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { colors, group, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**
  * A plant's scientific name for the line beneath its name, or none where it would repeat the name,
@@ -33,7 +33,7 @@ export function PlantRow({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, pressed && pressedStyle.row]}
     >
       <PlantPhoto uri={photoUri(photo)} size={44} />
       {/* The divider starts after the photo, as iOS insets it. */}
@@ -55,7 +55,6 @@ export function PlantRow({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingLeft: space.l },
-  pressed: { backgroundColor: colors.fill },
   body: {
     flex: 1,
     flexDirection: 'row',

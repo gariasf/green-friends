@@ -1,4 +1,4 @@
-import type { SFSymbol } from 'expo-symbols';
+import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
 import type { ColorValue } from 'react-native';
 
@@ -25,6 +25,12 @@ export const CARE_COPY: Record<
   repot: { symbol: 'shippingbox.fill', hue: colors.repot, label: 'Repot', done: 'Repotted' },
   note: { symbol: 'note.text', hue: colors.note, label: 'Note', done: 'Note' },
 };
+
+/** A Care Event type's symbol, in its hue. */
+export function CareSymbol({ type, size }: { type: CareEventType; size: number }) {
+  const { symbol, hue } = CARE_COPY[type];
+  return <SymbolView name={symbol} size={size} tintColor={hue} />;
+}
 
 /** How many plants Need Attention, as Today's summary and the Daily Digest's title put it. */
 export function plantsNeedYou(count: number): string {

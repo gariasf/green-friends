@@ -16,7 +16,7 @@ import { db } from '@/src/db/client';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
-import { colors, group, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /** "When did you last …?" quick answers, in days ago; null leaves that care type unanswered. */
 type Ago = { label: string; value: number | null };
@@ -170,7 +170,7 @@ export default function NewPlantScreen() {
               style={({ pressed }) => [
                 styles.match,
                 index > 0 && group.divider,
-                pressed && styles.matchPressed,
+                pressed && pressedStyle.row,
               ]}
               onPress={() => {
                 setSpecies(s);
@@ -279,7 +279,6 @@ const styles = StyleSheet.create({
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   grow: { flex: 1 },
   match: { paddingVertical: space.s },
-  matchPressed: { backgroundColor: colors.fill },
   picked: {
     flexDirection: 'row',
     alignItems: 'center',

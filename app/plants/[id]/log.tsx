@@ -8,8 +8,8 @@ import { careLogQuery, type CareEvent } from '@/src/core/careLog';
 import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, dayLabel } from '@/src/ui/CareEvent';
-import { colors, group, space, text } from '@/src/ui/theme';
+import { CARE_COPY, CareSymbol, dayLabel } from '@/src/ui/CareEvent';
+import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /** A plant's Care Log (spec #8): every Care Event, newest first; each opens to be edited or deleted. */
 export default function CareLogScreen() {
@@ -21,6 +21,8 @@ export default function CareLogScreen() {
   return (
     <>
       <Stack.Screen options={{ title: displayName }} />
+      {/* ponytail: renders every Care Event at once; back to a FlatList if a Care Log ever runs
+          into the thousands. */}
       {updatedAt && (
         <ScrollView contentContainerStyle={events.length === 0 ? styles.empty : styles.list}>
           {events.length === 0 ? (
@@ -58,9 +60,9 @@ function CareEventRow({
       accessibilityLabel={[copy.done, day, detail].filter(Boolean).join(', ')}
       accessibilityHint="Edit or delete"
       onPress={() => router.push({ pathname: '/care-events/[id]', params: { id: event.id } })}
-      style={({ pressed }) => [group.row, !first && group.divider, pressed && styles.pressed]}
+      style={({ pressed }) => [group.row, !first && group.divider, pressed && pressedStyle.row]}
     >
-      <SymbolView name={copy.symbol} size={20} tintColor={copy.hue} />
+      <CareSymbol type={event.type} size={20} />
       <View style={styles.grow}>
         <Text style={text.body}>{copy.done}</Text>
         {detail ? <Text style={text.subheadline}>{detail}</Text> : null}
@@ -79,6 +81,5 @@ function CareEventRow({
 const styles = StyleSheet.create({
   empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
   list: { paddingVertical: space.l },
-  pressed: { backgroundColor: colors.fill },
   grow: { flex: 1 },
 });

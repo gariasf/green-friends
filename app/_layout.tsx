@@ -8,7 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
-import { colors, navigationTheme, space } from '@/src/ui/theme';
+import { colors, navigationTheme, pressedStyle, space } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
@@ -43,8 +43,16 @@ export default function RootLayout() {
             title: 'Today',
             headerRight: () => (
               <View style={styles.headerButtons}>
-                <TextButton label="Garden" onPress={() => router.push('/garden')} />
-                <TextButton label="Settings" onPress={() => router.push('/settings')} />
+                <TextButton
+                  label="Garden"
+                  onPress={() => router.push('/garden')}
+                  style={styles.headerButton}
+                />
+                <TextButton
+                  label="Settings"
+                  onPress={() => router.push('/settings')}
+                  style={styles.headerButton}
+                />
               </View>
             ),
           }}
@@ -57,9 +65,8 @@ export default function RootLayout() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Add plant"
-                hitSlop={12}
                 onPress={() => router.push('/plants/new')}
-                style={({ pressed }) => pressed && styles.pressed}
+                style={({ pressed }) => [styles.headerIcon, pressed && pressedStyle.button]}
               >
                 <SymbolView name="plus" size={22} weight="semibold" tintColor={colors.tint} />
               </Pressable>
@@ -71,7 +78,13 @@ export default function RootLayout() {
           options={{
             title: 'New plant',
             presentation: 'modal',
-            headerLeft: () => <TextButton label="Cancel" onPress={() => router.back()} />,
+            headerLeft: () => (
+              <TextButton
+                label="Cancel"
+                onPress={() => router.back()}
+                style={styles.headerButton}
+              />
+            ),
           }}
         />
         <Stack.Screen name="plants/[id]/index" options={SHEET} />
@@ -83,7 +96,10 @@ export default function RootLayout() {
   );
 }
 
+// A header button is a 44 pt target by its own size: UIKit, not React Native, decides which touches
+// reach a header item, so hitSlop past its edges can't be counted on.
 const styles = StyleSheet.create({
   headerButtons: { flexDirection: 'row', gap: space.l },
-  pressed: { opacity: 0.5 },
+  headerButton: { minHeight: 44, justifyContent: 'center' },
+  headerIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
