@@ -1,6 +1,6 @@
 # ADR-0004: Species IDs are Wikidata QIDs
 
-Status: accepted (2026-09-22) · Ticket: [#10](https://github.com/gariasf/green-friends/issues/10)
+Status: accepted (2026-09-22), amended (2026-09-24, [#20](https://github.com/gariasf/green-friends/issues/20)) · Ticket: [#10](https://github.com/gariasf/green-friends/issues/10)
 
 Spec #8 and the sync research (#5) require Species IDs that are deterministic, stable, append-only and never reused: Plants reference them, and an Export carries them in `species_refs` (ADR-0002), so the ID format is a compatibility contract rather than a build detail.
 
@@ -8,8 +8,9 @@ Spec #8 and the sync research (#5) require Species IDs that are deterministic, s
 
 - A Species ID is the Wikidata item ID (QID) of the taxon, stored as text: `Q161077` for _Monstera deliciosa_. Wikidata never reuses a QID and every ID resolves to a public page, so the IDs are meaningful outside the app and need no registry of our own.
 - The curated care layer (`scripts/species/curated.json`) pins each QID together with the expected scientific name. The build script (`scripts/species/build.ts`) fetches the item's taxon name (P225) from Wikidata and refuses to build on a mismatch, and refuses to drop any ID present in the `assets/species.json` committed at `HEAD`, which is the record of what shipped. Wikidata is CC0, so bundling the names carries no attribution duty; the dataset records its sources anyway.
-- The bundle carries names plus the curated care layer, nothing else. Spec #8 also named GBIF and Open Plantbook thresholds: GBIF is unused because Wikidata alone resolves every species, and the thresholds are not bundled because nothing in v1 reads them and Open Plantbook answers only registered credentials. Either can join the pipeline later without touching a single ID.
+- The bundle carries names plus the curated care layer (care defaults and, since #20, pet toxicity), nothing else. Spec #8 also named GBIF and Open Plantbook thresholds: GBIF is unused because Wikidata alone resolves every species, and the thresholds are not bundled because nothing in v1 reads them and Open Plantbook answers only registered credentials. Either can join the pipeline later without touching a single ID.
 - An entry may sit at whatever taxon rank a grower actually buys: a species, a named hybrid (_Alocasia × amazonica_) or a genus (_Phalaenopsis_, sold as unlabelled hybrids).
+- Wikidata often holds one item per name, so a synonym and its accepted name are two items. An entry takes the accepted name's item (_Dracaena trifasciata_, not _Sansevieria trifasciata_); where the taxonomy is contested, the item Wikidata attaches the Wikipedia articles to (_Rhipsalidopsis gaertneri_ for the Easter cactus). An ID is permanent once shipped, so a taxon whose Wikidata name is wrong waits until Wikidata is corrected (_Alocasia micholitziana_, left out of #20).
 - Taxonomy renames keep the ID. When Wikidata updates a taxon name (_Sansevieria trifasciata_ → _Dracaena trifasciata_), the curated name follows and the QID stays. Should Wikidata ever merge an item away, the shipped ID stays too: Wikidata mints the IDs, but once shipped they are ours. The build's name check then fails for that entry until the curated file gains a per-entry pointer to the surviving item to verify against; that field is added the first time it is needed.
 
 ## Considered options

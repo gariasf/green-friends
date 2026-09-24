@@ -4,7 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 
 import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { PlantRow } from '@/src/ui/PlantRow';
+import { PlantRow, scientificBeneath } from '@/src/ui/PlantRow';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 function readGarden() {
@@ -54,7 +54,7 @@ export default function GardenScreen() {
         <PlantRow
           photo={item.photo}
           name={item.displayName}
-          detail={item.scientificName}
+          detail={scientificBeneath(item.displayName, item.scientificName)}
           onPress={() => router.push({ pathname: '/plants/[id]', params: { id: item.id } })}
         />
       )}

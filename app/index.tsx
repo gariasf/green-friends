@@ -17,6 +17,7 @@ import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, plantsNeedYou } from '@/src/ui/CareEvent';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
+import { scientificBeneath } from '@/src/ui/PlantRow';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 const UNDO_MS = 4000;
@@ -115,6 +116,7 @@ function CareCard({
 }) {
   const due = dueCare(plant);
   const dueTypes = due.map((item) => item.type);
+  const scientific = scientificBeneath(plant.displayName, plant.scientificName);
 
   return (
     <View style={styles.card}>
@@ -130,7 +132,7 @@ function CareCard({
             style={styles.grow}
           >
             <Text style={styles.name}>{plant.displayName}</Text>
-            {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
+            {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           </Pressable>
           {due.length > 1 && (
             <Pressable

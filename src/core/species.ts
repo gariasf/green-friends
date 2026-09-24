@@ -43,7 +43,7 @@ export function seedSpecies(db: Db, dataset: SpeciesDataset): boolean {
   if (dataset.version <= getSpeciesDatasetVersion(db)) return false;
   db.transaction((tx) => {
     tx.delete(species).run();
-    // ponytail: one INSERT; SQLite takes 32766 bound values (~4000 species), chunk if the catalog ever grows past that.
+    // ponytail: one INSERT; SQLite takes 32766 bound values (~3600 species of 9 columns), chunk if the catalog ever grows past that.
     tx.insert(species).values(dataset.species).run();
     tx.insert(speciesDataset)
       .values({ id: SEEDED_ROW_ID, version: dataset.version })

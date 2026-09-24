@@ -11,7 +11,9 @@
  * - The curated care layer (colloquial names, watering / fertilizing / repotting defaults, pet
  *   toxicity) is hand-written in this repo. No open dataset of pet toxicity is licensed for
  *   commercial use (research #4), so it is curated per species and cross-checked against public
- *   references such as the ASPCA's toxic and non-toxic plant lists; none of them is imported.
+ *   references such as the ASPCA's toxic and non-toxic plant lists; none of them is imported. A
+ *   species is toxic where such a reference lists it or a relative sharing its toxic principle, and
+ *   non-toxic only where one lists it, or its whole genus or family, as non-toxic.
  * - No Perenual data: its terms forbid redistribution. Open Plantbook thresholds are not bundled
  *   because nothing in v1 reads them; openplantbook-coverage.ts runs the coverage spot-check.
  *

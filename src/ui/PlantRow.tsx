@@ -2,6 +2,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 
+/**
+ * A plant's scientific name for the line beneath its name, or none where it would repeat the name,
+ * as for a Species known by its scientific name (Aloe vera, Hoya pubicalyx).
+ */
+export function scientificBeneath(name: string, scientificName: string | null): string | null {
+  return scientificName === name ? null : scientificName;
+}
+
 /** A plant in a list: its photo, Display Name and one line beneath; the whole row opens it. */
 export function PlantRow({
   photo,

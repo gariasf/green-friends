@@ -11,6 +11,7 @@ import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { ChipGroup } from '@/src/ui/Chip';
 import { alertError, PrimaryButton } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles, photoUri } from '@/src/ui/Photo';
+import { scientificBeneath } from '@/src/ui/PlantRow';
 
 const KINDS = CARE_EVENT_TYPES.map((type) => ({
   label: `${CARE_COPY[type].icon} ${CARE_COPY[type].label}`,
@@ -43,6 +44,7 @@ export default function PlantSheet() {
   const details = useCareEventDetails(type);
   // Only a plant in care, live and not Archived, has a sheet.
   if (!plant) return null;
+  const scientific = scientificBeneath(plant.displayName, plant.scientificName);
 
   const log = () => {
     try {
@@ -64,12 +66,8 @@ export default function PlantSheet() {
         <PlantPhoto uri={photoUri(photo)} size={64} />
         <View style={styles.grow}>
           <Text style={styles.name}>{plant.displayName}</Text>
-          {plant.scientificName && <Text style={styles.scientific}>{plant.scientificName}</Text>}
-          {plant.toxicToPets !== null && (
-            <Text style={[styles.hint, plant.toxicToPets && styles.toxic]}>
-              {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
-            </Text>
-          )}
+          {scientific && <Text style={styles.scientific}>{scientific}</Text>}
+          {plant.toxicToPets && <Text style={styles.toxic}>Toxic to pets</Text>}
           <PhotoButton
             hasPhoto={photo !== null}
             onPick={(prepared) =>
@@ -117,7 +115,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '800' },
   scientific: { fontSize: 14, fontStyle: 'italic', color: '#666' },
   hint: { fontSize: 14, color: '#666' },
-  toxic: { color: '#e0342b', fontWeight: '600' },
+  toxic: { fontSize: 14, fontWeight: '600', color: '#e0342b' },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 32 },
   link: { fontSize: 16, color: '#2e7d32', fontWeight: '600', textAlign: 'center' },
 });
