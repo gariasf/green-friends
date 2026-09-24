@@ -82,7 +82,6 @@ export default function TodayScreen() {
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>🪴</Text>
             <Text style={styles.title}>No plants in care</Text>
-            <Text style={styles.hint}>Plants show up here when they need you.</Text>
             <Pressable
               accessibilityRole="button"
               hitSlop={8}
