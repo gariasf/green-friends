@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deleteCareEvent } from '@/src/core/careLog';
@@ -14,7 +15,8 @@ type Undo = { message: string; eventIds: string[] };
 /**
  * The undo toast after care logged in one tap: `offer` shows it for a few seconds, its message
  * announced to VoiceOver, and its Undo deletes those Care Events, then runs `onUndone`. `toast`
- * floats above the screen, so it goes after the screen's ScrollView, not inside it.
+ * floats above the screen, and above a tab's tab bar, rising in and sinking away; it goes after
+ * the screen's ScrollView, not inside it.
  */
 export function useUndoToast(onUndone?: () => void) {
   const [undo, setUndo] = useState<Undo | null>(null);
@@ -39,12 +41,17 @@ export function useUndoToast(onUndone?: () => void) {
 }
 
 function UndoToast({ message, onUndo }: { message: string; onUndo: () => void }) {
+  // Inside a tab, the bottom inset already clears the tab bar.
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.toast, { bottom: insets.bottom + space.m }]}>
+    <Animated.View
+      entering={FadeInDown}
+      exiting={FadeOutDown}
+      style={[styles.toast, { bottom: insets.bottom + space.m }]}
+    >
       <Text style={styles.toastText}>{message}</Text>
       <TextButton label="Undo" onPress={onUndo} />
-    </View>
+    </Animated.View>
   );
 }
 

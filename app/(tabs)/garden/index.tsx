@@ -1,13 +1,16 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
+import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { PlantRow, scientificBeneath } from '@/src/ui/PlantRow';
-import { group, space, text } from '@/src/ui/theme';
+import { group, space } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
+
+const ADD_PLANT = { label: 'Add a plant', onPress: () => router.push('/plants/new') };
 
 function readGarden() {
   return { plants: listPlants(db), archivedCount: listArchivedPlants(db).length };
@@ -23,21 +26,23 @@ export default function GardenScreen() {
   useAfterWrites(useCallback(() => setGarden(readGarden()), []));
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={plants.length === 0 ? styles.empty : styles.list}
-    >
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.list}>
       {plants.length === 0 ? (
-        <>
-          <Text style={text.title2}>
-            {archivedCount > 0 ? 'No plants in care' : 'No plants yet'}
-          </Text>
-          <Text style={text.subheadline}>
-            {archivedCount > 0
-              ? 'Tap + to add one, or unarchive one below.'
-              : 'Tap + to add your first plant.'}
-          </Text>
-        </>
+        archivedCount > 0 ? (
+          <EmptyState
+            symbol="archivebox"
+            title="No plants in care"
+            line="Every plant is Archived. Unarchive one below, or add a new one."
+            action={ADD_PLANT}
+          />
+        ) : (
+          <EmptyState
+            symbol="leaf"
+            title="No plants yet"
+            line="Add your first plant to start its Care Log."
+            action={ADD_PLANT}
+          />
+        )
       ) : (
         <View style={group.box}>
           {plants.map((plant, index) => (
@@ -65,12 +70,5 @@ export default function GardenScreen() {
 
 const styles = StyleSheet.create({
   list: { paddingVertical: space.l },
-  empty: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: space.xxl,
-    gap: space.s,
-  },
   footer: { alignSelf: 'center', marginTop: space.xl },
 });

@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { localDay } from '@/src/core/dates';
 import { listArchivedPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { dayLabel } from '@/src/ui/CareEvent';
+import { EmptyState } from '@/src/ui/EmptyState';
 import { PlantRow } from '@/src/ui/PlantRow';
-import { group, space, text } from '@/src/ui/theme';
+import { group, space } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 /**
@@ -20,9 +21,13 @@ export default function ArchivedScreen() {
   const today = localDay(new Date());
 
   return (
-    <ScrollView contentContainerStyle={plants.length === 0 ? styles.empty : styles.list}>
+    <ScrollView contentContainerStyle={styles.list}>
       {plants.length === 0 ? (
-        <Text style={text.subheadline}>No archived plants.</Text>
+        <EmptyState
+          symbol="archivebox"
+          title="No archived plants"
+          line="A plant archived from Edit keeps its Care Log and photo here."
+        />
       ) : (
         <View style={group.box}>
           {plants.map((plant, index) => (
@@ -46,5 +51,4 @@ export default function ArchivedScreen() {
 
 const styles = StyleSheet.create({
   list: { paddingVertical: space.l },
-  empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl },
 });

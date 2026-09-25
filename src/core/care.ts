@@ -135,6 +135,34 @@ export function dueCare(plant: PlantCare): DueCare[] {
   });
 }
 
+/**
+ * The care type that comes next for a plant, and in how many days: 0 when Due today, below 0 when
+ * Overdue. A `paused` care type comes no sooner than its Growing season, `days` away.
+ */
+export type NextCare = { type: CareType; days: number; paused: boolean };
+
+/**
+ * The care type an evaluated plant comes Due for soonest, counted from `today`, the day it was
+ * evaluated for; a Paused one on the first Growing day, so it comes next only when nothing else
+ * comes Due before then. Ties go by care-type order. Null with no schedule for any care type.
+ */
+export function nextCare(plant: PlantCare, today: string): NextCare | null {
+  const coming = CARE_TYPES.flatMap((type) => {
+    const status = plant.care[type];
+    switch (status.state) {
+      case 'unscheduled':
+        return [];
+      case 'paused':
+        return [{ type, on: status.until, paused: true }];
+      default:
+        return [{ type, on: status.dueOn, paused: false }];
+    }
+  }).sort((a, b) => a.on.localeCompare(b.on));
+  if (coming.length === 0) return null;
+  const [{ type, on, paused }] = coming;
+  return { type, days: daysBetween(today, on), paused };
+}
+
 /** Whether an evaluated plant Needs Attention (CONTEXT.md): at least one care type Due or Overdue. */
 export function needsAttention(plant: PlantCare): boolean {
   return dueCare(plant).length > 0;

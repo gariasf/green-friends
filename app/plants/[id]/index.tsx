@@ -33,7 +33,15 @@ import {
 } from '@/src/core/plants';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import { CARE_COPY, CareSymbol, dateLabel, dayLabel } from '@/src/ui/CareEvent';
+import {
+  CARE_COPY,
+  CareSymbol,
+  dateLabel,
+  dayLabel,
+  daysOrMonths,
+  plural,
+} from '@/src/ui/CareEvent';
+import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
@@ -141,7 +149,22 @@ export default function PlantScreen() {
         {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
           all above it its header, if one ever runs into the thousands. */}
         <View style={styles.timeline}>
-          {events.length === 0 && <Text style={text.subheadline}>Nothing logged yet.</Text>}
+          {events.length === 0 && (
+            <EmptyState
+              symbol="clock.arrow.circlepath"
+              title="Nothing logged yet"
+              line="What you log shows up here, newest first."
+              // An Archived plant takes Notes only, which Add note above adds.
+              action={
+                care
+                  ? {
+                      label: 'Log care',
+                      onPress: () => router.push({ pathname: '/plants/[id]/log', params: { id } }),
+                    }
+                  : undefined
+              }
+            />
+          )}
           {events.map((event, index) => (
             <TimelineEntry
               key={event.id}
@@ -290,16 +313,10 @@ function tileValue(status: CareStatus, today: string): [short: string, spoken: s
         ? ['Today', 'due today']
         : [`${status.daysOverdue}d`, `${plural(status.daysOverdue, 'day')} overdue`];
     case 'upcoming': {
-      const days = daysBetween(today, status.dueOn);
-      if (days < 60) return [`${days}d`, `due in ${plural(days, 'day')}`];
-      const months = Math.round(days / 30.4);
-      return [`${months}mo`, `due in ${plural(months, 'month')}`];
+      const [count, unit] = daysOrMonths(daysBetween(today, status.dueOn));
+      return [`${count}${unit === 'day' ? 'd' : 'mo'}`, `due in ${plural(count, unit)}`];
     }
   }
-}
-
-function plural(count: number, unit: string): string {
-  return `${count} ${unit}${count === 1 ? '' : 's'}`;
 }
 
 /** When a care type was last done, in the few words a tile has room for: "Last Sep 22". */

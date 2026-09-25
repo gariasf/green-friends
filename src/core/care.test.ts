@@ -1,6 +1,6 @@
 import type { Db } from '../db/types';
 import { MONSTERA, catalog, gardenDb, noon } from '../test/garden';
-import { dueCare, evaluateCare, listNeedsAttention } from './care';
+import { dueCare, evaluateCare, listNeedsAttention, nextCare } from './care';
 import { logCareEvent } from './careLog';
 import { NO_SCHEDULE, archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
 import { updateSettings } from './settings';
@@ -11,6 +11,13 @@ function careOn(db: Db, today: string) {
   const [plant, ...rest] = evaluateCare(db, today);
   expect(rest).toEqual([]);
   return plant.care;
+}
+
+/** The next care of the one plant in the garden on `today`. */
+function nextCareOn(db: Db, today: string) {
+  const [plant, ...rest] = evaluateCare(db, today);
+  expect(rest).toEqual([]);
+  return nextCare(plant, today);
 }
 
 describe('due-ness from the Care Log', () => {
@@ -353,5 +360,64 @@ describe('Needs Attention', () => {
 
     expect(listNeedsAttention(db, '2026-09-22')).toMatchObject([{ displayName: 'Shelf' }]);
     expect(evaluateCare(db, '2026-09-22')).toMatchObject([{ displayName: 'Shelf' }]);
+  });
+});
+
+describe('next care', () => {
+  test('is the care type Due soonest, in days from today', () => {
+    const db = gardenDb();
+    // Fed on Aug 25, so fertilizing comes Due on Sep 24, before watering on Sep 29.
+    createPlant(
+      db,
+      { speciesId: MONSTERA, lastDone: { fertilize: '2026-08-25' } },
+      noon(2026, 9, 22),
+    );
+
+    expect(nextCareOn(db, '2026-09-22')).toEqual({ type: 'fertilize', days: 2, paused: false });
+  });
+
+  test('is the most Overdue care type once care is Overdue, in days below 0', () => {
+    const db = gardenDb();
+    // Watering came Due on Sep 17, a week after creation; fertilizing on Aug 31, 30 days after Aug 1.
+    createPlant(
+      db,
+      { speciesId: MONSTERA, lastDone: { fertilize: '2026-08-01' } },
+      noon(2026, 9, 10),
+    );
+
+    expect(nextCareOn(db, '2026-09-22')).toEqual({ type: 'fertilize', days: -22, paused: false });
+  });
+
+  test('is care Due today in 0 days', () => {
+    const db = gardenDb();
+    createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 22));
+
+    expect(nextCareOn(db, '2026-09-29')).toEqual({ type: 'water', days: 0, paused: false });
+  });
+
+  test('is a Paused care type only when nothing comes Due before its Growing season, in days until then', () => {
+    // Watered every 3 weeks but never in the Dormant season (November to February), repotted every
+    // 3 years.
+    const schedule: CareSchedule = { ...NO_SCHEDULE, wateringGrowingDays: 21, repottingMonths: 36 };
+    const resting = gardenDb();
+    createPlant(resting, { nickname: 'Barrel', schedule }, noon(2026, 9, 22));
+    const repotting = gardenDb();
+    createPlant(
+      repotting,
+      { nickname: 'Barrel', schedule, lastDone: { repot: '2023-12-15' } },
+      noon(2026, 9, 22),
+    );
+
+    expect(nextCareOn(resting, '2026-12-01')).toEqual({ type: 'water', days: 90, paused: true });
+    expect(nextCareOn(repotting, '2026-12-01')).toEqual({ type: 'repot', days: 14, paused: false });
+  });
+
+  test('is none for a plant with no schedule for any care type', () => {
+    const db = gardenDb();
+    createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, noon(2026, 9, 22));
+    // As after an Import of a plant whose Species this catalog doesn't know (ADR-0002).
+    seedSpecies(db, { version: 2, species: [catalog.pothos] });
+
+    expect(nextCareOn(db, '2026-09-29')).toBeNull();
   });
 });

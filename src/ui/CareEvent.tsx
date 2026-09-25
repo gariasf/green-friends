@@ -37,6 +37,16 @@ export function plantsNeedYou(count: number): string {
   return count === 1 ? '1 plant needs you' : `${count} plants need you`;
 }
 
+/** A count and its unit: "1 day", "3 days". */
+export function plural(count: number, unit: string): string {
+  return `${count} ${unit}${count === 1 ? '' : 's'}`;
+}
+
+/** Days ahead as they are counted: in days, or from 60 on in months. */
+export function daysOrMonths(days: number): [count: number, unit: 'day' | 'month'] {
+  return days < 60 ? [days, 'day'] : [Math.round(days / 30.4), 'month'];
+}
+
 /** A local calendar day as the Care Log shows it: Today, Yesterday, else its date with its weekday. */
 export function dayLabel(day: string, today: string): string {
   const ago = daysBetween(day, today);
