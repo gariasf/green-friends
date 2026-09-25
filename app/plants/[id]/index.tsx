@@ -45,7 +45,15 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import { accessibilitySize, colors, pressedStyle, space, target, text } from '@/src/ui/theme';
+import {
+  accessibilitySize,
+  colors,
+  group,
+  pressedStyle,
+  space,
+  target,
+  text,
+} from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
@@ -142,7 +150,7 @@ export default function PlantScreen() {
         )}
 
         <View style={styles.logHead}>
-          <Text style={styles.logHeading}>Care Log</Text>
+          <Text style={[group.header, styles.logHeading]}>Care Log</Text>
           <TextButton label="Add note" onPress={() => openLog('note')} />
         </View>
         {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
@@ -430,7 +438,8 @@ const styles = StyleSheet.create({
     marginBottom: space.m,
     marginHorizontal: space.xl,
   },
-  logHeading: { ...text.footnote, textTransform: 'uppercase' },
+  // Its row places it, in line with the timeline, beside Add note.
+  logHeading: { marginTop: 0, marginBottom: 0, marginHorizontal: 0 },
   timeline: { paddingHorizontal: space.xl },
   entry: { flexDirection: 'row', gap: space.m },
   rail: { alignItems: 'center', width: 12 },

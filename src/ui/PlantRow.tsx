@@ -36,7 +36,7 @@ export function PlantRow({
       style={({ pressed }) => [styles.row, pressed && pressedStyle.row]}
     >
       <PlantPhoto uri={photoUri(photo)} size={44} />
-      {/* The divider starts after the photo, as iOS insets it. */}
+      {/* The divider starts after the photo and stops short of the edge, as iOS 26 draws it. */}
       <View style={[styles.body, !first && group.divider]}>
         <View style={styles.grow}>
           <Text style={text.body}>{name}</Text>
@@ -61,8 +61,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.s,
     minHeight: 64,
+    marginRight: space.l,
     paddingVertical: space.s,
-    paddingRight: space.l,
   },
   grow: { flex: 1 },
 });

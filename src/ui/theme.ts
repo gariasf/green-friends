@@ -101,30 +101,25 @@ export const pressedStyle = StyleSheet.create({
   row: { backgroundColor: colors.fill },
 });
 
-/** Rows grouped on the background, as iOS Settings draws them. */
+/**
+ * Rows grouped on the background, in iOS 26's grouped style, as Settings' SwiftUI Form draws it
+ * (measured on the simulator), so the lists React Native draws look like Settings.
+ */
 export const group = StyleSheet.create({
   /** A rounded group of rows, inset from the screen's edges. */
   box: {
     marginHorizontal: space.l,
-    borderRadius: 12,
+    borderRadius: 26,
+    borderCurve: 'continuous',
     backgroundColor: colors.surface,
     overflow: 'hidden',
   },
-  /** A row: at least a 44 pt target. */
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    minHeight: 44,
-    paddingHorizontal: space.l,
-    paddingVertical: space.s,
-  },
   /** The hairline above every row of a group but its first. */
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.separator },
-  /** A group's title, above it. */
+  /** A section's heading, in sentence case; above a group, in line with its rows' content. */
   header: {
-    ...text.footnote,
-    textTransform: 'uppercase',
+    ...text.headline,
+    color: colors.secondaryLabel,
     marginTop: space.xxl,
     marginBottom: space.s,
     marginHorizontal: space.xxxl,
