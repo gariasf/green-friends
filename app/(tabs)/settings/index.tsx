@@ -1,8 +1,22 @@
+import {
+  Button,
+  DatePicker,
+  Form,
+  Host,
+  HStack,
+  LabeledContent,
+  Picker,
+  ProgressView,
+  Section,
+  Spacer,
+  Text,
+} from '@expo/ui/swift-ui';
+import { datePickerStyle, disabled, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
 import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
 import { useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert } from 'react-native';
 
 import { localTime } from '@/src/core/dates';
 import { shareExport, type ShareSheet } from '@/src/core/export';
@@ -14,68 +28,74 @@ import {
   type Settings,
   type SettingsPatch,
 } from '@/src/core/settings';
+import { getSpeciesDatasetVersion } from '@/src/core/species';
 import { db, withScratchDb } from '@/src/db/client';
-import { ChipGroup } from '@/src/ui/Chip';
-import { alertError, TextButton } from '@/src/ui/Form';
+import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
-import { space, text } from '@/src/ui/theme';
+import { colors } from '@/src/ui/theme';
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-].map((label, index) => ({ label, value: index + 1 }));
+/** The months as the phone names them, for the season pickers. */
+const MONTHS = Array.from({ length: 12 }, (_, index) => ({
+  label: new Date(2000, index, 1).toLocaleDateString(undefined, { month: 'long' }),
+  value: index + 1,
+}));
+
+const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 /**
- * Daily Digest times on the hour, 06:00 to 22:00, labelled the way the phone shows times.
- * ponytail: whole hours only; a time picker the day someone wants 07:30.
+ * The iOS share sheet, offering an Export as a zip file in the cache folder; `presenting` runs as
+ * the sheet comes up, once the zip is made.
  */
-const HOURS = Array.from({ length: 17 }, (_, index) => new Date(2000, 0, 1, index + 6)).map(
-  (at) => ({
-    label: at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
-    value: localTime(at),
-  }),
-);
+function shareSheet(presenting: () => void): ShareSheet {
+  return {
+    async share(name, bytes) {
+      // One Export in the cache at a time: the last goes when the next is made, never while it may
+      // still be on its way somewhere.
+      const folder = new Directory(Paths.cache, 'export');
+      if (folder.exists) folder.delete();
+      folder.create();
+      const zip = new File(folder, name);
+      zip.write(bytes);
+      presenting();
+      await shareAsync(zip.uri);
+    },
+  };
+}
 
-/** The iOS share sheet, offering an Export as a zip file in the cache folder. */
-const shareSheet: ShareSheet = {
-  async share(name, bytes) {
-    // One Export in the cache at a time: the last goes when the next is made, never while it may
-    // still be on its way somewhere.
-    const folder = new Directory(Paths.cache, 'export');
-    if (folder.exists) folder.delete();
-    folder.create();
-    const zip = new File(folder, name);
-    zip.write(bytes);
-    await shareAsync(zip.uri);
-  },
-};
-
+/**
+ * Settings as iOS Settings draws them: a SwiftUI Form, whose scrolling UIKit and
+ * react-native-screens find as they find a ScrollView's, so the large title still collapses and a
+ * tap on the tab still scrolls back up.
+ */
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
+  const [catalogVersion] = useState(() => getSpeciesDatasetVersion(db));
   const save = (patch: SettingsPatch) => setSettings(updateSettings(db, patch));
+  const [digestHour, digestMinute] = settings.digestTime.split(':').map(Number);
 
-  // A second tap while the zip is being built would share another over the first.
-  const exporting = useRef(false);
+  // Exporting shows until the share sheet is up; a second tap until it's dismissed would share
+  // another over the first.
+  const [exporting, setExporting] = useState(false);
+  const exportBusy = useRef(false);
   const exportGarden = async () => {
-    if (exporting.current) return;
-    exporting.current = true;
+    if (exportBusy.current) return;
+    exportBusy.current = true;
+    setExporting(true);
     try {
-      const appVersion = Constants.expoConfig?.version ?? 'unknown';
-      await shareExport(db, photoFiles, shareSheet, appVersion);
+      // The zip is built on the JS thread, which renders nothing until it is done: the spinner
+      // goes up first.
+      await new Promise((resolve) => setTimeout(resolve));
+      await shareExport(
+        db,
+        photoFiles,
+        shareSheet(() => setExporting(false)),
+        APP_VERSION,
+      );
     } catch (error) {
       alertError('Could not export', error);
     } finally {
-      exporting.current = false;
+      exportBusy.current = false;
+      setExporting(false);
     }
   };
 
@@ -125,54 +145,93 @@ export default function SettingsScreen() {
     );
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.screen}>
-      <Text style={styles.heading}>Growing season</Text>
-      <Text style={text.subheadline}>
-        Watering and fertilizing follow the Growing interval in these months and the Dormant
-        interval outside them.
-      </Text>
-      <MonthRow
-        label="Starts"
-        value={settings.growingStartMonth}
-        onChange={(growingStartMonth) => save({ growingStartMonth })}
-      />
-      <MonthRow
-        label="Ends"
-        value={settings.growingEndMonth}
-        onChange={(growingEndMonth) => save({ growingEndMonth })}
-      />
+    <Host style={{ flex: 1 }} seedColor={colors.tint}>
+      <Form>
+        <Section
+          title="Growing season"
+          footer={
+            <Text>
+              Watering and fertilizing follow the Growing interval in these months and the Dormant
+              interval outside them. The same month for both means Growing all year.
+            </Text>
+          }
+        >
+          <MonthPicker
+            label="Starts"
+            value={settings.growingStartMonth}
+            onChange={(growingStartMonth) => save({ growingStartMonth })}
+          />
+          <MonthPicker
+            label="Ends"
+            value={settings.growingEndMonth}
+            onChange={(growingEndMonth) => save({ growingEndMonth })}
+          />
+        </Section>
 
-      <Text style={styles.heading}>Daily digest</Text>
-      <Text style={text.subheadline}>
-        One notification at this time, and only on days a plant needs you.
-      </Text>
-      <ChipGroup
-        options={HOURS}
-        value={settings.digestTime}
-        onChange={(digestTime) => save({ digestTime })}
-      />
+        <Section
+          title="Daily Digest"
+          footer={<Text>One notification at this time, and only on days a plant needs you.</Text>}
+        >
+          <DatePicker
+            title="Time"
+            displayedComponents={['hourAndMinute']}
+            // Any day would do for a time of day; this one has no DST change to skip it.
+            selection={new Date(2000, 0, 1, digestHour, digestMinute)}
+            onDateChange={(time) => save({ digestTime: localTime(time) })}
+            modifiers={[datePickerStyle('compact')]}
+          />
+        </Section>
 
-      <Text style={styles.heading}>Export</Text>
-      <Text style={text.subheadline}>
-        Every plant, Archived ones too, with its Care Log and photo, and these settings, in one zip
-        file to keep wherever you like.
-      </Text>
-      <TextButton label="Export garden" onPress={exportGarden} />
+        <Section
+          title="Backup"
+          footer={
+            <Text>
+              An export is one zip file of every plant, Archived ones too, with its Care Log and
+              photo, and these settings. Importing one merges it into this garden: for each plant,
+              Care Event and photo the newer version wins, deletions too, and nothing is wiped. To
+              go back to an export exactly, erase all data first.
+            </Text>
+          }
+        >
+          <Button onPress={exportGarden} modifiers={[disabled(exporting)]}>
+            <HStack>
+              <Text>Export garden</Text>
+              <Spacer />
+              {exporting && <ProgressView />}
+            </HStack>
+          </Button>
+          <Button label="Import garden" onPress={importGarden} />
+        </Section>
 
-      <Text style={styles.heading}>Import</Text>
-      <Text style={text.subheadline}>
-        Brings an export into this garden. For each plant, Care Event and photo, the newer version
-        wins, deletions too, and nothing is wiped. To go back to an export exactly, erase all data
-        first.
-      </Text>
-      <TextButton label="Import garden" onPress={importGarden} />
+        <Section
+          footer={
+            <Text>
+              Erases every plant, Archived ones too, with its Care Log and photo, and these
+              settings. Export first to keep a copy.
+            </Text>
+          }
+        >
+          <Button label="Erase all data" role="destructive" onPress={erase} />
+        </Section>
 
-      <TextButton label="Erase all data" destructive onPress={erase} style={styles.erase} />
-    </ScrollView>
+        <Section
+          title="About"
+          footer={<Text>Species IDs and scientific names come from Wikidata, under CC0.</Text>}
+        >
+          <LabeledContent label="Version">
+            <Text>{APP_VERSION}</Text>
+          </LabeledContent>
+          <LabeledContent label="Species catalog">
+            <Text>{`Version ${catalogVersion}`}</Text>
+          </LabeledContent>
+        </Section>
+      </Form>
+    </Host>
   );
 }
 
-function MonthRow({
+/** A Growing season month, picked from a menu. */
+function MonthPicker({
   label,
   value,
   onChange,
@@ -182,16 +241,17 @@ function MonthRow({
   onChange: (month: number) => void;
 }) {
   return (
-    <View style={styles.row}>
-      <Text style={text.body}>{label}</Text>
-      <ChipGroup options={MONTHS} value={value} onChange={onChange} />
-    </View>
+    <Picker
+      label={label}
+      selection={value}
+      onSelectionChange={onChange}
+      modifiers={[pickerStyle('menu')]}
+    >
+      {MONTHS.map((month) => (
+        <Text key={month.value} modifiers={[tag(month.value)]}>
+          {month.label}
+        </Text>
+      ))}
+    </Picker>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
-  heading: { ...text.title3, marginTop: space.s },
-  row: { gap: space.s },
-  erase: { alignSelf: 'center', marginTop: space.xxxl },
-});
