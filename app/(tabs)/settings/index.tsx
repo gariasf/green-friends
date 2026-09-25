@@ -11,14 +11,19 @@ import {
   Spacer,
   Text,
 } from '@expo/ui/swift-ui';
-import { datePickerStyle, disabled, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
+import {
+  datePickerStyle,
+  disabled,
+  environment,
+  pickerStyle,
+  tag,
+} from '@expo/ui/swift-ui/modifiers';
 import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
 import { useRef, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
-import { localTime } from '@/src/core/dates';
 import { shareExport, type ShareSheet } from '@/src/core/export';
 import { importExport } from '@/src/core/import';
 import {
@@ -34,9 +39,13 @@ import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
 import { colors } from '@/src/ui/theme';
 
-/** The months as the phone names them, for the season pickers. */
+/**
+ * The months as the phone names them, for the season pickers. Each is named from its 15th: Hermes
+ * reads a past year's local time at today's offset, and where a zone's offset has changed since,
+ * the 1st at midnight is formatted as the last day of the month before.
+ */
 const MONTHS = Array.from({ length: 12 }, (_, index) => ({
-  label: new Date(2000, index, 1).toLocaleDateString(undefined, { month: 'long' }),
+  label: new Date(2000, index, 15).toLocaleDateString(undefined, { month: 'long' }),
   value: index + 1,
 }));
 
@@ -71,31 +80,30 @@ export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
   const [catalogVersion] = useState(() => getSpeciesDatasetVersion(db));
   const save = (patch: SettingsPatch) => setSettings(updateSettings(db, patch));
-  const [digestHour, digestMinute] = settings.digestTime.split(':').map(Number);
 
-  // Exporting shows until the share sheet is up; a second tap until it's dismissed would share
-  // another over the first.
-  const [exporting, setExporting] = useState(false);
-  const exportBusy = useRef(false);
+  // The row shows the zip being made until the share sheet is up. A second tap until the sheet is
+  // dismissed would share another over the first.
+  const [zipping, setZipping] = useState(false);
+  const exporting = useRef(false);
   const exportGarden = async () => {
-    if (exportBusy.current) return;
-    exportBusy.current = true;
-    setExporting(true);
+    if (exporting.current) return;
+    exporting.current = true;
+    setZipping(true);
     try {
-      // The zip is built on the JS thread, which renders nothing until it is done: the spinner
-      // goes up first.
+      // The zip is made on the JS thread, which renders nothing until it is done: the spinner goes
+      // up first.
       await new Promise((resolve) => setTimeout(resolve));
       await shareExport(
         db,
         photoFiles,
-        shareSheet(() => setExporting(false)),
+        shareSheet(() => setZipping(false)),
         APP_VERSION,
       );
     } catch (error) {
       alertError('Could not export', error);
     } finally {
-      exportBusy.current = false;
-      setExporting(false);
+      exporting.current = false;
+      setZipping(false);
     }
   };
 
@@ -145,7 +153,7 @@ export default function SettingsScreen() {
     );
 
   return (
-    <Host style={{ flex: 1 }} seedColor={colors.tint}>
+    <Host style={styles.form} seedColor={colors.tint}>
       <Form>
         <Section
           title="Growing season"
@@ -175,10 +183,12 @@ export default function SettingsScreen() {
           <DatePicker
             title="Time"
             displayedComponents={['hourAndMinute']}
-            // Any day would do for a time of day; this one has no DST change to skip it.
-            selection={new Date(2000, 0, 1, digestHour, digestMinute)}
-            onDateChange={(time) => save({ digestTime: localTime(time) })}
-            modifiers={[datePickerStyle('compact')]}
+            // A time of day, not an instant: the picker keeps to UTC, where no offset applies. Set
+            // on a past day in local time, it showed an hour off where the zone's offset has since
+            // changed, as Hermes reads that day at today's offset and iOS at the day's own.
+            selection={new Date(`1970-01-01T${settings.digestTime}Z`)}
+            onDateChange={(time) => save({ digestTime: time.toISOString().slice(11, 16) })}
+            modifiers={[datePickerStyle('compact'), environment('timeZone', 'UTC')]}
           />
         </Section>
 
@@ -186,18 +196,17 @@ export default function SettingsScreen() {
           title="Backup"
           footer={
             <Text>
-              An export is one zip file of every plant, Archived ones too, with its Care Log and
-              photo, and these settings. Importing one merges it into this garden: for each plant,
-              Care Event and photo the newer version wins, deletions too, and nothing is wiped. To
-              go back to an export exactly, erase all data first.
+              Import merges an export into this garden: for each plant, Care Event and photo the
+              newer version wins, deletions too, and nothing is wiped. To go back to an export
+              exactly, erase all data first.
             </Text>
           }
         >
-          <Button onPress={exportGarden} modifiers={[disabled(exporting)]}>
+          <Button onPress={exportGarden} modifiers={[disabled(zipping)]}>
             <HStack>
               <Text>Export garden</Text>
               <Spacer />
-              {exporting && <ProgressView />}
+              {zipping && <ProgressView />}
             </HStack>
           </Button>
           <Button label="Import garden" onPress={importGarden} />
@@ -255,3 +264,7 @@ function MonthPicker({
     </Picker>
   );
 }
+
+const styles = StyleSheet.create({
+  form: { flex: 1 },
+});
