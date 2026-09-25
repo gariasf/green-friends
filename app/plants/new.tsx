@@ -173,13 +173,7 @@ export default function NewPlantScreen() {
         onChangeText={setPotSizeCm}
         keyboardType="decimal-pad"
       />
-      <Field
-        label="Soil"
-        placeholder="Optional"
-        value={soil}
-        onChangeText={setSoil}
-        autoCapitalize="sentences"
-      />
+      <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
 
       {ownSchedule && (
         <>
@@ -252,7 +246,8 @@ const styles = StyleSheet.create({
   heading: { ...text.title3, marginTop: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   grow: { flex: 1 },
-  match: { paddingVertical: space.s },
+  // One line tall for a Species known by its scientific name; still a 44 pt target.
+  match: { minHeight: 44, justifyContent: 'center', paddingVertical: space.s },
   picked: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -215,7 +215,7 @@ export function TextButton({
         style={[
           styles.textButton,
           destructive && styles.destructive,
-          disabled && styles.textButtonDisabled,
+          disabled && styles.buttonLabelDisabled,
         ]}
       >
         {label}
@@ -276,6 +276,5 @@ const styles = StyleSheet.create({
   buttonLabel: { ...text.headline, color: colors.onTint },
   buttonLabelDisabled: { color: colors.tertiaryLabel },
   textButton: { ...text.body, color: colors.tint },
-  textButtonDisabled: { color: colors.tertiaryLabel },
   destructive: { color: colors.danger },
 });

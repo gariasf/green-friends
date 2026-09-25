@@ -30,7 +30,7 @@ type CareTypeForm = { own: boolean; growing: string; dormant: string };
  */
 export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | null) {
   const [form, setForm] = useState(() => startingSchedule(plant, defaults));
-  const own = (type: CareType, interval: string) =>
+  const override = (type: CareType, interval: string) =>
     form[type].own ? optionalNumber(interval) : null;
   // A blank Growing interval would clear the Override (ADR-0003), not keep an own schedule.
   const blank = CARE_TYPES.find((type) => form[type].own && !form[type].growing.trim());
@@ -46,11 +46,11 @@ export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | nu
       />
     )),
     overrides: {
-      wateringGrowingDays: own('water', form.water.growing),
-      wateringDormantDays: own('water', form.water.dormant),
-      fertilizingGrowingDays: own('fertilize', form.fertilize.growing),
-      fertilizingDormantDays: own('fertilize', form.fertilize.dormant),
-      repottingMonths: own('repot', form.repot.growing),
+      wateringGrowingDays: override('water', form.water.growing),
+      wateringDormantDays: override('water', form.water.dormant),
+      fertilizingGrowingDays: override('fertilize', form.fertilize.growing),
+      fertilizingDormantDays: override('fertilize', form.fertilize.dormant),
+      repottingMonths: override('repot', form.repot.growing),
     } satisfies CareSchedule,
     problem: blank
       ? `${CARE_COPY[blank].label}: enter how often, or pick ${defaults ? 'Species default' : 'None'}.`

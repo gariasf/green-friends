@@ -190,8 +190,11 @@ describe('searching the catalog', () => {
 
     const found = colloquialNames(searchSpecies(db, 'mon'));
 
+    const calamondin = found.indexOf('Calamondin');
     expect(found[0]).toBe('Monstera');
-    expect(found.indexOf('Calamondin')).toBeGreaterThan(found.indexOf('Mini monstera'));
-    expect(found.indexOf('Calamondin')).toBeGreaterThan(found.indexOf('Chinese money plant'));
+    expect(calamondin).toBeGreaterThan(0);
+    expect(found.slice(0, calamondin)).toEqual(
+      expect.arrayContaining(['Mini monstera', 'Chinese money plant']),
+    );
   });
 });
