@@ -38,6 +38,7 @@ import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
 import { accessibilitySize, colors, pressedStyle, space, target, text } from '@/src/ui/theme';
+import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 /**
@@ -50,6 +51,7 @@ import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 export default function PlantScreen() {
   const { id } = useLocalSearchParams<'/plants/[id]'>();
   const plant = usePlant(id);
+  const undo = useUndoToast();
   const { width, fontScale } = useWindowDimensions();
   if (!plant) return null;
 
@@ -62,98 +64,102 @@ export default function PlantScreen() {
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TextButton
-              label="Edit"
-              onPress={() => router.push({ pathname: '/plants/[id]/edit', params: { id } })}
-              style={target.text}
-            />
-          ),
-        }}
-      />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={photo ? 'Replace photo' : 'Add photo'}
-        onPress={() => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared))}
-        // A banner: a square photo this wide would fill the screen.
-        style={({ pressed }) => [
-          styles.hero,
-          { height: width * 0.72 },
-          pressed && pressedStyle.button,
-        ]}
-      >
-        {uri ? (
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} />
-        ) : (
-          <SymbolView name="leaf.fill" size={96} tintColor={colors.tint} />
-        )}
-      </Pressable>
+    <>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+        <Stack.Screen
+          options={{
+            headerRight: () => (
+              <TextButton
+                label="Edit"
+                onPress={() => router.push({ pathname: '/plants/[id]/edit', params: { id } })}
+                style={target.text}
+              />
+            ),
+          }}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={photo ? 'Replace photo' : 'Add photo'}
+          onPress={() => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared))}
+          // A banner: a square photo this wide would fill the screen.
+          style={({ pressed }) => [
+            styles.hero,
+            { height: width * 0.72 },
+            pressed && pressedStyle.button,
+          ]}
+        >
+          {uri ? (
+            <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+          ) : (
+            <SymbolView name="leaf.fill" size={96} tintColor={colors.tint} />
+          )}
+        </Pressable>
 
-      <View style={styles.title}>
-        <Text style={text.title1}>{plant.displayName}</Text>
-        {scientific && <Text style={styles.scientific}>{scientific}</Text>}
-        {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
-      </View>
-
-      {plant.archivedAt !== null && (
-        <View style={styles.banner}>
-          <SymbolView name="archivebox" size={18} tintColor={colors.secondaryLabel} />
-          <Text style={[text.subheadline, styles.grow]}>
-            Archived: out of care, its Care Log kept.
-          </Text>
-          <TextButton label="Unarchive" onPress={() => unarchivePlant(db, id)} />
+        <View style={styles.title}>
+          <Text style={text.title1}>{plant.displayName}</Text>
+          {scientific && <Text style={styles.scientific}>{scientific}</Text>}
+          {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
         </View>
-      )}
 
-      {care && (
-        // Three abreast, words break mid-word at accessibility text sizes, so there they stack.
-        // ponytail: WhenPicker's font-scale threshold, not a measurement; measure the tiles' words
-        // with onLayout if a longer label ever breaks at a standard size.
-        <View style={[styles.tiles, accessibilitySize(fontScale) && styles.tilesStacked]}>
-          {CARE_TYPES.map((type) => (
-            <CareTile
-              key={type}
-              type={type}
-              status={care[type]}
-              lastDone={lastDone(type)}
+        {plant.archivedAt !== null && (
+          <View style={styles.banner}>
+            <SymbolView name="archivebox" size={18} tintColor={colors.secondaryLabel} />
+            <Text style={[text.subheadline, styles.grow]}>
+              Archived: out of care, its Care Log kept.
+            </Text>
+            <TextButton label="Unarchive" onPress={() => unarchivePlant(db, id)} />
+          </View>
+        )}
+
+        {care && (
+          // Three abreast, words break mid-word at accessibility text sizes, so there they stack.
+          // ponytail: WhenPicker's font-scale threshold, not a measurement; measure the tiles' words
+          // with onLayout if a longer label ever breaks at a standard size.
+          <View style={[styles.tiles, accessibilitySize(fontScale) && styles.tilesStacked]}>
+            {CARE_TYPES.map((type) => (
+              <CareTile
+                key={type}
+                type={type}
+                status={care[type]}
+                lastDone={lastDone(type)}
+                today={today}
+                onOpen={() => openLog(type)}
+                onDone={() => {
+                  const event = logCareEvent(db, { plantId: id, type });
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  undo.offer(`${CARE_COPY[type].done} ${plant.displayName}`, [event.id]);
+                }}
+              />
+            ))}
+          </View>
+        )}
+
+        <View style={styles.logHead}>
+          <Text style={styles.logHeading}>Care Log</Text>
+          <TextButton label="Add note" onPress={() => openLog('note')} />
+        </View>
+        {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
+          all above it its header, if one ever runs into the thousands. */}
+        <View style={styles.timeline}>
+          {events.length === 0 && <Text style={text.subheadline}>Nothing logged yet.</Text>}
+          {events.map((event, index) => (
+            <TimelineEntry
+              key={event.id}
+              event={event}
               today={today}
-              onOpen={() => openLog(type)}
-              onDone={() => {
-                logCareEvent(db, { plantId: id, type });
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              }}
+              last={index === events.length - 1}
             />
           ))}
         </View>
-      )}
 
-      <View style={styles.logHead}>
-        <Text style={styles.logHeading}>Care Log</Text>
-        <TextButton label="Add note" onPress={() => openLog('note')} />
-      </View>
-      {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
-          all above it its header, if one ever runs into the thousands. */}
-      <View style={styles.timeline}>
-        {events.length === 0 && <Text style={text.subheadline}>Nothing logged yet.</Text>}
-        {events.map((event, index) => (
-          <TimelineEntry
-            key={event.id}
-            event={event}
-            today={today}
-            last={index === events.length - 1}
-          />
-        ))}
-      </View>
-
-      <View style={styles.chips}>
-        {row.potSizeCm !== null && <Text style={styles.chip}>{row.potSizeCm} cm pot</Text>}
-        {row.soil !== null && <Text style={styles.chip}>{row.soil}</Text>}
-        <Text style={styles.chip}>{whoseSchedule(row)}</Text>
-      </View>
-    </ScrollView>
+        <View style={styles.chips}>
+          {row.potSizeCm !== null && <Text style={styles.chip}>{row.potSizeCm} cm pot</Text>}
+          {row.soil !== null && <Text style={styles.chip}>{row.soil}</Text>}
+          <Text style={styles.chip}>{whoseSchedule(row)}</Text>
+        </View>
+      </ScrollView>
+      {undo.toast}
+    </>
   );
 }
 
@@ -248,6 +254,7 @@ function CareTile({
         </View>
         <Text style={[text.title2, due && (overdue ? styles.danger : styles.dueToday)]}>
           {value}
+          {overdue && <Text style={styles.overdueWord}> overdue</Text>}
         </Text>
         <Text style={text.caption}>{last}</Text>
       </Pressable>
@@ -269,8 +276,8 @@ function CareTile({
 }
 
 /**
- * A tile's short value ("5d", "17mo", "Today", "Paused", "—"; Overdue as the spec words it, "1d
- * late"), and the same in words.
+ * A tile's short value ("5d", "17mo", "Today", "Paused", "—"; Overdue care's days, which the tile
+ * follows with "overdue"), and the same in words.
  */
 function tileValue(status: CareStatus, today: string): [short: string, spoken: string] {
   switch (status.state) {
@@ -281,7 +288,7 @@ function tileValue(status: CareStatus, today: string): [short: string, spoken: s
     case 'due':
       return status.daysOverdue === 0
         ? ['Today', 'due today']
-        : [`${status.daysOverdue}d late`, `${plural(status.daysOverdue, 'day')} overdue`];
+        : [`${status.daysOverdue}d`, `${plural(status.daysOverdue, 'day')} overdue`];
     case 'upcoming': {
       const days = daysBetween(today, status.dueOn);
       if (days < 60) return [`${days}d`, `due in ${plural(days, 'day')}`];
@@ -364,6 +371,7 @@ const styles = StyleSheet.create({
   badgeToxic: { backgroundColor: colors.dangerSoft },
   badgeText: { ...text.footnote, fontWeight: '600' },
   danger: { color: colors.danger },
+  overdueWord: { ...text.footnote, fontWeight: '600', color: colors.danger },
   dueToday: { color: colors.dueToday },
   banner: {
     flexDirection: 'row',

@@ -2,18 +2,17 @@ import { MenuView, type MenuAction } from '@expo/ui/community/menu';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
   LayoutAnimationConfig,
   LinearTransition,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { dueCare, evaluateCare, needsAttention, type PlantCare } from '@/src/core/care';
-import { deleteCareEvent, logCareEvent } from '@/src/core/careLog';
+import { logCareEvent } from '@/src/core/careLog';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol, plantsNeedYou } from '@/src/ui/CareEvent';
@@ -21,11 +20,8 @@ import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
 import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
+import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
-
-const UNDO_MS = 4000;
-
-type Undo = { message: string; eventIds: string[] };
 
 /**
  * Today (spec #8, prototype #6): one card per plant that Needs Attention, most Overdue first, with
@@ -36,32 +32,18 @@ type Undo = { message: string; eventIds: string[] };
  */
 export default function TodayScreen() {
   const [plants, refresh] = usePlantCare();
-  const [undo, setUndo] = useState<Undo | null>(null);
-
-  useEffect(() => {
-    if (!undo) return;
-    AccessibilityInfo.announceForAccessibility(`${undo.message}. Undo available.`);
-    const timer = setTimeout(() => setUndo(null), UNDO_MS);
-    return () => clearTimeout(timer);
-  }, [undo]);
+  const undo = useUndoToast(refresh);
 
   const log = (plant: PlantCare, types: CareType[]) => {
     const eventIds = types.map((type) => logCareEvent(db, { plantId: plant.id, type }).id);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     refresh();
-    setUndo({
-      message:
-        types.length === 1
-          ? `${CARE_COPY[types[0]].done} ${plant.displayName}`
-          : `Logged everything for ${plant.displayName}`,
+    undo.offer(
+      types.length === 1
+        ? `${CARE_COPY[types[0]].done} ${plant.displayName}`
+        : `Logged everything for ${plant.displayName}`,
       eventIds,
-    });
-  };
-
-  const revert = ({ eventIds }: Undo) => {
-    for (const id of eventIds) deleteCareEvent(db, id);
-    refresh();
-    setUndo(null);
+    );
   };
 
   const needingAttention = plants.filter(needsAttention);
@@ -101,7 +83,7 @@ export default function TodayScreen() {
           {rest.length > 0 && <RestOfGarden plants={rest} />}
         </LayoutAnimationConfig>
       </ScrollView>
-      {undo && <UndoToast message={undo.message} onUndo={() => revert(undo)} />}
+      {undo.toast}
     </>
   );
 }
@@ -286,16 +268,6 @@ function RestOfGarden({ plants }: { plants: PlantCare[] }) {
   );
 }
 
-function UndoToast({ message, onUndo }: { message: string; onUndo: () => void }) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[styles.toast, { bottom: insets.bottom + space.m }]}>
-      <Text style={styles.toastText}>{message}</Text>
-      <TextButton label="Undo" onPress={onUndo} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: { paddingTop: space.m, paddingBottom: 96 },
   summary: { ...text.subheadline, fontWeight: '600', marginHorizontal: space.xl },
@@ -362,21 +334,4 @@ const styles = StyleSheet.create({
   restPlant: { width: 72, alignItems: 'center', gap: space.xs, opacity: 0.6 },
   restPlantPressed: { opacity: 0.3 },
   restName: { ...text.caption, fontWeight: '600', color: colors.label },
-  toast: {
-    position: 'absolute',
-    left: space.l,
-    right: space.l,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    paddingVertical: space.m,
-    paddingHorizontal: space.l,
-    borderRadius: 14,
-    backgroundColor: colors.floating,
-    // Black, iOS's default shadow colour.
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  toastText: { ...text.subheadline, flex: 1, fontWeight: '600', color: colors.label },
 });
