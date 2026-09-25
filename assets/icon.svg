@@ -2,17 +2,20 @@
   The app icon (ticket #29): three leaves rising from behind a pot's rim. The mask is the mark
   (white) less its cut-outs (black), so the mark renders on any ground; each PNG beside it
   changes the two fills (the last two rects):
-    icon.png         #ffffff on #2e7d32   opaque, as iOS requires
-    icon-dark.png    #6fcf73, no ground   iOS draws its dark ground behind it
-    icon-tinted.png  #ffffff on #000000   iOS tints it; Expo would flatten a transparent one onto white
+    icon.png         #ffffff on #2e7d32   the icon, opaque as iOS requires
+    icon-dark.png    #6fcf73, no ground   the dark icon, on the ground iOS draws behind it,
+                                          and the dark splash's mark, on #000000 (app.json)
+    icon-tinted.png  #ffffff on #000000   the tinted icon, which iOS tints; Expo would flatten
+                                          a transparent one onto white
     splash-icon.png  #ffffff, no ground   the splash's mark, on #2e7d32 (app.json)
   The greens are theme.ts's brand green, light and dark. Rendered with
-  `rsvg-convert -w 1024 -h 1024`, then `magick <png> -alpha off <png>` for the two opaque ones.
+  `rsvg-convert -w 1024 -h 1024`, then `magick <png> -alpha off PNG24:<png>` for the two opaque
+  ones.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
     <mask id="mark" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
-      <rect width="1024" height="1024" fill="black"/>
+      <!-- The mark 2% larger about the centre, and 27 up, so its bounds sit centred. -->
       <g transform="translate(-10.24 -37.24) scale(1.02)">
         <g fill="white">
           <path d="M512 630 C380 505.2 424 330.5 512 214 C600 330.5 644 505.2 512 630Z"/>
