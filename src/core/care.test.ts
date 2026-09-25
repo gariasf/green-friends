@@ -6,18 +6,21 @@ import { NO_SCHEDULE, archivePlant, createPlant, updatePlant, type CareSchedule 
 import { updateSettings } from './settings';
 import { seedSpecies } from './species';
 
-/** The care statuses of the one plant in the garden on `today`. */
-function careOn(db: Db, today: string) {
+/** The one plant in the garden, evaluated on `today`. */
+function onlyPlantOn(db: Db, today: string) {
   const [plant, ...rest] = evaluateCare(db, today);
   expect(rest).toEqual([]);
-  return plant.care;
+  return plant;
+}
+
+/** The care statuses of the one plant in the garden on `today`. */
+function careOn(db: Db, today: string) {
+  return onlyPlantOn(db, today).care;
 }
 
 /** The next care of the one plant in the garden on `today`. */
 function nextCareOn(db: Db, today: string) {
-  const [plant, ...rest] = evaluateCare(db, today);
-  expect(rest).toEqual([]);
-  return nextCare(plant, today);
+  return nextCare(onlyPlantOn(db, today), today);
 }
 
 describe('due-ness from the Care Log', () => {
@@ -410,6 +413,16 @@ describe('next care', () => {
 
     expect(nextCareOn(resting, '2026-12-01')).toEqual({ type: 'water', days: 90, paused: true });
     expect(nextCareOn(repotting, '2026-12-01')).toEqual({ type: 'repot', days: 14, paused: false });
+
+    // Watered every 14 days in the Dormant season, a Monstera watered on Feb 20 is next fed, on the
+    // first Growing day, before it is next watered.
+    const feeding = gardenDb();
+    createPlant(
+      feeding,
+      { speciesId: MONSTERA, lastDone: { water: '2027-02-20' } },
+      noon(2027, 2, 20),
+    );
+    expect(nextCareOn(feeding, '2027-02-22')).toEqual({ type: 'fertilize', days: 7, paused: true });
   });
 
   test('is none for a plant with no schedule for any care type', () => {

@@ -11,19 +11,12 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated';
 
-import {
-  dueCare,
-  evaluateCare,
-  needsAttention,
-  nextCare,
-  type NextCare,
-  type PlantCare,
-} from '@/src/core/care';
+import { dueCare, evaluateCare, needsAttention, nextCare, type PlantCare } from '@/src/core/care';
 import { logCareEvent } from '@/src/core/careLog';
 import { localDay, localNoon } from '@/src/core/dates';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, CareSymbol, daysOrMonths, plantsNeedYou, plural } from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol, nextCareLine, plantsNeedYou, plural } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
@@ -39,7 +32,7 @@ const TICK_MS = 250;
  * How a row or a card leaves: a fade quicker than the move of what takes its place, so that never
  * shows through it.
  */
-const FOLD = FadeOut.duration(150);
+const FADE_AWAY = FadeOut.duration(150);
 
 /**
  * Today (spec #8, prototype #6; spec #22): the day and how many plants need you, then one card per
@@ -186,7 +179,12 @@ function CareCard({
   };
 
   return (
-    <Animated.View layout={LinearTransition} entering={FadeIn} exiting={FOLD} style={styles.card}>
+    <Animated.View
+      layout={LinearTransition}
+      entering={FadeIn}
+      exiting={FADE_AWAY}
+      style={styles.card}
+    >
       {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
       <View style={styles.cardHead}>
         <Pressable
@@ -227,7 +225,7 @@ function CareCard({
             key={type}
             layout={LinearTransition}
             entering={FadeIn}
-            exiting={FOLD}
+            exiting={FADE_AWAY}
             style={[styles.row, group.divider]}
           >
             <Pressable
@@ -266,7 +264,7 @@ function CareCard({
       {due.length > 1 && (
         <Animated.View
           layout={LinearTransition}
-          exiting={FOLD}
+          exiting={FADE_AWAY}
           style={[styles.cardFoot, group.divider]}
         >
           <TextButton
@@ -314,19 +312,6 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
       </ScrollView>
     </Animated.View>
   );
-}
-
-/**
- * The next care of a plant that needs nothing today, which is always days ahead: "Water in 3
- * days", "Fertilize tomorrow"; "Resting" while it waits for its Growing season.
- */
-function nextCareLine(next: NextCare | null): string {
-  if (next === null) return 'No schedule';
-  if (next.paused) return 'Resting';
-  const { label } = CARE_COPY[next.type];
-  if (next.days === 1) return `${label} tomorrow`;
-  const [count, unit] = daysOrMonths(next.days);
-  return `${label} in ${plural(count, unit)}`;
 }
 
 const styles = StyleSheet.create({

@@ -63,12 +63,11 @@ export default function PlantScreen() {
   const { width, fontScale } = useWindowDimensions();
   if (!plant) return null;
 
-  const today = localDay(new Date());
-  const { care, events, photo, row } = plant;
+  const { care, events, photo, row, today } = plant;
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
   const uri = photoUri(photo);
   const lastDone = (type: CareType) => events.find((event) => event.type === type)?.occurredOn;
-  const openLog = (type: CareEventType) =>
+  const openLog = (type?: CareEventType) =>
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
 
   return (
@@ -155,14 +154,7 @@ export default function PlantScreen() {
               title="Nothing logged yet"
               line="What you log shows up here, newest first."
               // An Archived plant takes Notes only, which Add note above adds.
-              action={
-                care
-                  ? {
-                      label: 'Log care',
-                      onPress: () => router.push({ pathname: '/plants/[id]/log', params: { id } }),
-                    }
-                  : undefined
-              }
+              action={care ? { label: 'Log care', onPress: () => openLog() } : undefined}
             />
           )}
           {events.map((event, index) => (
@@ -204,7 +196,7 @@ function usePlant(id: string) {
   return plant;
 }
 
-/** Null once the plant is Deleted. */
+/** Null once the plant is Deleted. Its care is as of `today`, the day it was read. */
 function readPlant(id: string) {
   // ponytail: reads the whole garden to find one plant; fine at dozens of plants, a core read of
   // one plant by id at hundreds.
@@ -213,12 +205,14 @@ function readPlant(id: string) {
   );
   if (!listed) return null;
   const row = getPlant(db, id);
+  const today = localDay(new Date());
   return {
     ...listed,
     row,
+    today,
     toxicToPets: row.speciesId ? (getSpecies(db, row.speciesId)?.toxicToPets ?? null) : null,
     // Archived plants are out of care, so evaluateCare leaves them out.
-    care: evaluateCare(db).find((candidate) => candidate.id === id)?.care ?? null,
+    care: evaluateCare(db, today).find((candidate) => candidate.id === id)?.care ?? null,
     events: listCareEvents(db, id),
   };
 }
