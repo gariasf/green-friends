@@ -19,6 +19,42 @@ export function listSpecies(db: Db): Species[] {
     .all();
 }
 
+/**
+ * The Species whose names match a search, best first: colloquial names starting with it, then
+ * those with a word starting with it, then scientific names with a word starting with it, then
+ * names containing it anywhere. Within each, shorter names come first.
+ */
+export function searchSpecies(db: Db, query: string): Species[] {
+  const needle = fold(query);
+  if (!needle) return [];
+  const rank = (s: Species) => {
+    const colloquial = fold(s.colloquialName);
+    const scientific = fold(s.scientificName);
+    if (colloquial.startsWith(needle)) return 0;
+    if (colloquial.includes(` ${needle}`)) return 1;
+    if (` ${scientific}`.includes(` ${needle}`)) return 2;
+    if (colloquial.includes(needle) || scientific.includes(needle)) return 3;
+    return null;
+  };
+  return listSpecies(db)
+    .map((s) => ({ s, rank: rank(s) }))
+    .filter((match): match is { s: Species; rank: number } => match.rank !== null)
+    .sort((a, b) => a.rank - b.rank || a.s.colloquialName.length - b.s.colloquialName.length)
+    .map(({ s }) => s);
+}
+
+/**
+ * A name or a search as searchSpecies compares them: in lower case, without apostrophes (straight
+ * or iOS's curly one), and hyphens and × (hybrids' sign) parting words as spaces do.
+ */
+function fold(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[\s×-]+/g, ' ')
+    .trim();
+}
+
 /** A catalog Species by ID; null for one the catalog doesn't know (an imported plant's, ADR-0002). */
 export function getSpecies(db: Db, id: string): Species | null {
   return db.select().from(species).where(eq(species.id, id)).get() ?? null;

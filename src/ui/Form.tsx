@@ -182,18 +182,20 @@ export function PrimaryButton({
 }
 
 /**
- * A button that is only its label, in the tint, or in red when it destroys something;
- * `accessibilityLabel` names it for VoiceOver where the label alone is ambiguous.
+ * A button that is only its label, in the tint, in red when it destroys something, or grey while
+ * disabled; `accessibilityLabel` names it for VoiceOver where the label alone is ambiguous.
  */
 export function TextButton({
   label,
   destructive = false,
+  disabled = false,
   accessibilityLabel,
   onPress,
   style,
 }: {
   label: string;
   destructive?: boolean;
+  disabled?: boolean;
   accessibilityLabel?: string;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
@@ -202,12 +204,22 @@ export function TextButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       // A line of body text is about 20 pt tall; this makes it a 44 pt target.
       hitSlop={12}
       onPress={onPress}
       style={({ pressed }) => [style, pressed && pressedStyle.button]}
     >
-      <Text style={[styles.textButton, destructive && styles.destructive]}>{label}</Text>
+      <Text
+        style={[
+          styles.textButton,
+          destructive && styles.destructive,
+          disabled && styles.textButtonDisabled,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -264,5 +276,6 @@ const styles = StyleSheet.create({
   buttonLabel: { ...text.headline, color: colors.onTint },
   buttonLabelDisabled: { color: colors.tertiaryLabel },
   textButton: { ...text.body, color: colors.tint },
+  textButtonDisabled: { color: colors.tertiaryLabel },
   destructive: { color: colors.danger },
 });

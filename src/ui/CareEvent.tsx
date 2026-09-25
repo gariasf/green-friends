@@ -116,7 +116,13 @@ export function useCareEventDetails(type: CareEventType, event?: CareEvent) {
           onChangeText={setPotSizeCm}
           keyboardType="decimal-pad"
         />
-        <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
+        <Field
+          label="Soil"
+          placeholder="Optional"
+          value={soil}
+          onChangeText={setSoil}
+          autoCapitalize="sentences"
+        />
       </>
     );
   }

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -6,22 +6,19 @@ import { setPlantPhoto } from '@/src/core/photos';
 import {
   CARE_TYPES,
   createPlant,
-  type CareSchedule,
+  hasOverride,
+  NO_SCHEDULE,
   type CareType,
   type Plant,
 } from '@/src/core/plants';
-import { listSpecies, type Species } from '@/src/core/species';
+import { searchSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import {
-  alertError,
-  Field,
-  optionalNumber,
-  PrimaryButton,
-  TextButton,
-  WhenPicker,
-} from '@/src/ui/Form';
+import { useCareSchedule } from '@/src/ui/CareSchedule';
+import { EmptyState } from '@/src/ui/EmptyState';
+import { alertError, Field, optionalNumber, TextButton, WhenPicker } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
-import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { scientificBeneath } from '@/src/ui/PlantRow';
+import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
 
 /** "When did you last …?", per care type. */
 const LAST_DONE_LABEL: Record<CareType, string> = {
@@ -30,26 +27,13 @@ const LAST_DONE_LABEL: Record<CareType, string> = {
   repot: 'Repot it',
 };
 
-type ScheduleForm = Record<keyof CareSchedule, string>;
-const EMPTY_SCHEDULE: ScheduleForm = {
-  wateringGrowingDays: '',
-  wateringDormantDays: '',
-  fertilizingGrowingDays: '',
-  fertilizingDormantDays: '',
-  repottingMonths: '',
-};
-const INTERVAL_FIELDS: { key: keyof CareSchedule; label: string; unit: string }[] = [
-  { key: 'wateringGrowingDays', label: 'Watering, Growing season', unit: 'days' },
-  { key: 'wateringDormantDays', label: 'Watering, Dormant season', unit: 'days' },
-  { key: 'fertilizingGrowingDays', label: 'Fertilizing, Growing season', unit: 'days' },
-  { key: 'fertilizingDormantDays', label: 'Fertilizing, Dormant season', unit: 'days' },
-  { key: 'repottingMonths', label: 'Repotting', unit: 'months' },
-];
-
-/** New plant: one scrolling sheet where the Species pick is the only required input (spec #8). */
+/**
+ * New plant: one scrolling sheet where the Species pick is the only required input (spec #8), with
+ * Add in the header, always in reach, and at the top why it can't add yet (spec #22).
+ */
 export default function NewPlantScreen() {
-  const catalog = useMemo(() => listSpecies(db), []);
   const [query, setQuery] = useState('');
+  const matches = useMemo(() => searchSpecies(db, query), [query]);
   const [species, setSpecies] = useState<Species | null>(null);
   const [ownSchedule, setOwnSchedule] = useState(false);
   const [nickname, setNickname] = useState('');
@@ -57,23 +41,12 @@ export default function NewPlantScreen() {
   const [soil, setSoil] = useState('');
   /** The prepared photo's file, filed with the plant once it is added. */
   const [prepared, setPrepared] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState(EMPTY_SCHEDULE);
+  // Without a Species, a plant's Overrides are its whole schedule (ADR-0003).
+  const schedule = useCareSchedule(NO_SCHEDULE, null);
   /** The day each care type was last done; unanswered ones count from the plant's creation. */
   const [lastDone, setLastDone] = useState<Partial<Record<CareType, string>>>({});
 
-  const matches = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return [];
-    return catalog
-      .filter(
-        (s) =>
-          s.colloquialName.toLowerCase().includes(needle) ||
-          s.scientificName.toLowerCase().includes(needle),
-      )
-      .slice(0, 8);
-  }, [catalog, query]);
-
-  const canSave = species !== null || (ownSchedule && nickname.trim() !== '');
+  const whyNot = whyNotYet(species, ownSchedule, nickname, schedule);
 
   const save = () => {
     let plant: Plant;
@@ -83,15 +56,7 @@ export default function NewPlantScreen() {
         nickname,
         potSizeCm: optionalNumber(potSizeCm),
         soil,
-        schedule: ownSchedule
-          ? {
-              wateringGrowingDays: optionalNumber(schedule.wateringGrowingDays),
-              wateringDormantDays: optionalNumber(schedule.wateringDormantDays),
-              fertilizingGrowingDays: optionalNumber(schedule.fertilizingGrowingDays),
-              fertilizingDormantDays: optionalNumber(schedule.fertilizingDormantDays),
-              repottingMonths: optionalNumber(schedule.repottingMonths),
-            }
-          : undefined,
+        schedule: species ? undefined : schedule.overrides,
         lastDone,
       });
     } catch (error) {
@@ -108,17 +73,27 @@ export default function NewPlantScreen() {
     router.back();
   };
 
+  const addWithoutSpecies = () => setOwnSchedule(true);
+
   return (
     <ScrollView
       contentContainerStyle={styles.screen}
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets
     >
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TextButton label="Add" disabled={whyNot !== null} onPress={save} style={target.text} />
+          ),
+        }}
+      />
+      {whyNot && <Text style={text.subheadline}>{whyNot}</Text>}
       <Text style={styles.heading}>Species</Text>
       {species ? (
         <Picked
           title={species.colloquialName}
-          subtitle={species.scientificName}
+          subtitle={scientificBeneath(species.colloquialName, species.scientificName)}
           action="Change"
           onAction={() => setSpecies(null)}
         />
@@ -139,29 +114,40 @@ export default function NewPlantScreen() {
             onChangeText={setQuery}
             autoFocus
             autoCorrect={false}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
           />
-          {matches.map((s, index) => (
-            <Pressable
-              key={s.id}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.match,
-                index > 0 && group.divider,
-                pressed && pressedStyle.row,
-              ]}
-              onPress={() => {
-                setSpecies(s);
-                setQuery('');
-              }}
-            >
-              <Text style={text.body}>{s.colloquialName}</Text>
-              <Text style={text.subheadline}>{s.scientificName}</Text>
-            </Pressable>
-          ))}
-          {query.trim() !== '' && matches.length === 0 && (
-            <Text style={text.subheadline}>Nothing in the catalog matches.</Text>
+          {matches.map((s, index) => {
+            const scientific = scientificBeneath(s.colloquialName, s.scientificName);
+            return (
+              <Pressable
+                key={s.id}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.match,
+                  index > 0 && group.divider,
+                  pressed && pressedStyle.row,
+                ]}
+                onPress={() => {
+                  setSpecies(s);
+                  setQuery('');
+                }}
+              >
+                <Text style={text.body}>{s.colloquialName}</Text>
+                {scientific && <Text style={text.subheadline}>{scientific}</Text>}
+              </Pressable>
+            );
+          })}
+          {query.trim() !== '' && matches.length === 0 ? (
+            <EmptyState
+              symbol="magnifyingglass"
+              title="Not in the catalog"
+              line="Check the spelling, or add it without a species and give it its own schedule."
+              action={{ label: 'Add without a species', onPress: addWithoutSpecies }}
+            />
+          ) : (
+            <TextButton label="Add without a species" onPress={addWithoutSpecies} />
           )}
-          <TextButton label="Add without a species" onPress={() => setOwnSchedule(true)} />
         </>
       )}
 
@@ -175,6 +161,9 @@ export default function NewPlantScreen() {
         placeholder={ownSchedule ? 'Required' : 'Optional'}
         value={nickname}
         onChangeText={setNickname}
+        autoCapitalize="words"
+        // iOS would offer contacts' names.
+        textContentType="none"
       />
       <Field
         label="Pot size"
@@ -184,26 +173,18 @@ export default function NewPlantScreen() {
         onChangeText={setPotSizeCm}
         keyboardType="decimal-pad"
       />
-      <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
+      <Field
+        label="Soil"
+        placeholder="Optional"
+        value={soil}
+        onChangeText={setSoil}
+        autoCapitalize="sentences"
+      />
 
       {ownSchedule && (
         <>
           <Text style={styles.heading}>Care schedule</Text>
-          <Text style={text.subheadline}>
-            Days between waterings and feedings in the Growing and Dormant seasons, months between
-            repots. Leave a care type blank if this plant never needs it, and a Dormant field blank
-            to pause that care for the winter.
-          </Text>
-          {INTERVAL_FIELDS.map(({ key, label, unit }) => (
-            <Field
-              key={key}
-              label={label}
-              suffix={unit}
-              value={schedule[key]}
-              onChangeText={(value) => setSchedule((form) => ({ ...form, [key]: value }))}
-              keyboardType="number-pad"
-            />
-          ))}
+          {schedule.fields}
         </>
       )}
 
@@ -220,10 +201,28 @@ export default function NewPlantScreen() {
           onChange={(day) => setLastDone({ ...lastDone, [type]: day ?? undefined })}
         />
       ))}
-
-      <PrimaryButton label="Add plant" disabled={!canSave} onPress={save} />
     </ScrollView>
   );
+}
+
+/**
+ * Why the plant can't be added yet, or null once it can: without a Species it needs what the core
+ * asks of one (validatePlant), a nickname and its own schedule for a care type at least.
+ */
+function whyNotYet(
+  species: Species | null,
+  ownSchedule: boolean,
+  nickname: string,
+  schedule: ReturnType<typeof useCareSchedule>,
+): string | null {
+  if (species) return null;
+  if (!ownSchedule) return 'Pick a species, or add without one and give it a nickname.';
+  if (!nickname.trim()) return 'Give it a nickname to add it without a species.';
+  if (schedule.problem) return schedule.problem;
+  if (!CARE_TYPES.some((type) => hasOverride(schedule.overrides, type))) {
+    return 'Give it its own schedule for at least one care type.';
+  }
+  return null;
 }
 
 function Picked({
@@ -233,7 +232,7 @@ function Picked({
   onAction,
 }: {
   title: string;
-  subtitle: string;
+  subtitle: string | null;
   action: string;
   onAction: () => void;
 }) {
@@ -241,7 +240,7 @@ function Picked({
     <View style={styles.picked}>
       <View style={styles.grow}>
         <Text style={text.body}>{title}</Text>
-        <Text style={text.subheadline}>{subtitle}</Text>
+        {subtitle && <Text style={text.subheadline}>{subtitle}</Text>}
       </View>
       <TextButton label={action} onPress={onAction} />
     </View>
@@ -249,7 +248,7 @@ function Picked({
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: space.l, gap: space.m, paddingBottom: 48 },
+  screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
   heading: { ...text.title3, marginTop: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   grow: { flex: 1 },
