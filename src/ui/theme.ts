@@ -6,7 +6,7 @@ const GREEN = { light: '#2e7d32', dark: '#6fcf73' };
 
 /**
  * The app's colours, the only ones it uses: iOS semantic colours, which follow light and dark
- * mode and Increase Contrast by themselves, and brand green. React Native draws text black unless
+ * mode and Increase Contrast by themselves, brand green, and two status colours in iOS's shades. React Native draws text black unless
  * told otherwise, so every Text takes its colour from here, through `text`.
  */
 export const colors = {
@@ -30,12 +30,15 @@ export const colors = {
   onTint: DynamicColorIOS({ light: '#ffffff', dark: '#0b2410' }),
   /** A pale tint, behind a photo placeholder or a picked Species. */
   tintSoft: DynamicColorIOS({ light: '#e8f5e9', dark: '#1d3320' }),
+  // The two status colours are iOS's systemRed and systemOrange, but in light mode their Increase
+  // Contrast shades: the default ones read about 3.5:1 and 2.2:1 on a card, short of the 4.5:1 a
+  // status line needs (ticket #30).
   /** Overdue care, toxicity, and destructive actions. */
-  danger: Color.ios.systemRed,
-  /** A pale danger, behind the toxicity badge. */
-  dangerSoft: DynamicColorIOS({ light: '#fdecea', dark: '#3b1d1b' }),
+  danger: DynamicColorIOS({ light: '#d70015', dark: '#ff453a', highContrastDark: '#ff6961' }),
+  /** A pale danger, behind the toxicity badge: dark enough in dark mode for 4.5:1 with danger. */
+  dangerSoft: DynamicColorIOS({ light: '#fdecea', dark: '#361a18' }),
   /** Care Due today. */
-  dueToday: Color.ios.systemOrange,
+  dueToday: DynamicColorIOS({ light: '#c93400', dark: '#ff9f0a', highContrastDark: '#ffb340' }),
   // Each kind of Care Event's hue, beside its symbol (CARE_COPY).
   water: Color.ios.systemBlue,
   fertilize: Color.ios.systemYellow,

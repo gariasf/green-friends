@@ -44,7 +44,9 @@ export default function CareEventSheet() {
     <View style={styles.sheet}>
       <View style={styles.header}>
         <CareSymbol type={event.type} size={22} />
-        <Text style={[text.title3, styles.grow]}>{CARE_COPY[event.type].done}</Text>
+        <Text accessibilityRole="header" style={[text.title3, styles.grow]}>
+          {CARE_COPY[event.type].done}
+        </Text>
         <CloseButton />
       </View>
       <WhenPicker label="When did it happen?" value={occurredOn} onChange={setOccurredOn} />

@@ -12,6 +12,7 @@ import {
   Text,
 } from '@expo/ui/swift-ui';
 import {
+  accessibilityValue,
   datePickerStyle,
   disabled,
   environment,
@@ -202,7 +203,11 @@ export default function SettingsScreen() {
             </Text>
           }
         >
-          <Button onPress={exportGarden} modifiers={[disabled(zipping)]}>
+          <Button
+            onPress={exportGarden}
+            // The spinner alone reads as "1" to VoiceOver.
+            modifiers={[disabled(zipping), ...(zipping ? [accessibilityValue('Exporting')] : [])]}
+          >
             <HStack>
               <Text>Export garden</Text>
               <Spacer />

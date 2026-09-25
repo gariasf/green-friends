@@ -1,4 +1,3 @@
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -10,7 +9,7 @@ import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
-import { alertError, CloseButton, PrimaryButton, WhenPicker } from '@/src/ui/Form';
+import { alertError, CloseButton, PrimaryButton, Segmented, WhenPicker } from '@/src/ui/Form';
 import { space, text } from '@/src/ui/theme';
 
 /**
@@ -54,13 +53,10 @@ export default function LogCareSheet() {
         <CloseButton />
       </View>
       {inCare && (
-        <SegmentedControl
-          values={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
-          selectedIndex={CARE_EVENT_TYPES.indexOf(type)}
-          onChange={({ nativeEvent }) => {
-            Haptics.selectionAsync();
-            setType(CARE_EVENT_TYPES[nativeEvent.selectedSegmentIndex]);
-          }}
+        <Segmented
+          options={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
+          selected={CARE_EVENT_TYPES.indexOf(type)}
+          onChange={(index) => setType(CARE_EVENT_TYPES[index])}
         />
       )}
       <WhenPicker label="When did it happen?" value={day} onChange={setDay} />

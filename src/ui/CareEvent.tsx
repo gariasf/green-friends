@@ -27,10 +27,13 @@ export const CARE_COPY: Record<
   note: { symbol: 'note.text', hue: colors.note, label: 'Note', done: 'Note' },
 };
 
-/** A Care Event type's symbol, in its hue. */
+/**
+ * A Care Event type's symbol, in its hue. Always beside its words, so VoiceOver skips it rather
+ * than read the symbol's name ("sparkle").
+ */
 export function CareSymbol({ type, size }: { type: CareEventType; size: number }) {
   const { symbol, hue } = CARE_COPY[type];
-  return <SymbolView name={symbol} size={size} tintColor={hue} />;
+  return <SymbolView accessibilityElementsHidden name={symbol} size={size} tintColor={hue} />;
 }
 
 /** How many plants Need Attention, as Today's date line and the Daily Digest's title put it. */

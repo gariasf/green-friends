@@ -74,7 +74,9 @@ export default function EditPlantScreen() {
       automaticallyAdjustKeyboardInsets
     >
       <Stack.Screen options={{ title: displayName }} />
-      <Text style={styles.heading}>About this plant</Text>
+      <Text accessibilityRole="header" style={styles.heading}>
+        About this plant
+      </Text>
       <Field
         label="Nickname"
         // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).
@@ -95,7 +97,9 @@ export default function EditPlantScreen() {
       />
       <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
 
-      <Text style={styles.heading}>Care schedule</Text>
+      <Text accessibilityRole="header" style={styles.heading}>
+        Care schedule
+      </Text>
       {schedule.fields}
 
       <PrimaryButton label="Save" onPress={save} />

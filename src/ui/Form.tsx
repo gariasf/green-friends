@@ -1,5 +1,12 @@
-import { DatePicker, Host } from '@expo/ui/swift-ui';
-import { datePickerStyle, labelsHidden } from '@expo/ui/swift-ui/modifiers';
+import { DatePicker, Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
+import {
+  controlSize,
+  datePickerStyle,
+  labelsHidden,
+  pickerStyle,
+  tag,
+} from '@expo/ui/swift-ui/modifiers';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useId } from 'react';
@@ -20,7 +27,7 @@ import {
 
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
-import { accessibilitySize, colors, pressedStyle, space, text } from '@/src/ui/theme';
+import { accessibilitySize, colors, pressedStyle, space, target, text } from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
 
@@ -138,14 +145,48 @@ export function WhenPicker({
   );
 }
 
+/**
+ * iOS's segmented control, picking one of `options` by index with a selection haptic. At its
+ * extra-large size, 47 pt tall: the regular one is 31 pt, short of a 44 pt target (ticket #30).
+ */
+export function Segmented({
+  options,
+  selected,
+  onChange,
+}: {
+  options: string[];
+  selected: number;
+  onChange: (index: number) => void;
+}) {
+  return (
+    <Host matchContents={{ vertical: true }} ignoreSafeArea="all">
+      <Picker
+        label=""
+        selection={selected}
+        onSelectionChange={(index) => {
+          Haptics.selectionAsync();
+          onChange(index);
+        }}
+        modifiers={[pickerStyle('segmented'), controlSize('extraLarge')]}
+      >
+        {options.map((option, index) => (
+          <SwiftText key={index} modifiers={[tag(index)]}>
+            {option}
+          </SwiftText>
+        ))}
+      </Picker>
+    </Host>
+  );
+}
+
 /** Closes a sheet: iOS's grey ⓧ, top right. */
 export function CloseButton() {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Close"
-      // 30 pt across; this makes it a 44 pt target.
-      hitSlop={7}
+      // 29 pt across as drawn; this makes it a 45 pt target.
+      hitSlop={8}
       onPress={() => router.back()}
       style={({ pressed }) => pressed && pressedStyle.button}
     >
@@ -183,20 +224,26 @@ export function PrimaryButton({
 
 /**
  * A button that is only its label, in the tint, in red when it destroys something, or grey while
- * disabled; `accessibilityLabel` names it for VoiceOver where the label alone is ambiguous.
+ * disabled; `accessibilityLabel` names it for VoiceOver where the label alone is ambiguous, and
+ * `accessibilityHint` says what it does where that isn't obvious. In a `header`, it is a 44 pt
+ * target by its own size, its text growing no larger than the header's title.
  */
 export function TextButton({
   label,
   destructive = false,
   disabled = false,
+  header = false,
   accessibilityLabel,
+  accessibilityHint,
   onPress,
   style,
 }: {
   label: string;
   destructive?: boolean;
   disabled?: boolean;
+  header?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -204,14 +251,17 @@ export function TextButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
       disabled={disabled}
       // A line of body text is about 20 pt tall; this makes it a 44 pt target.
       hitSlop={12}
       onPress={onPress}
-      style={({ pressed }) => [style, pressed && pressedStyle.button]}
+      style={({ pressed }) => [header && target.text, style, pressed && pressedStyle.button]}
     >
       <Text
+        // A header's title and UIKit's own header buttons don't grow with Dynamic Type.
+        maxFontSizeMultiplier={header ? 1 : undefined}
         style={[
           styles.textButton,
           destructive && styles.destructive,

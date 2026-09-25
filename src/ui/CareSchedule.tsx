@@ -1,5 +1,3 @@
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
-import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -11,7 +9,7 @@ import {
   type CareType,
 } from '@/src/core/plants';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
-import { Field, optionalNumber } from '@/src/ui/Form';
+import { Field, optionalNumber, Segmented } from '@/src/ui/Form';
 import { space, text } from '@/src/ui/theme';
 
 /**
@@ -74,15 +72,14 @@ function CareTypeSchedule({
     <View style={styles.careType}>
       <View style={styles.careTypeHead}>
         <CareSymbol type={type} size={18} />
-        <Text style={text.headline}>{label}</Text>
+        <Text accessibilityRole="header" style={text.headline}>
+          {label}
+        </Text>
       </View>
-      <SegmentedControl
-        values={[defaults ? 'Species default' : 'None', 'Own schedule']}
-        selectedIndex={value.own ? 1 : 0}
-        onChange={({ nativeEvent }) => {
-          Haptics.selectionAsync();
-          onChange({ ...value, own: nativeEvent.selectedSegmentIndex === 1 });
-        }}
+      <Segmented
+        options={[defaults ? 'Species default' : 'None', 'Own schedule']}
+        selected={value.own ? 1 : 0}
+        onChange={(index) => onChange({ ...value, own: index === 1 })}
       />
       {!value.own && <Text style={text.subheadline}>{describeDefault(type, defaults)}</Text>}
       {value.own && type === 'repot' && (

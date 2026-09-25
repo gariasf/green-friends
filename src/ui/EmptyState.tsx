@@ -21,8 +21,10 @@ export function EmptyState({
 }) {
   return (
     <View style={styles.empty}>
-      <SymbolView name={symbol} size={44} tintColor={colors.tint} />
-      <Text style={styles.title}>{title}</Text>
+      <SymbolView accessibilityElementsHidden name={symbol} size={44} tintColor={colors.tint} />
+      <Text accessibilityRole="header" style={styles.title}>
+        {title}
+      </Text>
       <Text style={styles.line}>{line}</Text>
       {action && <TextButton label={action.label} onPress={action.onPress} style={styles.action} />}
     </View>

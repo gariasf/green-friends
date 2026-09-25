@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { setPlantPhoto } from '@/src/core/photos';
 import {
@@ -18,7 +18,7 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { alertError, Field, optionalNumber, TextButton, WhenPicker } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
+import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /** "When did you last …?", per care type. */
 const LAST_DONE_LABEL: Record<CareType, string> = {
@@ -84,12 +84,21 @@ export default function NewPlantScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <TextButton label="Add" disabled={whyNot !== null} onPress={save} style={target.text} />
+            <TextButton
+              label="Add"
+              header
+              disabled={whyNot !== null}
+              // Why it's dimmed, for VoiceOver, which doesn't read the form's first line as it changes.
+              accessibilityHint={whyNot ?? undefined}
+              onPress={save}
+            />
           ),
         }}
       />
       {whyNot && <Text style={text.subheadline}>{whyNot}</Text>}
-      <Text style={styles.heading}>Species</Text>
+      <Text accessibilityRole="header" style={styles.heading}>
+        Species
+      </Text>
       {species ? (
         <Picked
           title={species.colloquialName}
@@ -151,7 +160,9 @@ export default function NewPlantScreen() {
         </>
       )}
 
-      <Text style={styles.heading}>About this plant</Text>
+      <Text accessibilityRole="header" style={styles.heading}>
+        About this plant
+      </Text>
       <View style={styles.photoRow}>
         <PlantPhoto uri={prepared} size={64} />
         <PhotoButton hasPhoto={prepared !== null} onPick={setPrepared} />
@@ -177,12 +188,16 @@ export default function NewPlantScreen() {
 
       {ownSchedule && (
         <>
-          <Text style={styles.heading}>Care schedule</Text>
+          <Text accessibilityRole="header" style={styles.heading}>
+            Care schedule
+          </Text>
           {schedule.fields}
         </>
       )}
 
-      <Text style={styles.heading}>When did you last…</Text>
+      <Text accessibilityRole="header" style={styles.heading}>
+        When did you last…
+      </Text>
       <Text style={text.subheadline}>
         Optional. Answers set the first due dates; the rest count from today.
       </Text>
@@ -230,9 +245,11 @@ function Picked({
   action: string;
   onAction: () => void;
 }) {
+  // Beside the action, the title breaks mid-word at accessibility text sizes, so there it stacks.
+  const stacked = accessibilitySize(useWindowDimensions().fontScale);
   return (
-    <View style={styles.picked}>
-      <View style={styles.grow}>
+    <View style={[styles.picked, stacked && styles.pickedStacked]}>
+      <View style={!stacked && styles.grow}>
         <Text style={text.body}>{title}</Text>
         {subtitle && <Text style={text.subheadline}>{subtitle}</Text>}
       </View>
@@ -256,4 +273,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: colors.tintSoft,
   },
+  pickedStacked: { flexDirection: 'column', alignItems: 'flex-start' },
 });

@@ -45,15 +45,7 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import {
-  accessibilitySize,
-  colors,
-  group,
-  pressedStyle,
-  space,
-  target,
-  text,
-} from '@/src/ui/theme';
+import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
@@ -86,8 +78,8 @@ export default function PlantScreen() {
             headerRight: () => (
               <TextButton
                 label="Edit"
+                header
                 onPress={() => router.push({ pathname: '/plants/[id]/edit', params: { id } })}
-                style={target.text}
               />
             ),
           }}
@@ -111,15 +103,23 @@ export default function PlantScreen() {
         </Pressable>
 
         <View style={styles.title}>
-          <Text style={text.title1}>{plant.displayName}</Text>
+          <Text accessibilityRole="header" style={text.title1}>
+            {plant.displayName}
+          </Text>
           {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
         </View>
 
         {plant.archivedAt !== null && (
-          <View style={styles.banner}>
-            <SymbolView name="archivebox" size={18} tintColor={colors.secondaryLabel} />
-            <Text style={[text.subheadline, styles.grow]}>
+          // In a row, the line wraps into a tall column at accessibility text sizes, so there it stacks.
+          <View style={[styles.banner, accessibilitySize(fontScale) && styles.bannerStacked]}>
+            <SymbolView
+              accessibilityElementsHidden
+              name="archivebox"
+              size={18}
+              tintColor={colors.secondaryLabel}
+            />
+            <Text style={[text.subheadline, !accessibilitySize(fontScale) && styles.grow]}>
               Archived: out of care, its Care Log kept.
             </Text>
             <TextButton label="Unarchive" onPress={() => unarchivePlant(db, id)} />
@@ -150,7 +150,9 @@ export default function PlantScreen() {
         )}
 
         <View style={styles.logHead}>
-          <Text style={group.header}>Care Log</Text>
+          <Text accessibilityRole="header" style={group.header}>
+            Care Log
+          </Text>
           <TextButton label="Add note" onPress={() => openLog('note')} />
         </View>
         {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
@@ -229,6 +231,7 @@ function Toxicity({ toxic }: { toxic: boolean }) {
   return (
     <View style={[styles.badge, toxic && styles.badgeToxic]}>
       <SymbolView
+        accessibilityElementsHidden
         name="pawprint.fill"
         size={12}
         tintColor={toxic ? colors.danger : colors.secondaryLabel}
@@ -286,7 +289,9 @@ function CareTile({
       {due && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${label}, done today`}
+          // Starts with the word it shows, so Voice Control's "Tap Done" finds it.
+          accessibilityLabel={`Done, ${CARE_COPY[type].done.toLowerCase()}`}
+          accessibilityHint="Logs it as done today"
           // 26 pt tall; this makes it a 44 pt target.
           hitSlop={{ top: 9, bottom: 9 }}
           onPress={onDone}
@@ -403,6 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.surface,
   },
+  bannerStacked: { flexDirection: 'column', alignItems: 'flex-start' },
   tiles: { flexDirection: 'row', gap: space.s, paddingHorizontal: space.l },
   tilesStacked: { flexDirection: 'column' },
   tile: {

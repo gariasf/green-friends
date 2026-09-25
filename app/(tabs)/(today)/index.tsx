@@ -1,4 +1,5 @@
-import { MenuView, type MenuAction } from '@expo/ui/community/menu';
+import { Button, Host, Menu, RNHostView, Section } from '@expo/ui/swift-ui';
+import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -135,7 +136,7 @@ const MORE = [
   { id: 'log', title: 'Log earlier…', image: 'calendar' },
   { id: 'note', title: 'Add note', image: CARE_COPY.note.symbol },
   { id: 'edit', title: 'Edit plant', image: 'pencil' },
-] satisfies MenuAction[];
+] as const;
 
 /** Opens what was picked from a card's ⋯. */
 function openPicked({ id }: PlantCare, action: string) {
@@ -199,23 +200,38 @@ function CareCard({
             {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           </View>
         </Pressable>
-        {/* iOS's own menu, which opens on a tap. */}
-        <MenuView
-          title={plant.displayName}
-          actions={MORE}
-          onPressAction={({ nativeEvent }) => openPicked(plant, nativeEvent.event)}
-        >
-          <View accessibilityLabel={`More for ${plant.displayName}`} style={target.icon}>
-            <View style={styles.more}>
-              <SymbolView
-                name="ellipsis"
-                size={16}
-                weight="bold"
-                tintColor={colors.secondaryLabel}
-              />
-            </View>
-          </View>
-        </MenuView>
+        {/* iOS's own menu, which opens on a tap. SwiftUI's Menu is the button VoiceOver reads, so
+            the label goes on it; @expo/ui's MenuView drop-in can't pass it one. */}
+        <Host matchContents ignoreSafeArea="all">
+          <Menu
+            label={
+              <RNHostView matchContents>
+                <View style={target.icon}>
+                  <View style={styles.more}>
+                    <SymbolView
+                      name="ellipsis"
+                      size={16}
+                      weight="bold"
+                      tintColor={colors.secondaryLabel}
+                    />
+                  </View>
+                </View>
+              </RNHostView>
+            }
+            modifiers={[accessibilityLabel(`More for ${plant.displayName}`)]}
+          >
+            <Section title={plant.displayName}>
+              {MORE.map(({ id, title, image }) => (
+                <Button
+                  key={id}
+                  label={title}
+                  systemImage={image}
+                  onPress={() => openPicked(plant, id)}
+                />
+              ))}
+            </Section>
+          </Menu>
+        </Host>
       </View>
       {due.map(({ type, daysOverdue }) => {
         const overdue = daysOverdue > 0;
@@ -245,6 +261,7 @@ function CareCard({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
+              accessibilityHint="Logs it as done today"
               disabled={done}
               // 30 pt across; this makes it a 46 pt target.
               hitSlop={8}
@@ -285,7 +302,9 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
   const width = 84 * useWindowDimensions().fontScale;
   return (
     <Animated.View layout={LinearTransition}>
-      <Text style={[group.header, styles.restHeading]}>Everything else</Text>
+      <Text accessibilityRole="header" style={[group.header, styles.restHeading]}>
+        Everything else
+      </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

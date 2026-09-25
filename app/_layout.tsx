@@ -8,7 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
-import { colors, navigationTheme, target } from '@/src/ui/theme';
+import { colors, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
@@ -67,9 +67,7 @@ export default function RootLayout() {
           options={{
             title: 'New plant',
             presentation: 'modal',
-            headerLeft: () => (
-              <TextButton label="Cancel" onPress={() => router.back()} style={target.text} />
-            ),
+            headerLeft: () => <TextButton label="Cancel" header onPress={() => router.back()} />,
           }}
         />
         {/* The plant's photo leads the screen and its name follows, so the header has no title. */}
