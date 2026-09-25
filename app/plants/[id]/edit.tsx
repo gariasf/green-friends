@@ -15,7 +15,7 @@ import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
 import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
-import { colors, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**
  * A plant's details (spec #8): its nickname and Current Pot, per care type the Species default or
@@ -142,7 +142,7 @@ function Action({ label, hint, onPress }: { label: string; hint: string; onPress
 
 const styles = StyleSheet.create({
   screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
-  heading: { ...text.title3, marginTop: space.s },
+  heading: { ...group.header, marginTop: space.s },
   centered: { alignSelf: 'center' },
   centeredText: { textAlign: 'center' },
   actions: { marginTop: space.xxl, gap: space.xxl },

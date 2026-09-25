@@ -243,7 +243,7 @@ function Picked({
 
 const styles = StyleSheet.create({
   screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
-  heading: { ...text.title3, marginTop: space.s },
+  heading: { ...group.header, marginTop: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   grow: { flex: 1 },
   // One line tall for a Species known by its scientific name; still a 44 pt target.
