@@ -347,6 +347,47 @@ describe('editing plants', () => {
     });
   });
 
+  test("a plant's Species can be changed, and it then goes by the new one's name", () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA });
+
+    updatePlant(db, id, { speciesId: POTHOS });
+
+    expect(listPlants(db)).toMatchObject([
+      { displayName: 'Pothos', scientificName: 'Epipremnum aureum' },
+    ]);
+  });
+
+  test('a plant without a species can gain one, keeping its schedule as Overrides and dropping its nickname', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { nickname: 'Air plant', schedule: AIR_PLANT_SCHEDULE });
+
+    updatePlant(db, id, { speciesId: POTHOS, nickname: '' });
+
+    expect(getPlant(db, id)).toMatchObject({ speciesId: POTHOS, ...AIR_PLANT_SCHEDULE });
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Pothos' }]);
+  });
+
+  test('a Species the catalog does not know is refused, even for a plant with a nickname', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: MONSTERA, nickname: 'Big Monty' });
+
+    expect(() => updatePlant(db, id, { speciesId: 'Q0' })).toThrow(/species/i);
+
+    expect(getPlant(db, id)).toMatchObject({ speciesId: MONSTERA });
+  });
+
+  test('a plant keeps a Species the catalog does not know when saved with it unchanged', () => {
+    const db = gardenDb();
+    const { id } = createPlant(db, { speciesId: POTHOS, nickname: 'Trailing one' });
+    // A catalog without the plant's species: the state an Import can leave (ADR-0002).
+    seedSpecies(db, { version: 2, species: [catalog.monstera] });
+
+    updatePlant(db, id, { speciesId: POTHOS, soil: 'Bark' });
+
+    expect(getPlant(db, id)).toMatchObject({ speciesId: POTHOS, soil: 'Bark' });
+  });
+
   test('editing an unknown plant is refused', () => {
     const db = gardenDb();
 

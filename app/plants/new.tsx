@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { setPlantPhoto } from '@/src/core/photos';
 import {
@@ -11,14 +11,14 @@ import {
   type CareType,
   type Plant,
 } from '@/src/core/plants';
-import { searchSpecies, type Species } from '@/src/core/species';
+import { type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
-import { EmptyState } from '@/src/ui/EmptyState';
 import { alertError, Field, optionalNumber, TextButton, WhenPicker } from '@/src/ui/Form';
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/PlantRow';
-import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
+import { group, space, text } from '@/src/ui/theme';
 
 /** "When did you last …?", per care type. */
 const LAST_DONE_LABEL: Record<CareType, string> = {
@@ -32,8 +32,6 @@ const LAST_DONE_LABEL: Record<CareType, string> = {
  * Add in the header, always in reach, and at the top why it can't add yet (spec #22).
  */
 export default function NewPlantScreen() {
-  const [query, setQuery] = useState('');
-  const matches = useMemo(() => searchSpecies(db, query), [query]);
   const [species, setSpecies] = useState<Species | null>(null);
   const [ownSchedule, setOwnSchedule] = useState(false);
   const [nickname, setNickname] = useState('');
@@ -100,64 +98,28 @@ export default function NewPlantScreen() {
         Species
       </Text>
       {species ? (
-        <Picked
+        <PickedSpecies
           title={species.colloquialName}
           subtitle={scientificBeneath(species.colloquialName, species.scientificName)}
           action="Change"
           onAction={() => setSpecies(null)}
         />
       ) : ownSchedule ? (
-        <Picked
+        <PickedSpecies
           title="No species"
           subtitle="This plant carries its own care schedule."
           action="Pick a species"
           onAction={() => setOwnSchedule(false)}
         />
       ) : (
-        <>
-          <Field
-            // The heading above labels it; a search field shows what to type.
-            placeholder="Search by name, e.g. monstera"
-            accessibilityLabel="Search species"
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            returnKeyType="search"
-          />
-          {matches.map((s, index) => {
-            const scientific = scientificBeneath(s.colloquialName, s.scientificName);
-            return (
-              <Pressable
-                key={s.id}
-                accessibilityRole="button"
-                style={({ pressed }) => [
-                  styles.match,
-                  index > 0 && group.divider,
-                  pressed && pressedStyle.row,
-                ]}
-                onPress={() => {
-                  setSpecies(s);
-                  setQuery('');
-                }}
-              >
-                <Text style={text.body}>{s.colloquialName}</Text>
-                {scientific && <Text style={text.subheadline}>{scientific}</Text>}
-              </Pressable>
-            );
-          })}
-          {query.trim() !== '' && matches.length === 0 ? (
-            <EmptyState
-              symbol="magnifyingglass"
-              title="Not in the catalog"
-              line="Check the spelling, or add it without a species and give it its own schedule."
-              action={{ label: 'Add without a species', onPress: addWithoutSpecies }}
-            />
-          ) : (
-            <TextButton label="Add without a species" onPress={addWithoutSpecies} />
-          )}
-        </>
+        <SpeciesSearch
+          onPick={setSpecies}
+          fallback={{
+            label: 'Add without a species',
+            line: 'Check the spelling, or add it without a species and give it its own schedule.',
+            onPress: addWithoutSpecies,
+          }}
+        />
       )}
 
       <Text accessibilityRole="header" style={styles.heading}>
@@ -234,44 +196,8 @@ function whyNotYet(
   return null;
 }
 
-function Picked({
-  title,
-  subtitle,
-  action,
-  onAction,
-}: {
-  title: string;
-  subtitle: string | null;
-  action: string;
-  onAction: () => void;
-}) {
-  // Beside the action, the title breaks mid-word at accessibility text sizes, so there it stacks.
-  const stacked = accessibilitySize(useWindowDimensions().fontScale);
-  return (
-    <View style={[styles.picked, stacked && styles.pickedStacked]}>
-      <View style={!stacked && styles.grow}>
-        <Text style={text.body}>{title}</Text>
-        {subtitle && <Text style={text.subheadline}>{subtitle}</Text>}
-      </View>
-      <TextButton label={action} onPress={onAction} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
   heading: { ...group.header, marginTop: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
-  grow: { flex: 1 },
-  // One line tall for a Species known by its scientific name; still a 44 pt target.
-  match: { minHeight: 44, justifyContent: 'center', paddingVertical: space.s },
-  picked: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.m,
-    padding: space.m,
-    borderRadius: 10,
-    backgroundColor: colors.tintSoft,
-  },
-  pickedStacked: { flexDirection: 'column', alignItems: 'flex-start' },
 });

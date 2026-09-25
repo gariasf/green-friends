@@ -22,12 +22,14 @@ type CareTypeForm = { own: boolean; growing: string; dormant: string };
  * A plant's care schedule as Edit plant, and New plant without a Species, set it (spec #22): per
  * care type, a segmented control between the Species default ("None" without a known Species) and
  * an Override of the plant's own (ADR-0003), every so many days and, in the Dormant season, every
- * so many or Paused; repotting every so many months. It starts from the plant's Overrides where
- * set, else from the defaults they'd shadow. Gives the fields to show, the Override columns they
- * set (null for a care type left to its default), and why they can't be saved yet, if they can't.
+ * so many or Paused; repotting every so many months. Each time an Override is switched on it
+ * starts over, from the plant's own values where it has them, else from the defaults it shadows
+ * then, as Edit plant's Species can change meanwhile. Gives the fields to show, the Override
+ * columns they set (null for a care type left to its default), and why they can't be saved yet,
+ * if they can't.
  */
 export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | null) {
-  const [form, setForm] = useState(() => startingSchedule(plant, defaults));
+  const [form, setForm] = useState(() => startingSchedule(plant));
   const override = (type: CareType, interval: string) =>
     form[type].own ? optionalNumber(interval) : null;
   // A blank Growing interval would clear the Override (ADR-0003), not keep an own schedule.
@@ -40,7 +42,18 @@ export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | nu
         type={type}
         value={form[type]}
         defaults={defaults}
-        onChange={(value) => setForm((current) => ({ ...current, [type]: value }))}
+        onChange={(value) =>
+          setForm((current) => ({
+            ...current,
+            [type]:
+              value.own === current[type].own
+                ? value
+                : {
+                    own: value.own,
+                    ...intervals(type, hasOverride(plant, type) ? plant : defaults),
+                  },
+          }))
+        }
       />
     )),
     overrides: {
@@ -118,31 +131,21 @@ function CareTypeSchedule({
   );
 }
 
-/**
- * Where the form starts: each care type's Override where one is set, else the Species default, so
- * an Override begins from the values it shadows.
- */
-function startingSchedule(
-  plant: CareSchedule,
-  defaults: CareSchedule | null,
-): Record<CareType, CareTypeForm> {
-  const asText = (value: number | null | undefined) => value?.toString() ?? '';
-  const seasonal = (type: 'water' | 'fertilize'): CareTypeForm => {
-    const { growing, dormant } = SEASONAL[type];
+/** Where the form starts: each care type's Override where one is set, else blank until switched on. */
+function startingSchedule(plant: CareSchedule): Record<CareType, CareTypeForm> {
+  const start = (type: CareType): CareTypeForm => {
     const own = hasOverride(plant, type);
-    const source = own ? plant : defaults;
-    return { own, growing: asText(source?.[growing]), dormant: asText(source?.[dormant]) };
+    return { own, ...intervals(type, own ? plant : null) };
   };
-  const ownRepot = hasOverride(plant, 'repot');
-  return {
-    water: seasonal('water'),
-    fertilize: seasonal('fertilize'),
-    repot: {
-      own: ownRepot,
-      growing: asText((ownRepot ? plant : defaults)?.repottingMonths),
-      dormant: '',
-    },
-  };
+  return { water: start('water'), fertilize: start('fertilize'), repot: start('repot') };
+}
+
+/** A care type's intervals in `source`, as the form holds them. */
+function intervals(type: CareType, source: CareSchedule | null) {
+  const asText = (value: number | null | undefined) => value?.toString() ?? '';
+  if (type === 'repot') return { growing: asText(source?.repottingMonths), dormant: '' };
+  const { growing, dormant } = SEASONAL[type];
+  return { growing: asText(source?.[growing]), dormant: asText(source?.[dormant]) };
 }
 
 /** A care type's Species default in words; a plant with no Species has none. */

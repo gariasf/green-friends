@@ -122,6 +122,7 @@ export function getPlant(db: Db, id: string): Plant {
 
 /** The columns updatePlant may change; anything else on a patch object is ignored. */
 const PATCHABLE = [
+  'speciesId',
   'nickname',
   'potSizeCm',
   'soil',
@@ -135,16 +136,22 @@ const PATCHABLE = [
 export type PlantPatch = Partial<Pick<Plant, (typeof PATCHABLE)[number]>>;
 
 /**
- * Edits a live Plant: nickname, Current Pot, and its Override columns (ADR-0003: set a care type's
+ * Edits a live Plant: its Species (one the catalog knows; Overrides stay, shadowing the new
+ * Species' defaults), nickname, Current Pot, and its Override columns (ADR-0003: set a care type's
  * Growing or repotting interval to shadow the Species default; null the Growing interval to clear
  * the Override, Dormant included; a null Dormant interval inside a set Override is Paused).
  * Due-ness re-derives from the Care Log on the next evaluation, so a schedule edit takes effect at
  * once. Undefined entries leave the field as it is; timestamps and tombstones are never patchable.
  */
 export function updatePlant(db: Db, id: string, patch: PlantPatch, now: Date = new Date()): Plant {
-  const next: Plant = { ...getPlant(db, id), updatedAt: now.toISOString() };
+  const current = getPlant(db, id);
+  const next: Plant = { ...current, updatedAt: now.toISOString() };
   for (const key of PATCHABLE) {
     if (patch[key] !== undefined) Object.assign(next, { [key]: patch[key] });
+  }
+  // An imported plant may keep a Species the catalog doesn't know (ADR-0002), but never take one.
+  if (next.speciesId && next.speciesId !== current.speciesId && !getSpecies(db, next.speciesId)) {
+    throw new Error(`Unknown species ${next.speciesId}`);
   }
   for (const { growing, dormant } of Object.values(SEASONAL)) {
     // Clearing an Override clears every value for that care type (ADR-0003).

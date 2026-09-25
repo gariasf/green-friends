@@ -10,26 +10,33 @@ import {
   unarchivePlant,
   updatePlant,
 } from '@/src/core/plants';
-import { getSpecies } from '@/src/core/species';
+import { getSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
 import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
+import { scientificBeneath } from '@/src/ui/PlantRow';
+import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**
- * A plant's details (spec #8): its nickname and Current Pot, per care type the Species default or
- * an Override that shadows it (ADR-0003), and Archive, Unarchive or Delete.
+ * A plant's details (spec #8): its Species, which a plant without one can gain (#31), its nickname
+ * and Current Pot, per care type the Species default or an Override that shadows it (ADR-0003),
+ * and Archive, Unarchive or Delete. Overrides stay through a change of Species.
  */
 export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<'/plants/[id]/edit'>();
   const [plant] = useState(() => getPlant(db, id));
   const [displayName] = useState(() => getDisplayName(db, id));
-  const [defaults] = useState(() => (plant.speciesId ? getSpecies(db, plant.speciesId) : null));
+  /** The plant's Species as the catalog knows it: null without one, or for an imported unknown one. */
+  const [species, setSpecies] = useState<Species | null>(() =>
+    plant.speciesId ? getSpecies(db, plant.speciesId) : null,
+  );
+  const [searching, setSearching] = useState(false);
   const [nickname, setNickname] = useState(plant.nickname ?? '');
   const [potSizeCm, setPotSizeCm] = useState(plant.potSizeCm?.toString() ?? '');
   const [soil, setSoil] = useState(plant.soil ?? '');
-  const schedule = useCareSchedule(plant, defaults);
+  const schedule = useCareSchedule(plant, species);
 
   const save = () => {
     if (schedule.problem) {
@@ -38,6 +45,7 @@ export default function EditPlantScreen() {
     }
     try {
       updatePlant(db, plant.id, {
+        speciesId: species?.id,
         nickname,
         potSizeCm: optionalNumber(potSizeCm),
         soil,
@@ -75,12 +83,54 @@ export default function EditPlantScreen() {
     >
       <Stack.Screen options={{ title: displayName }} />
       <Text accessibilityRole="header" style={styles.heading}>
+        Species
+      </Text>
+      {searching ? (
+        <SpeciesSearch
+          onPick={(picked) => {
+            setSpecies(picked);
+            setSearching(false);
+          }}
+          fallback={{
+            label: species
+              ? `Keep ${species.colloquialName}`
+              : plant.speciesId
+                ? 'Keep its species'
+                : 'Keep it without a species',
+            line: 'Check the spelling, or search by its scientific name.',
+            onPress: () => setSearching(false),
+          }}
+        />
+      ) : species ? (
+        <PickedSpecies
+          title={species.colloquialName}
+          subtitle={scientificBeneath(species.colloquialName, species.scientificName)}
+          action="Change"
+          onAction={() => setSearching(true)}
+        />
+      ) : plant.speciesId ? (
+        <PickedSpecies
+          title="Not in the catalog"
+          subtitle="Its species came with an Import from a newer catalog."
+          action="Change"
+          onAction={() => setSearching(true)}
+        />
+      ) : (
+        <PickedSpecies
+          title="No species"
+          subtitle="This plant carries its own care schedule."
+          action="Pick a species"
+          onAction={() => setSearching(true)}
+        />
+      )}
+
+      <Text accessibilityRole="header" style={styles.heading}>
         About this plant
       </Text>
       <Field
         label="Nickname"
         // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).
-        placeholder={defaults?.colloquialName ?? 'Required without a known species'}
+        placeholder={species?.colloquialName ?? 'Required without a known species'}
         value={nickname}
         onChangeText={setNickname}
         autoCapitalize="words"
