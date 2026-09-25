@@ -1,0 +1,36 @@
+<!--
+  The app icon (ticket #29): three leaves rising from behind a pot's rim. The mask is the mark
+  (white) less its cut-outs (black), so the mark renders on any ground; each PNG beside it
+  changes the two fills (the last two rects):
+    icon.png         #ffffff on #2e7d32   opaque, as iOS requires
+    icon-dark.png    #6fcf73, no ground   iOS draws its dark ground behind it
+    icon-tinted.png  #ffffff on #000000   iOS tints it; Expo would flatten a transparent one onto white
+    splash-icon.png  #ffffff, no ground   the splash's mark, on #2e7d32 (app.json)
+  The greens are theme.ts's brand green, light and dark. Rendered with
+  `rsvg-convert -w 1024 -h 1024`, then `magick <png> -alpha off <png>` for the two opaque ones.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <mask id="mark" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="black"/>
+      <g transform="translate(-10.24 -37.24) scale(1.02)">
+        <g fill="white">
+          <path d="M512 630 C380 505.2 424 330.5 512 214 C600 330.5 644 505.2 512 630Z"/>
+          <path d="M498 630 C356.5 660.6 274.7 551.6 250 440 C372.3 424.2 502.9 469.5 498 630Z"/>
+          <path d="M526 630 C521.6 470.1 652 424.6 774 440 C749.6 552 668 661.2 526 630Z"/>
+          <rect x="336" y="612" width="352" height="74" rx="20"/>
+          <path d="M362 680 H662 L634 842 Q630 864 608 864 H416 Q394 864 390 842 Z"/>
+        </g>
+        <!-- The gap the leaves rise from behind, and their midribs. -->
+        <rect x="316" y="592" width="392" height="20" fill="black"/>
+        <g fill="none" stroke="black" stroke-width="20" stroke-linecap="round">
+          <path d="M512 521.8 L512 305.5"/>
+          <path d="M423.6 573 L309.5 485.6"/>
+          <path d="M600.4 573 L714.5 485.6"/>
+        </g>
+      </g>
+    </mask>
+  </defs>
+  <rect width="1024" height="1024" fill="#2e7d32"/>
+  <rect width="1024" height="1024" fill="#ffffff" mask="url(#mark)"/>
+</svg>

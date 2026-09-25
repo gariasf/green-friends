@@ -37,6 +37,7 @@
     "expo-notifications": "~57.0.20",
     "expo-router": "~57.0.22",
     "expo-sharing": "~57.0.21",
+    "expo-splash-screen": "~57.0.9",
     "expo-sqlite": "~57.0.3",
     "expo-symbols": "~57.0.3",
     "fflate": "^0.8.3",

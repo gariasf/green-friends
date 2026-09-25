@@ -1,7 +1,7 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native';
 
-/** Brand green, per appearance. */
+/** Brand green, per appearance. The app icon (`assets/icon.svg`) and app.json's splash repeat it. */
 const GREEN = { light: '#2e7d32', dark: '#6fcf73' };
 
 /**
