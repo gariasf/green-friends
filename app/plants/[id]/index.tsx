@@ -150,7 +150,7 @@ export default function PlantScreen() {
         )}
 
         <View style={styles.logHead}>
-          <Text style={[group.header, styles.logHeading]}>Care Log</Text>
+          <Text style={group.header}>Care Log</Text>
           <TextButton label="Add note" onPress={() => openLog('note')} />
         </View>
         {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
@@ -438,8 +438,6 @@ const styles = StyleSheet.create({
     marginBottom: space.m,
     marginHorizontal: space.xl,
   },
-  // Its row places it, in line with the timeline, beside Add note.
-  logHeading: { marginTop: 0, marginBottom: 0, marginHorizontal: 0 },
   timeline: { paddingHorizontal: space.xl },
   entry: { flexDirection: 'row', gap: space.m },
   rail: { alignItems: 'center', width: 12 },

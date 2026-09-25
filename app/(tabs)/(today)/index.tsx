@@ -376,8 +376,8 @@ const styles = StyleSheet.create({
     paddingRight: space.l,
     paddingVertical: space.m,
   },
-  // In line with the cards and the strip, not inset as over a group of rows.
-  restHeading: { marginHorizontal: space.l },
+  // In line with the cards and the strip.
+  restHeading: { marginTop: space.xxl, marginBottom: space.s, marginHorizontal: space.l },
   restStrip: { gap: space.m, paddingHorizontal: space.l, paddingVertical: space.s },
   restPlant: { gap: space.xs },
   restName: { ...text.caption, fontWeight: '600', color: colors.label },
