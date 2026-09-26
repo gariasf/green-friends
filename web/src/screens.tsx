@@ -16,33 +16,19 @@ import {
   whoseSchedule,
 } from '../../src/ui/words';
 import type { Garden } from './garden';
+import { CareIcon, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
-
-const SYNCED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-
-/** When the Snapshot was taken, under Today's and the Garden's headings. */
-function Synced({ takenAt }: { takenAt: Date | null }) {
-  return takenAt && <p className="quiet">Synced {SYNCED.format(takenAt)}</p>;
-}
 
 // ponytail: the day is the one the screen was drawn on; left open past midnight, Today shows
 // yesterday until the next navigation, as the phone's does until the next write.
 /**
  * Today, as the phone's (spec #35): the browser's day and how many plants need you, then each plant
- * that Needs Attention, most Overdue first, with what is Due or Overdue and by how much. Read-only,
- * so a plant opens its Plant screen rather than logging care.
+ * that Needs Attention, most Overdue first, with what is Due or Overdue and by how much, and the
+ * rest with their next care. Read-only, so a plant opens its Plant screen rather than logging care.
  */
-export function Today({
-  garden,
-  takenAt,
-  photoUrl,
-}: {
-  garden: Garden;
-  takenAt: Date | null;
-  photoUrl: PhotoUrl;
-}) {
+export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl }) {
   const today = localDay(new Date());
   // listNeedsAttention, and the rest of the plants in care beside it.
   const inCare = useMemo(() => evaluateCare(garden.db, today), [garden, today]);
@@ -60,7 +46,6 @@ export function Today({
       <p className="quiet">
         {plants.length > 0 ? `${date} · ${plantsNeedYou(plants.length)}` : date}
       </p>
-      <Synced takenAt={takenAt} />
       {inCare.length === 0 && (
         <Empty title="No plants in care" line="Add one in Green Friends on your phone." />
       )}
@@ -71,23 +56,24 @@ export function Today({
         {plants.map((plant) => (
           <li key={plant.id}>
             <a className="card" href={`#/plant/${plant.id}`}>
-              <PlantName
-                photo={photoUrl(plant.photo)}
-                name={plant.displayName}
-                scientificName={plant.scientificName}
-              />
-              <ul className="due">
-                {dueCare(plant).map(({ type, daysOverdue }) => (
-                  <li key={type}>
-                    <span className="care-label">{CARE_WORDS[type].label}</span>
-                    {daysOverdue > 0 ? (
-                      <span className="overdue">{plural(daysOverdue, 'day')} overdue</span>
-                    ) : (
-                      <span className="due-today">Due today</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <Thumb src={photoUrl(plant.photo)} size="lg" />
+              <span className="card-body">
+                <span className="name">{plant.displayName}</span>
+                <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+                <ul className="due">
+                  {dueCare(plant).map(({ type, daysOverdue }) => (
+                    <li key={type}>
+                      <CareIcon type={type} size={16} />
+                      <span className="care-label">{CARE_WORDS[type].label}</span>
+                      {daysOverdue > 0 ? (
+                        <span className="overdue">{plural(daysOverdue, 'day')} overdue</span>
+                      ) : (
+                        <span className="due-today">Due today</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </span>
             </a>
           </li>
         ))}
@@ -95,15 +81,18 @@ export function Today({
       {rest.length > 0 && (
         <>
           <h2>Everything else</h2>
-          <ul className="rest">
+          <ul className="group rows">
             {rest.map((plant) => {
-              const photo = photoUrl(plant.photo);
+              const next = nextCare(plant, today);
               return (
                 <li key={plant.id}>
                   <a href={`#/plant/${plant.id}`}>
-                    {photo ? <img src={photo} alt="" /> : <span className="no-photo" />}
+                    <Thumb src={photoUrl(plant.photo)} />
                     <span className="name">{plant.displayName}</span>
-                    <span className="quiet">{nextCareLine(nextCare(plant, today))}</span>
+                    <span className="quiet next">
+                      {next && <CareIcon type={next.type} size={14} />}
+                      {nextCareLine(next)}
+                    </span>
                   </a>
                 </li>
               );
@@ -116,20 +105,11 @@ export function Today({
 }
 
 /** Every live plant by Display Name, with its photo and scientific name, as the phone's Garden. */
-export function GardenList({
-  garden,
-  takenAt,
-  photoUrl,
-}: {
-  garden: Garden;
-  takenAt: Date | null;
-  photoUrl: PhotoUrl;
-}) {
+export function GardenList({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl }) {
   const plants = useMemo(() => listPlants(garden.db), [garden]);
   return (
     <>
       <h1 tabIndex={-1}>Garden</h1>
-      <Synced takenAt={takenAt} />
       {plants.length === 0 ? (
         <Empty title="No plants yet" line="Add one in Green Friends on your phone." />
       ) : (
@@ -207,7 +187,10 @@ export function PlantScreen({
             status.state === 'due' ? (status.daysOverdue > 0 ? 'overdue' : 'due-today') : '';
           return (
             <div key={type}>
-              <dt>{CARE_WORDS[type].label}</dt>
+              <dt>
+                <CareIcon type={type} />
+                {CARE_WORDS[type].label}
+              </dt>
               <dd>
                 <span className={tone}>{sentence(spoken)}</span>
                 <span className="quiet">{lastLine(lastDone, today)}</span>
@@ -235,11 +218,12 @@ export function PlantScreen({
   );
 }
 
-/** A Care Event on the timeline: a dot in its hue beside its day, what was done, and its details. */
+/** A Care Event on the timeline: its symbol beside its day, what was done, and its details. */
 function TimelineEntry({ event, today }: { event: CareEvent; today: string }) {
   const detail = [potLine(event.potSizeCm, event.soil), event.note].filter(Boolean).join(' · ');
   return (
-    <li className={event.type}>
+    <li>
+      <CareIcon type={event.type} size={16} />
       <time className="quiet" dateTime={event.occurredOn}>
         {dayLabel(event.occurredOn, today)}
       </time>
@@ -249,7 +233,7 @@ function TimelineEntry({ event, today }: { event: CareEvent; today: string }) {
   );
 }
 
-/** A plant's photo, decorative beside its name as on the phone, its Display Name and scientific name. */
+/** A plant's photo or the leaf beside its Display Name and scientific name. */
 function PlantName({
   photo,
   name,
@@ -259,16 +243,21 @@ function PlantName({
   name: string;
   scientificName: string | null;
 }) {
-  const scientific = scientificBeneath(name, scientificName);
   return (
     <span className="plant">
-      {photo ? <img src={photo} alt="" /> : <span className="no-photo" />}
+      <Thumb src={photo} />
       <span>
         <span className="name">{name}</span>
-        {scientific && <span className="scientific">{scientific}</span>}
+        <Scientific name={name} scientificName={scientificName} />
       </span>
     </span>
   );
+}
+
+/** The scientific name beneath a Display Name, unless it says the same. */
+function Scientific({ name, scientificName }: { name: string; scientificName: string | null }) {
+  const scientific = scientificBeneath(name, scientificName);
+  return scientific && <span className="scientific">{scientific}</span>;
 }
 
 function Empty({ title, line }: { title: string; line: string }) {

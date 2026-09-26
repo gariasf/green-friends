@@ -2,9 +2,13 @@ import initSqlJs from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { useEffect, useMemo, useState } from 'react';
 
+import { evaluateCare, needsAttention } from '../../src/core/care';
+import { localDay } from '../../src/core/dates';
 import { NewerExportError } from '../../src/core/import';
 import { listPlants } from '../../src/core/plants';
+import { plantsNeedYou, plural } from '../../src/ui/words';
 import { openGarden, type Garden } from './garden';
+import { AppMark } from './icons';
 import { GardenList, PlantScreen, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
@@ -116,7 +120,13 @@ export function App() {
   );
 }
 
-/** The Garden's screens, Today and Garden as tabs and each plant at its own address. */
+const SYNCED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+
+/**
+ * The Garden's screens in the shell (spec #41): a sidebar with the app's mark and name, Today and
+ * Garden with their counts, and when the Snapshot was taken at its foot; below 60rem, a top bar.
+ * Each plant has its own address.
+ */
 function GardenView({
   garden,
   takenAt,
@@ -129,6 +139,13 @@ function GardenView({
   screen: Route;
 }) {
   const photoUrl = usePhotoUrls(garden);
+  const { needYou, plants } = useMemo(
+    () => ({
+      needYou: evaluateCare(garden.db, localDay(new Date())).filter(needsAttention).length,
+      plants: listPlants(garden.db).length,
+    }),
+    [garden],
+  );
   // A new screen starts at its top, and a screen reader starts at its heading.
   useEffect(() => {
     scrollTo(0, 0);
@@ -136,29 +153,44 @@ function GardenView({
   }, [screen]);
 
   return (
-    <>
-      <nav aria-label="Screens">
-        <a href="#/" aria-current={screen.tab === 'today' ? 'page' : undefined}>
-          Today
-        </a>
-        <a href="#/garden" aria-current={screen.tab === 'garden' ? 'page' : undefined}>
-          Garden
-        </a>
+    <div className="shell">
+      <header className="sidebar">
+        <p className="brand">
+          <AppMark />
+          <span>Green Friends</span>
+        </p>
+        <nav aria-label="Screens">
+          <a
+            href="#/"
+            aria-current={screen.tab === 'today' ? 'page' : undefined}
+            aria-label={needYou > 0 ? `Today, ${plantsNeedYou(needYou)}` : undefined}
+          >
+            Today
+            {needYou > 0 && <span className="count">{needYou}</span>}
+          </a>
+          <a
+            href="#/garden"
+            aria-current={screen.tab === 'today' ? undefined : 'page'}
+            aria-label={`Garden, ${plural(plants, 'plant')}`}
+          >
+            Garden
+            <span className="count quiet">{plants}</span>
+          </a>
+        </nav>
         {/* The Pairing link as the app takes it, for a phone to pair and restore from (#40). */}
         <a className="open-app" href={`${APP_PAIRING_LINK}#k=${toBase64url(pairKey)}`}>
           Open in Green Friends
         </a>
-      </nav>
-      <main>
-        {screen.tab === 'today' && <Today garden={garden} takenAt={takenAt} photoUrl={photoUrl} />}
-        {screen.tab === 'garden' && (
-          <GardenList garden={garden} takenAt={takenAt} photoUrl={photoUrl} />
-        )}
+        {takenAt && <p className="synced">Synced {SYNCED.format(takenAt)}</p>}
+      </header>
+      <main className={`screen-${screen.tab}`}>
+        {screen.tab === 'today' && <Today garden={garden} photoUrl={photoUrl} />}
+        {screen.tab === 'garden' && <GardenList garden={garden} photoUrl={photoUrl} />}
         {screen.tab === 'plant' && (
           <PlantScreen garden={garden} id={screen.id} photoUrl={photoUrl} />
         )}
       </main>
-    </>
+    </div>
   );
 }
 
