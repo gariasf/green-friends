@@ -15,5 +15,15 @@ const sqlAsText: Plugin = {
 export default defineConfig({
   plugins: [react(), sqlAsText],
   // The Web view runs the app's own src/core, drizzle/ and assets/, one level up.
-  server: { fs: { allow: ['..'] } },
+  server: {
+    fs: { allow: ['..'] },
+    // PROTOTYPE (prototype/web-design): the relay, same-origin for the dev server.
+    proxy: {
+      '/relay': {
+        target: 'https://green-friends-relay.gariasf.workers.dev',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/relay/, ''),
+      },
+    },
+  },
 });

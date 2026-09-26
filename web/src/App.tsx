@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { NewerExportError } from '../../src/core/import';
 import { listPlants } from '../../src/core/plants';
 import { openGarden, type Garden } from './garden';
+import { PrototypeSwitcher, VARIANTS, type VariantKey } from './prototype/variants';
 import { GardenList, PlantScreen, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
@@ -134,6 +135,18 @@ function GardenView({
     scrollTo(0, 0);
     document.querySelector<HTMLElement>('main h1')?.focus();
   }, [screen]);
+
+  // PROTOTYPE (prototype/web-design): ?variant=A|B|C on the dev server.
+  const variant = new URLSearchParams(location.search).get('variant') as VariantKey | null;
+  if (import.meta.env.DEV && variant && variant in VARIANTS) {
+    const { View } = VARIANTS[variant];
+    return (
+      <>
+        <View garden={garden} takenAt={takenAt} photoUrl={photoUrl} screen={screen} />
+        <PrototypeSwitcher current={variant} />
+      </>
+    );
+  }
 
   return (
     <>
