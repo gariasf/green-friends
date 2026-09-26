@@ -17,3 +17,7 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/do
 ### Expo / React Native
 
 Versioned-docs-first rules, commands, and house rules for the app code. See `docs/agents/expo.md`.
+
+### Relay
+
+Sync's Cloudflare Worker in `relay/`: routes, commands, deploys and never committing a token. See `docs/agents/relay.md`.

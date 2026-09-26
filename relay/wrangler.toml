@@ -1,0 +1,18 @@
+# The blind relay (ADR-0006): stores encrypted Snapshots in R2, never reads them.
+name = "green-friends-relay"
+main = "src/index.ts"
+compatibility_date = "2026-08-22"
+
+[vars]
+# The Web view's origin, the only one CORS lets read Snapshots from a browser.
+ALLOWED_ORIGIN = "https://green-friends.pages.dev"
+
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "green-friends-snapshots"
+
+# Per client IP, in front of every route (workers.dev has no zone for WAF rules).
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+simple = { limit = 60, period = 60 }

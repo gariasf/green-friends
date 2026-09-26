@@ -10,12 +10,14 @@
     "start": "expo start",
     "ios": "expo run:ios",
     "test": "jest",
-    "lint": "expo lint app src scripts plugins",
+    "lint": "expo lint app src scripts plugins relay",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "db:generate": "drizzle-kit generate",
     "species:build": "node scripts/species/build.ts",
-    "species:coverage": "node --env-file-if-exists=.env.local scripts/species/openplantbook-coverage.ts"
+    "species:coverage": "node --env-file-if-exists=.env.local scripts/species/openplantbook-coverage.ts",
+    "relay:test": "npm --prefix relay test",
+    "relay:deploy": "npm --prefix relay run deploy"
   },
   "jest": {
     "preset": "jest-expo",

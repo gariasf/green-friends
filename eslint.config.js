@@ -3,7 +3,15 @@ const expoConfig = require('eslint-config-expo/flat');
 const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
 
 module.exports = defineConfig([
-  globalIgnores(['dist/*', 'drizzle/*', 'ios/*', 'android/*', '.expo/*', 'expo-env.d.ts']),
+  globalIgnores([
+    'dist/*',
+    'drizzle/*',
+    'ios/*',
+    'android/*',
+    '.expo/*',
+    'expo-env.d.ts',
+    'relay/worker-configuration.d.ts',
+  ]),
   expoConfig,
   eslintPluginPrettierRecommended,
   {
@@ -32,5 +40,10 @@ module.exports = defineConfig([
         },
       ],
     },
+  },
+  {
+    // The relay's `cloudflare:*` modules exist only inside the Workers runtime.
+    files: ['relay/**/*.ts'],
+    rules: { 'import/no-unresolved': ['error', { ignore: ['^cloudflare:'] }] },
   },
 ]);
