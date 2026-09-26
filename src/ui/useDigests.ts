@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 
 import { scheduleDigests, type Digest, type PendingNotifications } from '@/src/core/digest';
 import { db } from '@/src/db/client';
-import { plantsNeedYou } from '@/src/ui/CareEvent';
+import { plantsNeedYou } from '@/src/ui/words';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 
 /** The phone's pending notifications, which hold the Daily Digests and nothing else. */

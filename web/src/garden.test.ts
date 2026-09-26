@@ -3,10 +3,14 @@ import initSqlJs from 'sql.js';
 import { expect, test } from 'vitest';
 
 import species from '../../assets/species.json';
+import { listNeedsAttention } from '../../src/core/care';
+import { logCareEvent } from '../../src/core/careLog';
+import { shiftDays } from '../../src/core/dates';
 import { buildExport } from '../../src/core/export';
 import { NewerExportError } from '../../src/core/import';
 import { setPlantPhoto } from '../../src/core/photos';
 import { NO_SCHEDULE, createPlant, listPlants } from '../../src/core/plants';
+import { updateSettings } from '../../src/core/settings';
 import { seedSpecies, type SpeciesDataset } from '../../src/core/species';
 import { openTestDb } from '../../src/test/db';
 import { MONSTERA, noon } from '../../src/test/garden';
@@ -26,7 +30,14 @@ function phoneExport() {
     noon(2026, 9, 21),
   );
   setPlantPhoto(db, files, monty.id, 'file:///cache/monty.jpg', noon(2026, 9, 21));
-  return { plants: listPlants(db), zip: buildExport(db, files, '1.2.3', noon(2026, 9, 22)) };
+  logCareEvent(
+    db,
+    { plantId: monty.id, type: 'water', occurredOn: '2026-09-21' },
+    noon(2026, 9, 21),
+  );
+  // A season of the owner's own, which the Export carries and Needs Attention follows.
+  updateSettings(db, { growingEndMonth: 9 }, noon(2026, 9, 21));
+  return { db, plants: listPlants(db), zip: buildExport(db, files, '1.2.3', noon(2026, 9, 22)) };
 }
 
 test("an Export opened through sql.js lists the phone's plants, with their photos", async () => {
@@ -37,6 +48,18 @@ test("an Export opened through sql.js lists the phone's plants, with their photo
   expect(listPlants(garden.db)).toEqual(phone.plants);
   const [photo] = phone.plants.flatMap((plant) => plant.photo ?? []);
   expect(new TextDecoder().decode(garden.photo(photo))).toBe('file:///cache/monty.jpg');
+});
+
+test("the Web view's Today is the phone's, day after day", async () => {
+  const phone = phoneExport();
+
+  const garden = openGarden(await initSqlJs(), phone.zip);
+
+  const days = Array.from({ length: 60 }, (_, index) => shiftDays('2026-09-22', index));
+  expect(days.some((day) => listNeedsAttention(phone.db, day).length > 0)).toBe(true);
+  for (const day of days) {
+    expect(listNeedsAttention(garden.db, day)).toEqual(listNeedsAttention(phone.db, day));
+  }
 });
 
 test('an Export from a newer Green Friends is refused as one', async () => {

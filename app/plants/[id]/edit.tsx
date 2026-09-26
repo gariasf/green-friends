@@ -15,7 +15,7 @@ import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
 import { alertError, Field, optionalNumber, PrimaryButton, TextButton } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
-import { scientificBeneath } from '@/src/ui/PlantRow';
+import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 

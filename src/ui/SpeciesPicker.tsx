@@ -5,7 +5,7 @@ import { searchSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { Field, TextButton } from '@/src/ui/Form';
-import { scientificBeneath } from '@/src/ui/PlantRow';
+import { scientificBeneath } from '@/src/ui/words';
 import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**

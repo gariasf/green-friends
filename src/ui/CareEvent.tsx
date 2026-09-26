@@ -2,29 +2,23 @@ import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
 import type { ColorValue } from 'react-native';
 
-import type { NextCare } from '@/src/core/care';
 import type { CareEvent, CareEventType } from '@/src/core/careLog';
-import { daysBetween, localNoon } from '@/src/core/dates';
 import { Field, optionalNumber } from '@/src/ui/Form';
 import { colors } from '@/src/ui/theme';
+import { CARE_WORDS } from '@/src/ui/words';
 
 /**
- * How each kind of Care Event reads: its symbol and hue, as a checklist row or a choice (label),
- * and once logged (done).
+ * How each kind of Care Event reads: its symbol and hue beside its words (CARE_WORDS), as a
+ * checklist row or a choice (label), and once logged (done).
  */
 export const CARE_COPY: Record<
   CareEventType,
   { symbol: SFSymbol; hue: ColorValue; label: string; done: string }
 > = {
-  water: { symbol: 'drop.fill', hue: colors.water, label: 'Water', done: 'Watered' },
-  fertilize: {
-    symbol: 'sparkles',
-    hue: colors.fertilize,
-    label: 'Fertilize',
-    done: 'Fertilized',
-  },
-  repot: { symbol: 'shippingbox.fill', hue: colors.repot, label: 'Repot', done: 'Repotted' },
-  note: { symbol: 'note.text', hue: colors.note, label: 'Note', done: 'Note' },
+  water: { symbol: 'drop.fill', hue: colors.water, ...CARE_WORDS.water },
+  fertilize: { symbol: 'sparkles', hue: colors.fertilize, ...CARE_WORDS.fertilize },
+  repot: { symbol: 'shippingbox.fill', hue: colors.repot, ...CARE_WORDS.repot },
+  note: { symbol: 'note.text', hue: colors.note, ...CARE_WORDS.note },
 };
 
 /**
@@ -34,53 +28,6 @@ export const CARE_COPY: Record<
 export function CareSymbol({ type, size }: { type: CareEventType; size: number }) {
   const { symbol, hue } = CARE_COPY[type];
   return <SymbolView accessibilityElementsHidden name={symbol} size={size} tintColor={hue} />;
-}
-
-/** How many plants Need Attention, as Today's date line and the Daily Digest's title put it. */
-export function plantsNeedYou(count: number): string {
-  return count === 1 ? '1 plant needs you' : `${count} plants need you`;
-}
-
-/** A count and its unit: "1 day", "3 days". */
-export function plural(count: number, unit: string): string {
-  return `${count} ${unit}${count === 1 ? '' : 's'}`;
-}
-
-/** Days ahead as they are counted: in days, or from 60 on in months. */
-export function daysOrMonths(days: number): [count: number, unit: 'day' | 'month'] {
-  return days < 60 ? [days, 'day'] : [Math.round(days / 30.4), 'month'];
-}
-
-/**
- * The next care of a plant that needs nothing today, which is always days ahead: "Water in 3
- * days", "Fertilize tomorrow"; "Resting" while its watering waits for the Growing season. Paused
- * feeding reads as the day it resumes, when it comes Due unless fed in the Dormant season.
- */
-export function nextCareLine(next: NextCare | null): string {
-  if (next === null) return 'No schedule';
-  if (next.paused && next.type === 'water') return 'Resting';
-  const { label } = CARE_COPY[next.type];
-  if (next.days === 1) return `${label} tomorrow`;
-  const [count, unit] = daysOrMonths(next.days);
-  return `${label} in ${plural(count, unit)}`;
-}
-
-/** A local calendar day as the Care Log shows it: Today, Yesterday, else its date with its weekday. */
-export function dayLabel(day: string, today: string): string {
-  const ago = daysBetween(day, today);
-  if (ago === 0) return 'Today';
-  if (ago === 1) return 'Yesterday';
-  return dateLabel(day, today, 'short');
-}
-
-/** A local calendar day's date ("Sep 22", or with a weekday "Tue, Sep 22"), its year only when not today's. */
-export function dateLabel(day: string, today: string, weekday?: 'short'): string {
-  return localNoon(day).toLocaleDateString(undefined, {
-    weekday,
-    day: 'numeric',
-    month: 'short',
-    year: day.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric',
-  });
 }
 
 /**

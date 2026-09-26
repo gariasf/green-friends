@@ -5,14 +5,6 @@ import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
 /**
- * A plant's scientific name for the line beneath its name, or none where it would repeat the name,
- * as for a Species known by its scientific name (Aloe vera, Hoya pubicalyx).
- */
-export function scientificBeneath(name: string, scientificName: string | null): string | null {
-  return scientificName === name ? null : scientificName;
-}
-
-/**
  * A plant in a group of rows: its photo, Display Name and one line beneath; the whole row opens
  * it. A group's `first` row has no divider above it.
  */

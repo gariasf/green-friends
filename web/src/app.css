@@ -1,45 +1,357 @@
-/* A plain page until the Web view's look (ticket #39) brings the app's colours. */
+/*
+ * The app's colours, mirrored from src/ui/theme.ts, which stays their source: change one there,
+ * then here. iOS's semantic colours are their light and dark values. secondaryLabel is the one
+ * departure: iOS's reads 3.3:1 on the background, so this is its Increase Contrast grey, 4.7:1,
+ * to #30's 4.5:1 bar.
+ */
+:root {
+  --background: #f2f2f7; /* systemGroupedBackground */
+  --surface: #ffffff; /* secondarySystemGroupedBackground */
+  --label: #000000;
+  --secondary-label: #6c6c70;
+  --separator: rgb(60 60 67 / 0.29);
+  --fill: rgb(118 118 128 / 0.12); /* tertiarySystemFill */
+  --tint: #417777; /* Dark Medici Blue */
+  --caution: #681916; /* Hay's Russet */
+  --caution-soft: #fdecea;
+  --due-today: var(--tint);
+  --water: #007aff; /* systemBlue */
+  --fertilize: #d1bd1a; /* Olive Ocher */
+  --repot: #681916;
+  --note: #8e8e93; /* systemGray */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --surface: #1c1c1e;
+    --label: #ffffff;
+    --secondary-label: rgb(235 235 245 / 0.6);
+    --separator: rgb(84 84 88 / 0.6);
+    --fill: rgb(118 118 128 / 0.24);
+    --tint: #7fb8b8;
+    --caution: #d86f62;
+    --caution-soft: #361a18;
+    --water: #0a84ff;
+    --repot: #c8594c;
+  }
+}
+
+@media (prefers-color-scheme: dark) and (prefers-contrast: more) {
+  :root {
+    --caution: #e07d70; /* caution's highContrastDark */
+  }
+}
+
 body {
   margin: 0;
+  background: var(--background);
+  color: var(--label);
   font-family:
     system-ui,
     -apple-system,
     sans-serif;
+  line-height: 1.35;
+}
+
+main,
+nav {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
 main {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem;
+  padding-bottom: 2rem;
 }
 
-.synced,
+h1 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+h1:focus {
+  outline: none;
+}
+
+h2 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.0625rem;
+  color: var(--secondary-label);
+}
+
+p {
+  margin: 0.25rem 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--tint);
+  outline-offset: 2px;
+}
+
+.quiet {
+  color: var(--secondary-label);
+  font-size: 0.9375rem;
+}
+
 .scientific {
-  opacity: 0.7;
+  display: block;
+  color: var(--secondary-label);
+  font-size: 0.9375rem;
+  font-style: italic;
 }
 
-.plants {
-  list-style: none;
-  padding: 0;
+.overdue {
+  color: var(--caution);
+  font-weight: 600;
 }
 
-.plants li {
+.due-today {
+  color: var(--due-today);
+  font-weight: 600;
+}
+
+/* The tabs. */
+nav {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+nav a {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  color: var(--tint);
+  font-weight: 600;
+}
+
+nav a[aria-current='page'] {
+  background: var(--fill);
+  color: var(--label);
+}
+
+/* A plant's photo and names, in a list or on a card. */
+.plant {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 0;
 }
 
-.plants img,
+.plant img,
 .no-photo {
+  flex: none;
   width: 44px;
   height: 44px;
   border-radius: 8px;
   object-fit: cover;
-  background: color-mix(in srgb, currentColor 10%, transparent);
+  background: var(--fill);
 }
 
-.name,
-.scientific {
+.name {
   display: block;
+}
+
+.cards .name {
+  font-weight: 600;
+}
+
+/* Rows grouped on the background, and Today's cards. */
+.group,
+.cards,
+.due,
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group {
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.group > * + * {
+  border-top: 1px solid var(--separator);
+}
+
+.group a {
+  display: block;
+  padding: 0.625rem 1rem;
+}
+
+.group a:hover,
+.card:hover {
+  background: var(--fill);
+}
+
+.cards > li {
+  margin-top: 0.75rem;
+}
+
+.card {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.due li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--separator);
+}
+
+.care-label {
+  font-weight: 600;
+}
+
+.empty {
+  margin: 3rem 0;
+  text-align: center;
+}
+
+.empty h2 {
+  color: var(--label);
+  font-size: 1.25rem;
+}
+
+/* The Plant screen. */
+.hero {
+  display: block;
+  width: 100%;
+  max-height: 24rem;
+  margin-top: 0.5rem;
+  border-radius: 16px;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  background: var(--fill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.badge.toxic {
+  background: var(--caution-soft);
+  color: var(--caution);
+}
+
+.care {
+  margin: 0 0 0.5rem;
+}
+
+.care > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.625rem 1rem;
+}
+
+.care dt {
+  font-weight: 600;
+}
+
+.care dd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0;
+  text-align: right;
+}
+
+/* The Care Log, a dot in each kind's hue on a line. */
+.timeline li {
+  position: relative;
+  padding: 0 0 1rem 1.5rem;
+}
+
+.timeline li::before {
+  content: '';
+  position: absolute;
+  top: 0.3rem;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--hue);
+}
+
+.timeline li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 1.2rem;
+  bottom: 0.1rem;
+  left: 5px;
+  width: 2px;
+  background: var(--separator);
+}
+
+.timeline time,
+.timeline strong {
+  display: block;
+}
+
+.timeline .water {
+  --hue: var(--water);
+}
+
+.timeline .fertilize {
+  --hue: var(--fertilize);
+}
+
+.timeline .repot {
+  --hue: var(--repot);
+}
+
+.timeline .note {
+  --hue: var(--note);
+}
+
+.rest {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rest img,
+.rest .no-photo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 0.25rem;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--fill);
+}
+
+.rest .name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.rest .quiet {
+  font-size: 0.8125rem;
+}
+
+.message {
+  padding-top: 3rem;
 }

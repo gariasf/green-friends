@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { localDay } from '@/src/core/dates';
 import { listArchivedPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { dayLabel } from '@/src/ui/CareEvent';
+import { dayLabel } from '@/src/ui/words';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { PlantRow } from '@/src/ui/PlantRow';
 import { group, space } from '@/src/ui/theme';

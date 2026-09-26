@@ -17,14 +17,14 @@ import { logCareEvent } from '@/src/core/careLog';
 import { localDay, localNoon } from '@/src/core/dates';
 import type { CareType } from '@/src/core/plants';
 import { db } from '@/src/db/client';
-import { CARE_COPY, CareSymbol, nextCareLine, plantsNeedYou, plural } from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { scientificBeneath } from '@/src/ui/PlantRow';
 import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
+import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
 
 /** How long a circle shows its tick before the care is logged and its row folds away. */
 const TICK_MS = 250;

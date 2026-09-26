@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { NewerExportError } from '../../src/core/import';
 import { listPlants } from '../../src/core/plants';
 import { openGarden, type Garden } from './garden';
+import { GardenList, PlantScreen, Today, type PhotoUrl } from './screens';
 import { keyFromFragment, loadSnapshot, storeKey, storedKey } from './snapshot';
 
 type State =
@@ -23,6 +24,8 @@ const UNPAIRED = {
  * before. A browser that won't keep it (a private window) keeps the link as it is instead, so a
  * reload still finds the key.
  */
+// ponytail: a key only in the link leaves the address bar at the first tab, so a reload there asks
+// to pair again; keep it in sessionStorage if that ever matters.
 async function pairingKey(): Promise<Uint8Array | undefined> {
   const fromLink = keyFromFragment(location.hash);
   if (!fromLink) return storedKey().catch(() => undefined);
@@ -62,18 +65,30 @@ async function load(): Promise<State> {
   }
 }
 
+type Route = { tab: 'today' } | { tab: 'garden' } | { tab: 'plant'; id: string };
+
+/** Where the fragment leads once a Pairing link's key has left it: `#/garden`, `#/plant/<id>`, else Today. */
+function route(fragment: string): Route {
+  const plant = /^#\/plant\/([\w-]+)$/.exec(fragment);
+  if (plant) return { tab: 'plant', id: plant[1] };
+  return fragment === '#/garden' ? { tab: 'garden' } : { tab: 'today' };
+}
+
 export function App() {
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const [screen, setScreen] = useState(() => route(location.hash));
   useEffect(() => {
     void load().then(setState);
-    // A Pairing link pasted into this tab changes only the fragment, which reloads nothing.
-    const paired = () => {
-      if (!keyFromFragment(location.hash)) return;
-      setState({ kind: 'loading' });
-      void load().then(setState);
+    const onHashChange = () => {
+      // A Pairing link pasted into this tab changes only the fragment, which reloads nothing.
+      if (keyFromFragment(location.hash)) {
+        setState({ kind: 'loading' });
+        void load().then(setState);
+      }
+      setScreen(route(location.hash));
     };
-    addEventListener('hashchange', paired);
-    return () => removeEventListener('hashchange', paired);
+    addEventListener('hashchange', onHashChange);
+    return () => removeEventListener('hashchange', onHashChange);
   }, []);
 
   if (state.kind === 'loading') return <main aria-busy="true" />;
@@ -85,51 +100,60 @@ export function App() {
       </main>
     );
   }
-  return <GardenList garden={state.garden} takenAt={state.takenAt} />;
+  return <GardenView garden={state.garden} takenAt={state.takenAt} screen={screen} />;
 }
 
-const SYNCED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+/** The Garden's screens, Today and Garden as tabs and each plant at its own address. */
+function GardenView({
+  garden,
+  takenAt,
+  screen,
+}: {
+  garden: Garden;
+  takenAt: Date | null;
+  screen: Route;
+}) {
+  const photoUrl = usePhotoUrls(garden);
+  // A new screen starts at its top, and a screen reader starts at its heading.
+  useEffect(() => {
+    scrollTo(0, 0);
+    document.querySelector<HTMLElement>('main h1')?.focus();
+  }, [screen]);
 
-/** Every live plant by Display Name, with its photo and scientific name, as the phone's Garden. */
-function GardenList({ garden, takenAt }: { garden: Garden; takenAt: Date | null }) {
-  const plants = useMemo(() => listPlants(garden.db), [garden]);
-  // ponytail: never revoked; the page holds one Garden for its whole life.
-  const photos = useMemo(() => {
+  return (
+    <>
+      <nav aria-label="Screens">
+        <a href="#/" aria-current={screen.tab === 'today' ? 'page' : undefined}>
+          Today
+        </a>
+        <a href="#/garden" aria-current={screen.tab === 'garden' ? 'page' : undefined}>
+          Garden
+        </a>
+      </nav>
+      <main>
+        {screen.tab === 'today' && <Today garden={garden} takenAt={takenAt} photoUrl={photoUrl} />}
+        {screen.tab === 'garden' && (
+          <GardenList garden={garden} takenAt={takenAt} photoUrl={photoUrl} />
+        )}
+        {screen.tab === 'plant' && (
+          <PlantScreen garden={garden} id={screen.id} photoUrl={photoUrl} />
+        )}
+      </main>
+    </>
+  );
+}
+
+/** Each plant's photo's address in this page, the Web view showing only plants in care. */
+function usePhotoUrls(garden: Garden): PhotoUrl {
+  return useMemo(() => {
+    // ponytail: never revoked; the page holds one Garden for its whole life.
     const urls = new Map<string, string>();
-    for (const { photo } of plants) {
+    for (const { photo } of listPlants(garden.db)) {
       const bytes = photo && garden.photo(photo);
       // Unzipped by fflate into a plain ArrayBuffer, never a shared one.
       const blob = bytes && new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'image/jpeg' });
       if (blob) urls.set(photo, URL.createObjectURL(blob));
     }
-    return urls;
-  }, [garden, plants]);
-
-  return (
-    <main>
-      <h1>Garden</h1>
-      {takenAt && <p className="synced">Synced {SYNCED.format(takenAt)}</p>}
-      {plants.length === 0 ? (
-        <p>No plants yet.</p>
-      ) : (
-        <ul className="plants">
-          {plants.map((plant) => {
-            const url = plant.photo && photos.get(plant.photo);
-            return (
-              <li key={plant.id}>
-                {/* Decorative beside the plant's name, as on the phone. */}
-                {url ? <img src={url} alt="" /> : <span className="no-photo" />}
-                <span>
-                  <span className="name">{plant.displayName}</span>
-                  {plant.scientificName && plant.scientificName !== plant.displayName && (
-                    <span className="scientific">{plant.scientificName}</span>
-                  )}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </main>
-  );
+    return (filename) => (filename ? urls.get(filename) : undefined);
+  }, [garden]);
 }

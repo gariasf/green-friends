@@ -19,35 +19,26 @@ import {
   type CareEvent,
   type CareEventType,
 } from '@/src/core/careLog';
-import { daysBetween, localDay } from '@/src/core/dates';
+import { localDay } from '@/src/core/dates';
 import { setPlantPhoto } from '@/src/core/photos';
 import {
   CARE_TYPES,
   getPlant,
-  hasOverride,
   listArchivedPlants,
   listPlants,
   unarchivePlant,
   type CareType,
-  type Plant,
 } from '@/src/core/plants';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
-import {
-  CARE_COPY,
-  CareSymbol,
-  dateLabel,
-  dayLabel,
-  daysOrMonths,
-  plural,
-} from '@/src/ui/CareEvent';
+import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
-import { scientificBeneath } from '@/src/ui/PlantRow';
 import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
+import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from '@/src/ui/words';
 
 /**
  * A plant's screen, where tapping a plant anywhere leads (spec #22, the prototype's variant B): its
@@ -303,48 +294,6 @@ function CareTile({
       )}
     </View>
   );
-}
-
-/**
- * A tile's short value ("5d", "17mo", "Today", "Paused", "—"; Overdue care's days, which the tile
- * follows with "overdue"), and the same in words.
- */
-function tileValue(status: CareStatus, today: string): [short: string, spoken: string] {
-  switch (status.state) {
-    case 'unscheduled':
-      return ['—', 'no schedule'];
-    case 'paused':
-      return ['Paused', 'paused for the Dormant season'];
-    case 'due':
-      return status.daysOverdue === 0
-        ? ['Today', 'due today']
-        : [`${status.daysOverdue}d`, `${plural(status.daysOverdue, 'day')} overdue`];
-    case 'upcoming': {
-      const [count, unit] = daysOrMonths(daysBetween(today, status.dueOn));
-      return [`${count}${unit === 'day' ? 'd' : 'mo'}`, `due in ${plural(count, unit)}`];
-    }
-  }
-}
-
-/** When a care type was last done, in the few words a tile has room for: "Last Sep 22". */
-function lastLine(day: string | undefined, today: string): string {
-  if (!day) return 'Never logged';
-  const ago = daysBetween(day, today);
-  if (ago === 0) return 'Done today';
-  if (ago === 1) return 'Done yesterday';
-  return `Last ${dateLabel(day, today)}`;
-}
-
-/**
- * Whose schedule the plant follows: its Species' default, its own (the Overrides, ADR-0003), or its
- * own for some care types only.
- */
-function whoseSchedule(plant: Plant): string {
-  const own = CARE_TYPES.filter((type) => hasOverride(plant, type));
-  if (own.length === 0) return 'Species schedule';
-  // A plant without a Species has its own schedule or none, care type by care type.
-  if (plant.speciesId === null || own.length === CARE_TYPES.length) return 'Own schedule';
-  return `Own schedule for ${own.map((type) => CARE_COPY[type].label).join(' and ')}`;
 }
 
 /** A Care Event on the timeline, a dot in its hue; a tap opens it to be edited or deleted. */

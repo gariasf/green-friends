@@ -6,7 +6,8 @@ import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
-import { PlantRow, scientificBeneath } from '@/src/ui/PlantRow';
+import { PlantRow } from '@/src/ui/PlantRow';
+import { scientificBeneath } from '@/src/ui/words';
 import { group, space } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
