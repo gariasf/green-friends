@@ -43,11 +43,11 @@ describe('species catalog', () => {
     expect(seedSpecies(db, bundled)).toBe(true);
 
     const catalog = listSpecies(db);
-    // Ticket #20 grows the catalog to roughly 300 common houseplants.
-    expect(catalog.length).toBeGreaterThanOrEqual(290);
+    // Ticket #53 grows the catalog to about 460, with herbs and balcony plants.
+    expect(catalog.length).toBeGreaterThanOrEqual(450);
     expect(catalog).toContainEqual(monstera(7));
-    // Pet toxicity is curated by hand for every Species.
-    expect(catalog.filter((s) => s.toxicToPets === null)).toEqual([]);
+    // Pet toxicity is true, false, or null where no reference settles it (#53).
+    expect(new Set(catalog.map((s) => s.toxicToPets))).toEqual(new Set([true, false, null]));
     expect(getSpeciesDatasetVersion(db)).toBe(bundled.version);
   });
 
