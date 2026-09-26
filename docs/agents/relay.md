@@ -4,6 +4,7 @@
 
 ## Routes
 
+- The two writes, `PUT /gardens/:id` and `POST /identify`, need the app's token in `X-App-Token` (the `APP_TOKEN` secret), checked before the body is read: 403 without it. Only the app carries it, so no one else can store files in the bucket or spend the Pl@ntNet quota. Reads and `DELETE` don't need it.
 - `PUT /gardens/:id` stores today's Snapshot (replacing today's earlier one) and drops any from before the last 7 days (today and the 6 before it). It needs `Authorization: Bearer <write token>`. The first PUT claims the id by storing the token's SHA-256 beside the Snapshots; later PUTs and `DELETE` must match it (401 without a token, 403 with a wrong one). Bodies over 25 MB get 413, and a body without a `Content-Length` 411, since its size can't be checked before it's read.
 - `GET /gardens/:id` serves the latest Snapshot, dated by `Last-Modified`. `GET /gardens/:id/snapshots` lists the days, oldest first, and `GET /gardens/:id/snapshots/:day` serves one.
 - `DELETE /gardens/:id` removes the Snapshots and the token, so the id can be claimed again.
@@ -22,11 +23,13 @@ npm run relay:deploy         # wrangler deploy, by hand (no CI deploys)
 
 The `PLANTNET_KEY` secret (declared in `wrangler.toml`'s `[secrets]`, so `Env` types it): `tr -d '\n' < ~/.plantnet-key | npx wrangler secret put PLANTNET_KEY` from `relay/`; the key lives outside the repo. For `wrangler dev`, put `PLANTNET_KEY=…` in `relay/.dev.vars` (git-ignored); the tests bind a stand-in and mock Pl@ntNet.
 
+The `APP_TOKEN` secret, 32 random bytes as hex, lives in `~/.green-friends-app-token`: `npx wrangler secret put APP_TOKEN < ~/.green-friends-app-token` from `relay/`. The app gets the same value as `EXPO_PUBLIC_APP_TOKEN` in the root's git-ignored `.env.local`, which Expo inlines into the bundle; a build without it can't sync or identify (403). To rotate, write a new token to both, deploy the secret and rebuild the app in one go, since the installed app stops syncing until the new build is on.
+
 A first deploy, by the owner: `cd relay && npx wrangler login`, then `npx wrangler r2 bucket create green-friends-snapshots`, then `npm run relay:deploy`. It lives at `https://green-friends-relay.gariasf.workers.dev` (first deployed 2026-09-26).
 
 ## House rules
 
-- Never commit a Cloudflare API token, account id or the Pl@ntNet key, and never print the key (pipe it into `wrangler secret put`). `wrangler login` keeps its OAuth token in the user's home directory; a `CLOUDFLARE_API_TOKEN`, if one is ever needed, stays in the shell or a git-ignored `.env*.local`.
+- Never commit a Cloudflare API token, account id, the app token or the Pl@ntNet key, and never print either secret (pipe it into `wrangler secret put`). `wrangler login` keeps its OAuth token in the user's home directory; a `CLOUDFLARE_API_TOKEN`, if one is ever needed, stays in the shell or a git-ignored `.env*.local`.
 - The Worker never logs a request body, a token or its hash, the Pl@ntNet key or the upstream URL (it carries the key), and holds nothing it could decrypt: the key never leaves the phone and the Pairing link's `#` fragment.
 - `compatibility_date` can't be newer than the `workerd` that `@cloudflare/vitest-pool-workers` bundles, or the tests won't start; bump the two together.
 - After editing `wrangler.toml`'s bindings or vars, run the typecheck so `Env` follows.

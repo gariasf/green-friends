@@ -102,11 +102,17 @@ async function keys(): Promise<SyncKeys> {
   };
 }
 
+/**
+ * The relay's app token (docs/agents/relay.md): only a request carrying it can create a garden or
+ * use Identify. `EXPO_PUBLIC_APP_TOKEN` in the git-ignored `.env.local`, inlined at bundle time.
+ */
+export const APP_TOKEN = process.env.EXPO_PUBLIC_APP_TOKEN ?? '';
+
 const relay: SyncRelay = {
   async put(gardenId, writeToken, snapshot) {
     const response = await fetch(`${RELAY_URL}/gardens/${gardenId}`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${writeToken}` },
+      headers: { Authorization: `Bearer ${writeToken}`, 'X-App-Token': APP_TOKEN },
       // Sealed by expo-crypto into a plain ArrayBuffer, never a shared one.
       body: snapshot as Uint8Array<ArrayBuffer>,
     });
@@ -198,17 +204,23 @@ function ask(title: string, message: string, action: string): Promise<boolean> {
 /**
  * A Pairing link opened on this phone (`greenfriends://pair#k=…`, from the Web view's Open in Green
  * Friends): Sync takes its key and turns on, offering an empty Garden the latest Snapshot. A Garden
- * with plants that syncs under another key is asked first, since it then replaces the opened one's
- * Snapshot of today.
+ * with plants is asked first unless it already syncs under that key, since it then goes up under
+ * the opened link: any web page can open one, and whoever made the link could read the Garden.
  */
 async function pair(key: Uint8Array): Promise<void> {
   const stored = SecureStore.getItem(KEY_ITEM, KEYCHAIN);
-  if (stored !== null && stored !== toBase64url(key) && !isGardenEmpty(db)) {
-    const replace = await ask(
-      'Replace the Pairing link?',
-      "This iPhone syncs under another Pairing link. From now on it syncs under the one you opened: this iPhone's Garden replaces that link's Snapshot of today, and the other link's Snapshots stop being updated.",
-      'Replace',
-    );
+  if (stored !== toBase64url(key) && !isGardenEmpty(db)) {
+    const replace = await (stored === null
+      ? ask(
+          'Sync under this Pairing link?',
+          "This iPhone's Garden, with its Care Logs and photos, goes up under the link you opened, and anyone with that link can see it. Open only a Pairing link from your own Web view.",
+          'Sync',
+        )
+      : ask(
+          'Replace the Pairing link?',
+          "This iPhone syncs under another Pairing link. From now on it syncs under the one you opened: this iPhone's Garden replaces that link's Snapshot of today, and the other link's Snapshots stop being updated.",
+          'Replace',
+        ));
     if (!replace) return;
   }
   let restored = false;

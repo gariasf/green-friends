@@ -4,6 +4,9 @@
 //
 // It also forwards Identify's photos to Pl@ntNet (ADR-0007, spec #44) under the owner's key, the
 // PLANTNET_KEY secret, keeping nothing: no photo, and never the key or the URL carrying it in a log.
+//
+// Both writes, a PUT and Identify, need the APP_TOKEN secret in `X-App-Token`, which only the app
+// carries: without it anyone could store files in the bucket or spend the Pl@ntNet quota.
 
 const MAX_BYTES = 25 * 1024 * 1024;
 const KEEP_DAYS = 7;
@@ -29,7 +32,8 @@ export default {
 async function route(request: Request, env: Env): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === '/identify') {
-    return request.method === 'POST' ? identify(request, env.PLANTNET_KEY) : status(405);
+    if (request.method !== 'POST') return status(405);
+    return (await fromApp(request, env)) ? identify(request, env.PLANTNET_KEY) : status(403);
   }
   const match = ROUTE.exec(pathname);
   if (!match) return status(404);
@@ -46,7 +50,9 @@ async function route(request: Request, env: Env): Promise<Response> {
   }
 
   if (day || listing) return status(405);
-  if (request.method === 'PUT') return put(request, bucket, id);
+  if (request.method === 'PUT') {
+    return (await fromApp(request, env)) ? put(request, bucket, id) : status(403);
+  }
   if (request.method === 'DELETE') return remove(request, bucket, id);
   return status(405);
 }
@@ -132,6 +138,15 @@ async function identify(request: Request, key: string): Promise<Response> {
       score: r.score,
     })),
   );
+}
+
+/** Whether the request carries the app's token, checked before any body is read. */
+async function fromApp(request: Request, env: Env): Promise<boolean> {
+  // An unset secret would match a missing header: refuse everyone instead.
+  if (!env.APP_TOKEN) return false;
+  // Comparing digests, not the tokens, so the time taken says nothing of how much matched.
+  const sent = await sha256(request.headers.get('X-App-Token') ?? '');
+  return sent === (await sha256(env.APP_TOKEN));
 }
 
 /** A refusal, or null once the bearer token matches the garden's (or claims it, on a first PUT). */

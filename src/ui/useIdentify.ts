@@ -13,6 +13,7 @@ import { getSpecies, type Species } from '@/src/core/species';
 import { RELAY_URL } from '@/src/core/sync';
 import { db } from '@/src/db/client';
 import { prepare } from '@/src/ui/Photo';
+import { APP_TOKEN } from '@/src/ui/useSync';
 
 /** The long edge of the photo Identify sends, in pixels (ADR-0007). */
 const IDENTIFY_LONG_EDGE = 1280;
@@ -37,7 +38,7 @@ const relay: IdentifyRelay = {
     try {
       response = await fetch(`${RELAY_URL}/identify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
+        headers: { 'Content-Type': 'image/jpeg', 'X-App-Token': APP_TOKEN },
         body: jpeg as Uint8Array<ArrayBuffer>,
       });
     } catch {

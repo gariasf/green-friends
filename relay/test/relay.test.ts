@@ -15,9 +15,16 @@ function relay(path: string, init?: RequestInit): Promise<Response> {
   return exports.default.fetch(new Request(BASE + path, init));
 }
 
-function put(id: string, body: BodyInit, token: string | null = TOKEN): Promise<Response> {
-  const headers: Record<string, string> =
-    token === null ? {} : { Authorization: `Bearer ${token}` };
+function put(
+  id: string,
+  body: BodyInit,
+  token: string | null = TOKEN,
+  appToken: string | null = env.APP_TOKEN,
+): Promise<Response> {
+  const headers: Record<string, string> = {
+    ...(token === null ? {} : { Authorization: `Bearer ${token}` }),
+    ...(appToken === null ? {} : { 'X-App-Token': appToken }),
+  };
   return relay(`/gardens/${id}`, { method: 'PUT', headers, body });
 }
 
@@ -51,6 +58,19 @@ describe('the relay', () => {
     expect((await put(id, 'forged', 'other-token')).status).toBe(403);
     expect((await del(id, null)).status).toBe(401);
     expect((await del(id, 'other-token')).status).toBe(403);
+    expect(await (await relay(`/gardens/${id}`)).text()).toBe('sealed-1');
+  });
+
+  it('lets only the app create or write a garden', async () => {
+    const id = gardenId();
+
+    expect((await put(id, 'squatter', 'their-token', null)).status).toBe(403);
+    expect((await put(id, 'squatter', 'their-token', 'guessed')).status).toBe(403);
+    expect((await relay(`/gardens/${id}`)).status).toBe(404);
+    expect(await env.SNAPSHOTS.get(`${id}/token`)).toBeNull();
+
+    await put(id, 'sealed-1');
+    expect((await put(id, 'forged', TOKEN, null)).status).toBe(403);
     expect(await (await relay(`/gardens/${id}`)).text()).toBe('sealed-1');
   });
 

@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: './wrangler.toml' },
-      // A stand-in for the PLANTNET_KEY secret; the tests mock Pl@ntNet itself.
-      miniflare: { bindings: { PLANTNET_KEY: 'test-plantnet-key' } },
+      // Stand-ins for the secrets; the tests mock Pl@ntNet itself.
+      miniflare: { bindings: { PLANTNET_KEY: 'test-plantnet-key', APP_TOKEN: 'test-app-token' } },
     }),
   ],
 });

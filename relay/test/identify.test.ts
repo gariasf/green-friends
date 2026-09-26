@@ -27,11 +27,18 @@ function plantNet(answer: () => Response) {
   return vi.spyOn(globalThis, 'fetch').mockImplementation(async () => answer());
 }
 
-function identify(body: BodyInit = PHOTO, method = 'POST'): Promise<Response> {
+function identify(
+  body: BodyInit = PHOTO,
+  method = 'POST',
+  appToken: string | null = env.APP_TOKEN,
+): Promise<Response> {
   return exports.default.fetch(
     new Request('https://relay.test/identify', {
       method,
-      headers: { 'Content-Type': 'image/jpeg' },
+      headers: {
+        'Content-Type': 'image/jpeg',
+        ...(appToken === null ? {} : { 'X-App-Token': appToken }),
+      },
       body: method === 'POST' ? body : undefined,
     }),
   );
@@ -99,6 +106,14 @@ describe('POST /identify', () => {
     const res = await identify();
     expect(res.status).toBe(502);
     expect(await seen(res)).not.toContain(env.PLANTNET_KEY);
+  });
+
+  it('forwards nothing without the app’s token, so only the app spends the key', async () => {
+    const upstream = plantNet(() => Response.json({ results: [] }));
+
+    expect((await identify(PHOTO, 'POST', null)).status).toBe(403);
+    expect((await identify(PHOTO, 'POST', 'guessed')).status).toBe(403);
+    expect(upstream).not.toHaveBeenCalled();
   });
 
   it('refuses a body without a Content-Length, one over 5 MB, and other methods', async () => {

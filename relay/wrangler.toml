@@ -9,8 +9,10 @@ ALLOWED_ORIGIN = "https://green-friends.gariasf.workers.dev"
 
 # Pl@ntNet's API key for Identify (ADR-0007): `tr -d '\n' < ~/.plantnet-key | npx wrangler secret put PLANTNET_KEY`,
 # and a git-ignored .dev.vars for `wrangler dev`. Never in the repo.
+# APP_TOKEN: the app's own secret, sent as X-App-Token, so only the app can create gardens or use
+# the key; ~/.green-friends-app-token, also the app's EXPO_PUBLIC_APP_TOKEN in .env.local.
 [secrets]
-required = ["PLANTNET_KEY"]
+required = ["PLANTNET_KEY", "APP_TOKEN"]
 
 [[r2_buckets]]
 binding = "SNAPSHOTS"
