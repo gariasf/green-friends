@@ -19,7 +19,7 @@ npm --prefix relay run dev   # wrangler dev, local R2
 npm run relay:deploy         # wrangler deploy, by hand (no CI deploys)
 ```
 
-A first deploy, by the owner: `cd relay && npx wrangler login`, then `npx wrangler r2 bucket create green-friends-snapshots`, then `npm run relay:deploy`. The Worker lands on `https://green-friends-relay.<account>.workers.dev`.
+A first deploy, by the owner: `cd relay && npx wrangler login`, then `npx wrangler r2 bucket create green-friends-snapshots`, then `npm run relay:deploy`. It lives at `https://green-friends-relay.gariasf.workers.dev` (first deployed 2026-09-26).
 
 ## House rules
 
