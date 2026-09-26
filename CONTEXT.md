@@ -48,6 +48,22 @@ _Avoid_: routine, plan
 A plant-level schedule for one care type that shadows the Species default as a whole: both seasonal intervals for watering or fertilizing, the single interval for repotting. Unset means the default applies; a missing Dormant interval inside a set Override means Paused.
 _Avoid_: custom schedule, partial override
 
+**Care Profile**:
+A group of Species that share care advice (Tropical aroid, Succulent), bundled with the app and never user-editable. Each catalog Species points to one; its words say how to water, feed, place and pot, never how often.
+_Avoid_: category, family (that is botanical), group
+
+**Care Guide**:
+What a plant shows of how to care for it: its Species' Care Profile, that Species' own care notes and Fun fact, for today's Season, beside the plant's real Care Schedule. A plant without a Species has none.
+_Avoid_: instructions, tips, wiki
+
+**Symptom**:
+Something visible going wrong on a plant (brown tips, webbing), pests included, with its likely causes, how to tell them apart and what to do. Shared by every plant; a Care Profile puts its typical causes first. Only reading: what the user finds is kept as a Note.
+_Avoid_: problem, disease, issue, diagnosis
+
+**Fun fact**:
+One sourced line about a Species, at the end of its Care Guide.
+_Avoid_: trivia
+
 **Season**:
 Growing or Dormant, determined by an app-level growing-month range (default Mar–Oct); a range that starts and ends in the same month means Growing all year. Watering and fertilizing schedules carry one interval per season; a missing Dormant interval means that care type is Paused for the season.
 _Avoid_: winter mode
