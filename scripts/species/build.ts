@@ -11,9 +11,14 @@
  * - The curated care layer (colloquial names, watering / fertilizing / repotting defaults, pet
  *   toxicity) is hand-written in this repo. No open dataset of pet toxicity is licensed for
  *   commercial use (research #4), so it is curated per species and cross-checked against public
- *   references such as the ASPCA's toxic and non-toxic plant lists; none of them is imported. A
- *   species is toxic where such a reference lists it or a relative sharing its toxic principle, and
- *   non-toxic only where one lists it, or its whole genus or family, as non-toxic.
+ *   references such as the ASPCA's toxic and non-toxic plant lists; none of them is imported. In
+ *   order (#53): a species a reference lists (under any GBIF synonym) takes that value; else its
+ *   genus's (a "spp." entry or an entry named for the genus); else toxic when a listed member of
+ *   its own genus is, or a relative shares its toxic principle (Datura's tropane alkaloids for
+ *   Brugmansia); else non-toxic when two or more members of its genus are listed and all are
+ *   non-toxic, or when its former genus is listed non-toxic (Calathea for Goeppertia; a former
+ *   genus never makes a species toxic, as "Aloe" synonyms would Haworthia). Anything else is
+ *   unknown (null), which the app shows as no pet badge at all.
  * - GBIF Backbone Taxonomy, CC BY 4.0 (GBIF Secretariat, https://doi.org/10.15468/39omei). Only
  *   the name index, assets/species-index.json, draws on it: each Species' GBIF keys, accepted name
  *   and synonyms, so Identify (ADR-0007) can map Pl@ntNet's candidates to the catalog on the phone.
@@ -24,8 +29,9 @@
  *
  * Invariants: QIDs unique and append-only (every ID ever committed in assets/species.json stays,
  * none is reused for another taxon), intervals are positive integers, a Dormant interval needs a
- * Growing one, every species states its pet toxicity, and the dataset version goes up whenever the
- * species content changes (the app reseeds on a higher version).
+ * Growing one, every species states its pet toxicity (true, false, or null for unknown), and the
+ * dataset version goes up whenever the species content changes (the app reseeds on a higher
+ * version).
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -258,7 +264,9 @@ function validate({ version, species }: SpeciesDataset): string[] {
         if (other) problems.push(`${where}: ${key} duplicates ${other}`);
         seen.set(`${key}:${value}`, s.id);
       } else if (kind === 'flag') {
-        if (typeof value !== 'boolean') problems.push(`${where}: ${key} must be true or false`);
+        if (value !== null && typeof value !== 'boolean') {
+          problems.push(`${where}: ${key} must be true, false or null (unknown)`);
+        }
       } else if (
         value !== null &&
         !(typeof value === 'number' && Number.isInteger(value) && value > 0)

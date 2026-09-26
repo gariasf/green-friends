@@ -1,5 +1,5 @@
 import type { Db } from '../db/types';
-import { MONSTERA, catalog, gardenDb, noon } from '../test/garden';
+import { MONSTERA, POTHOS, catalog, gardenDb, noon } from '../test/garden';
 import { dueCare, evaluateCare, listNeedsAttention, nextCare } from './care';
 import { logCareEvent } from './careLog';
 import { NO_SCHEDULE, archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
@@ -316,6 +316,14 @@ describe('the evaluated plant', () => {
       { displayName: 'Air plant', toxicToPets: null },
       { displayName: 'Monty', toxicToPets: true },
     ]);
+  });
+
+  test("carries no pet toxicity when its Species' is unknown", () => {
+    const db = gardenDb();
+    seedSpecies(db, { version: 2, species: [{ ...catalog.pothos, toxicToPets: null }] });
+    createPlant(db, { speciesId: POTHOS });
+
+    expect(evaluateCare(db)).toMatchObject([{ displayName: 'Pothos', toxicToPets: null }]);
   });
 });
 
