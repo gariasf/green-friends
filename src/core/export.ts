@@ -21,13 +21,8 @@ export type ShareSheet = {
 };
 
 /**
- * Exports the Garden (CONTEXT.md, Export) to the share sheet: a plain zip named for the local day,
- * green-friends-<YYYY-MM-DD>.zip, holding export.json and, under photos/, the file of every live
- * photo row (ADR-0002). export.json carries a header, the user-data tables verbatim under their
- * column names, tombstones included, and a name snapshot of every Species a plant refers to; never
- * the Species catalog, nor the pending notifications, a projection recomputed after an Import.
- * ponytail: the zip is built in memory, the size of the photos; stream it into a file through
- * fflate's Zip if Gardens outgrow that.
+ * Exports the Garden (CONTEXT.md, Export) to the share sheet: buildExport's zip, named for the
+ * local day, green-friends-<YYYY-MM-DD>.zip.
  */
 export async function shareExport(
   db: Db,
@@ -36,6 +31,25 @@ export async function shareExport(
   appVersion: string,
   now: Date = new Date(),
 ): Promise<void> {
+  return sheet.share(`green-friends-${localDay(now)}.zip`, buildExport(db, files, appVersion, now));
+}
+
+/**
+ * The Garden's Export, which the share sheet offers and Sync uploads: a plain zip holding
+ * export.json and, under photos/, the file of every live photo row (ADR-0002). export.json carries
+ * a header, the user-data tables verbatim under their column names, tombstones included, and a
+ * name snapshot of every Species a plant refers to; never the Species catalog, nor the pending
+ * notifications, a projection recomputed after an Import. Every entry is dated `now`, so the same
+ * Garden at the same moment zips to the same bytes.
+ * ponytail: the zip is built in memory, the size of the photos; stream it into a file through
+ * fflate's Zip if Gardens outgrow that.
+ */
+export function buildExport(
+  db: Db,
+  files: PhotoFiles,
+  appVersion: string,
+  now: Date = new Date(),
+): Uint8Array {
   const json = {
     // The migration version, so an Import can bring an older Export's rows forward.
     schema_version: getSchemaVersion(db),
@@ -65,7 +79,7 @@ export async function shareExport(
     // JPEGs are compressed already: stored as they are.
     if (deleted_at === null) zip[`photos/${filename}`] = [files.read(filename), { level: 0 }];
   }
-  return sheet.share(`green-friends-${localDay(now)}.zip`, zipSync(zip));
+  return zipSync(zip, { mtime: now });
 }
 
 /** A table's rows under their SQL column names, as the table holds them. */

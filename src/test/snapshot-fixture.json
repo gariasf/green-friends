@@ -1,0 +1,11 @@
+{
+  "key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "gardenId": "b3c56a6156d742dbd63e28122ada8b3054eeaee25cf7575e7e0f323bc19174e3",
+  "writeToken": "07aab8ba1766c51164f697de5edcf10494d7be61aa55eba16cbf195bc0133622",
+  "plaintext": "A Snapshot sealed by WebCrypto, for the phone to open.",
+  "snapshot": "oKGio6SlpqeoqaqrSDeWWoyLMsYnfvDX6LqMQ0KrFN3QfQcIefpJ2KUw4GtPE/M0kqjJGDIm851vv6XB++30dOg6QvSWSR2jaLzi+joPSjxEdw==",
+  "hermes": {
+    "plaintext": "A Snapshot sealed by expo-crypto on Hermes, for the browser to open.",
+    "snapshot": "WPD5fRpSY2duWx58yDMK3zj58IqG58e17ahbiGjlvAfR9UbeivamAkLXmTpykSwm02J9y2YP8Euk/R+d4w8q4KKwfceJFlnnKJJntorc4UAe0Oeo8RvY3sQL/n/OO0CJ"
+  }
+}

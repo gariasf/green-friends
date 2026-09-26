@@ -5,7 +5,7 @@ import type { Db } from '../db/types';
 import { MONSTERA, POTHOS, gardenDb, noon } from '../test/garden';
 import { photoStore } from '../test/photos';
 import { deleteCareEvent, listCareEvents, logCareEvent } from './careLog';
-import { shareExport } from './export';
+import { buildExport, shareExport } from './export';
 import { setPlantPhoto } from './photos';
 import { NO_SCHEDULE, archivePlant, createPlant, deletePlant, updatePlant } from './plants';
 import { updateSettings } from './settings';
@@ -34,6 +34,18 @@ async function exportGarden(db: Db, files = photoStore().files, now = NOW) {
 }
 
 describe('Export', () => {
+  test('shares the very bytes buildExport makes, which Sync uploads', async () => {
+    const db = gardenDb();
+    const { files } = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 20));
+    setPlantPhoto(db, files, monty.id, 'file:///cache/1.jpg', noon(2026, 9, 21));
+    const shared: Uint8Array[] = [];
+
+    await shareExport(db, files, { share: async (_, zip) => void shared.push(zip) }, '1.2.3', NOW);
+
+    expect(shared).toEqual([buildExport(db, files, '1.2.3', NOW)]);
+  });
+
   test('is one zip named for the local day it was made, export.json alone for an empty Garden', async () => {
     const db = gardenDb();
 

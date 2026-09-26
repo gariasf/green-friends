@@ -10,6 +10,7 @@ import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
 import { colors, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
+import { useSync } from '@/src/ui/useSync';
 
 // Boot. src/core mints row ids with the standard crypto.randomUUID() so it stays portable
 // (ADR-0001); Hermes has no WebCrypto, so it gets Expo's native generator here. Then bring the
@@ -47,6 +48,7 @@ const TAB_TITLES: Record<string, string> = {
  */
 export default function RootLayout() {
   useDigests();
+  useSync();
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack

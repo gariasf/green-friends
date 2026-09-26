@@ -8,8 +8,10 @@ import {
   Picker,
   ProgressView,
   Section,
+  ShareLink,
   Spacer,
   Text,
+  Toggle,
 } from '@expo/ui/swift-ui';
 import {
   accessibilityValue,
@@ -22,7 +24,7 @@ import {
 import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
 import { shareExport, type ShareSheet } from '@/src/core/export';
@@ -39,6 +41,7 @@ import { db, withScratchDb } from '@/src/db/client';
 import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
 import { colors } from '@/src/ui/theme';
+import { pairingLink, sync, useSyncStatus } from '@/src/ui/useSync';
 
 /**
  * The months as the phone names them, for the season pickers. Each is named from its 15th: Hermes
@@ -51,6 +54,17 @@ const MONTHS = Array.from({ length: 12 }, (_, index) => ({
 }));
 
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
+
+/** When the last Snapshot reached the relay, as Settings' Last synced row words it. */
+function syncedLabel(syncedAt: string | null, now: Date): string {
+  if (syncedAt === null) return 'Never';
+  const minutes = Math.floor((now.getTime() - Date.parse(syncedAt)) / 60_000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)} h ago`;
+  const days = Math.floor(minutes / (24 * 60));
+  return days === 1 ? '1 day ago' : `${days} days ago`;
+}
 
 /**
  * The iOS share sheet, offering an Export as a zip file in the cache folder; `presenting` runs as
@@ -81,6 +95,18 @@ export default function SettingsScreen() {
   const [settings, setSettings] = useState<Settings>(() => getSettings(db));
   const [catalogVersion] = useState(() => getSpeciesDatasetVersion(db));
   const save = (patch: SettingsPatch) => setSettings(updateSettings(db, patch));
+
+  const syncStatus = useSyncStatus();
+  // Read from the keychain once Sync is on, not on every render.
+  const link = useMemo(() => (syncStatus.on ? pairingLink() : null), [syncStatus.on]);
+  // Last synced is relative to now: read again every half minute while Sync is on. A sync newer
+  // than the last tick reads as Just now.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (!syncStatus.on) return;
+    const tick = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(tick);
+  }, [syncStatus.on]);
 
   // The row shows the zip being made until the share sheet is up. A second tap until the sheet is
   // dismissed would share another over the first.
@@ -192,6 +218,47 @@ export default function SettingsScreen() {
             modifiers={[datePickerStyle('compact'), environment('timeZone', 'UTC')]}
           />
         </Section>
+
+        <Section
+          title="Sync"
+          footer={
+            <Text>
+              Keeps an encrypted copy of your Garden off this iPhone, uploaded after every change.
+              The relay that holds it has no way to read it.
+            </Text>
+          }
+        >
+          <Toggle
+            label="Sync"
+            isOn={syncStatus.on}
+            onIsOnChange={(on) => (on ? void sync.turnOn() : sync.turnOff())}
+          />
+          {syncStatus.on && (
+            <>
+              <LabeledContent label="Last synced">
+                <Text>{syncedLabel(syncStatus.syncedAt, now)}</Text>
+              </LabeledContent>
+              {syncStatus.problem !== null && <Text>{syncStatus.problem}</Text>}
+              <Button label="Sync now" onPress={() => void sync.syncNow()} />
+            </>
+          )}
+        </Section>
+
+        {link !== null && (
+          <Section
+            title="Pairing link"
+            footer={
+              <Text>
+                Opens your Garden in a browser. Save this link somewhere safe: a new iPhone restores
+                from it, and whoever has it can read your Garden.
+              </Text>
+            }
+          >
+            <ShareLink item={link}>
+              <Text>Share Pairing link</Text>
+            </ShareLink>
+          </Section>
+        )}
 
         <Section
           title="Backup"
