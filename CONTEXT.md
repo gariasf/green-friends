@@ -87,3 +87,19 @@ _Avoid_: backup dump, sync file
 **Import**:
 Merging an Export into the local data: the newer edit wins per record, deletions are preserved, and nothing is wiped. Importing into an empty install restores the Export. Either everything imports or nothing does.
 _Avoid_: load, restore mode
+
+**Sync**:
+The phone keeping an encrypted copy of its Garden off the device, uploaded by itself after changes (ADR-0006). Off until the user turns it on. In phase 1 the phone is the only writer.
+_Avoid_: backup, cloud, account
+
+**Snapshot**:
+One encrypted Export stored on the relay by Sync; the relay keeps one per day for 7 days and can't read any of them. Restoring a Snapshot is an Import.
+_Avoid_: backup, cloud copy, sync file
+
+**Pairing link**:
+The link that carries Sync's key, after its `#`, to a browser or a new phone. Whoever holds it can read the Snapshots; Reset sync replaces the key.
+_Avoid_: invite, login, join code
+
+**Web view**:
+The read-only browser client: Today, the Garden and each Plant screen, computed from the latest Snapshot for the browser's own day.
+_Avoid_: web app, dashboard, desktop app
