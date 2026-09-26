@@ -1,6 +1,6 @@
 // The app's words for care, with nothing from React Native, so the Web view (web/) says the same.
 // Relative imports, as in src/core: the Web view's build has no `@/`.
-import type { CareStatus, NextCare } from '../core/care';
+import type { CareStatus, DueCare, NextCare } from '../core/care';
 import type { CareEventType } from '../core/careLog';
 import { daysBetween, localNoon } from '../core/dates';
 import { CARE_TYPES, hasOverride, type Plant } from '../core/plants';
@@ -48,6 +48,25 @@ export function nextCareLine(next: NextCare | null): string {
   if (next.days === 1) return `${label} tomorrow`;
   const [count, unit] = daysOrMonths(next.days);
   return `${label} in ${plural(count, unit)}`;
+}
+
+/**
+ * What a plant that Needs Attention is waiting for, on one line: "Fertilize overdue", "Water due
+ * today", "Fertilize, Repot overdue · Water due today".
+ */
+export function dueLine(due: DueCare[]): string {
+  const labels = (overdue: boolean) =>
+    due
+      .filter((care) => care.daysOverdue > 0 === overdue)
+      .map((care) => CARE_WORDS[care.type].label);
+  const overdue = labels(true);
+  const today = labels(false);
+  return [
+    overdue.length > 0 && `${overdue.join(', ')} overdue`,
+    today.length > 0 && `${today.join(', ')} due today`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /** A local calendar day as the Care Log shows it: Today, Yesterday, else its date with its weekday. */

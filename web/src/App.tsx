@@ -9,7 +9,7 @@ import { listPlants } from '../../src/core/plants';
 import { plantsNeedYou, plural } from '../../src/ui/words';
 import { openGarden, type Garden } from './garden';
 import { AppMark } from './icons';
-import { GardenList, PlantScreen, Today, type PhotoUrl } from './screens';
+import { GardenPanes, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
 
@@ -139,21 +139,24 @@ function GardenView({
   screen: Route;
 }) {
   const photoUrl = usePhotoUrls(garden);
+  // The day each navigation draws, as Today's (screens.tsx).
+  const today = localDay(new Date());
   const { needYou, plants } = useMemo(
     () => ({
-      needYou: evaluateCare(garden.db, localDay(new Date())).filter(needsAttention).length,
+      needYou: evaluateCare(garden.db, today).filter(needsAttention).length,
       plants: listPlants(garden.db).length,
     }),
-    [garden],
+    [garden, today],
   );
-  // A new screen starts at its top, and a screen reader starts at its heading.
+  // A new screen starts at its top, and a screen reader starts at its heading: the chosen plant's,
+  // else the screen's.
   useEffect(() => {
     scrollTo(0, 0);
-    document.querySelector<HTMLElement>('main h1')?.focus();
+    (document.querySelector<HTMLElement>('main h1') ?? document.querySelector('h1'))?.focus();
   }, [screen]);
 
   return (
-    <div className="shell">
+    <div className={`shell ${{ today: '', garden: 'panes', plant: 'panes chosen' }[screen.tab]}`}>
       <header className="sidebar">
         <p className="brand">
           <AppMark />
@@ -183,13 +186,17 @@ function GardenView({
         </a>
         {takenAt && <p className="synced">Synced {SYNCED.format(takenAt)}</p>}
       </header>
-      <main className={`screen-${screen.tab}`}>
-        {screen.tab === 'today' && <Today garden={garden} photoUrl={photoUrl} />}
-        {screen.tab === 'garden' && <GardenList garden={garden} photoUrl={photoUrl} />}
-        {screen.tab === 'plant' && (
-          <PlantScreen garden={garden} id={screen.id} photoUrl={photoUrl} />
-        )}
-      </main>
+      {screen.tab === 'today' ? (
+        <main className="today">
+          <Today garden={garden} photoUrl={photoUrl} />
+        </main>
+      ) : (
+        <GardenPanes
+          garden={garden}
+          id={screen.tab === 'plant' ? screen.id : null}
+          photoUrl={photoUrl}
+        />
+      )}
     </div>
   );
 }

@@ -38,17 +38,20 @@ export function CareIcon({ type, size = 18 }: { type: CareEventType; size?: numb
 }
 
 /**
- * A plant's photo, decorative beside its name as on the phone, or the app's placeholder while it
- * has none: a tinted leaf (leaf.fill) on Ecru. `size` is its class: 40, 64 or 88 px.
+ * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the app's
+ * placeholder while it has none: a tinted leaf (leaf.fill) on Ecru. `size` is its class: 40, 64
+ * or 88 px.
  */
 export function Thumb({
   src,
   size = 'md',
+  alt = '',
 }: {
   src: string | undefined;
   size?: 'md' | 'lg' | 'xl';
+  alt?: string;
 }) {
-  if (src) return <img className={`thumb ${size}`} src={src} alt="" />;
+  if (src) return <img className={`thumb ${size}`} src={src} alt={alt} />;
   return (
     <span className={`thumb ${size} leaf`} aria-hidden="true">
       <svg viewBox="0 0 24 24">

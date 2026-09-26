@@ -7,6 +7,7 @@ import { CARE_TYPES, getPlant, listPlants } from '../../src/core/plants';
 import {
   CARE_WORDS,
   dayLabel,
+  dueLine,
   lastLine,
   nextCareLine,
   plantsNeedYou,
@@ -16,7 +17,7 @@ import {
   whoseSchedule,
 } from '../../src/ui/words';
 import type { Garden } from './garden';
-import { CareIcon, Thumb } from './icons';
+import { AppMark, CareIcon, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
@@ -104,48 +105,82 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
   );
 }
 
-/** Every live plant by Display Name, with its photo and scientific name, as the phone's Garden. */
-export function GardenList({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl }) {
-  const plants = useMemo(() => listPlants(garden.db), [garden]);
-  return (
-    <>
-      <h1 tabIndex={-1}>Garden</h1>
-      {plants.length === 0 ? (
-        <Empty title="No plants yet" line="Add one in Green Friends on your phone." />
-      ) : (
-        <ul className="group">
-          {plants.map((plant) => (
-            <li key={plant.id}>
-              <a href={`#/plant/${plant.id}`}>
-                <PlantName
-                  photo={photoUrl(plant.photo)}
-                  name={plant.displayName}
-                  scientificName={plant.scientificName}
-                />
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
 /**
- * A plant's screen, as the phone's without its buttons: the photo, its names and pet toxicity, a
- * line per care type with when it's next Due (or how long Overdue, or Paused) and when it was last
- * done, its Current Pot and whose schedule it follows, and its Care Log as a timeline. The Web view
- * lists only plants in care, so a link to any other says so.
+ * The Garden as panes, like Mail or Notes (spec #41): every live plant by Display Name with what's
+ * Due or Overdue, or its next care, and the chosen plant beside the list. Below 60rem, the list or
+ * the plant, with a way back.
  */
-export function PlantScreen({
+export function GardenPanes({
   garden,
   id,
   photoUrl,
 }: {
   garden: Garden;
-  id: string;
+  id: string | null;
   photoUrl: PhotoUrl;
 }) {
+  // The day the screen was drawn on, as Today's.
+  const today = localDay(new Date());
+  const plants = useMemo(() => {
+    const care = new Map(evaluateCare(garden.db, today).map((plant) => [plant.id, plant]));
+    return listPlants(garden.db).flatMap((plant) => care.get(plant.id) ?? []);
+  }, [garden, today]);
+
+  return (
+    <>
+      <section className="list" aria-labelledby="garden-heading">
+        <h1 id="garden-heading" tabIndex={-1}>
+          Garden
+        </h1>
+        {plants.length === 0 ? (
+          <Empty title="No plants yet" line="Add one in Green Friends on your phone." />
+        ) : (
+          <ul>
+            {plants.map((plant) => {
+              const due = dueCare(plant);
+              const tone = due.some((care) => care.daysOverdue > 0) ? 'overdue' : 'due-today';
+              return (
+                <li key={plant.id}>
+                  <a
+                    href={`#/plant/${plant.id}`}
+                    aria-current={plant.id === id ? 'page' : undefined}
+                  >
+                    <Thumb src={photoUrl(plant.photo)} />
+                    <span className="grow">
+                      <span className="name">{plant.displayName}</span>
+                      <span className="quiet line">
+                        {due.length > 0 && <span className={`dot ${tone}`} />}
+                        {due.length > 0 ? dueLine(due) : nextCareLine(nextCare(plant, today))}
+                      </span>
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+      <main className="detail">
+        {id ? (
+          <PlantDetail garden={garden} id={id} photoUrl={photoUrl} />
+        ) : (
+          <div className="pick">
+            <AppMark size={48} />
+            <p className="quiet">Pick a plant to see its care and Care Log.</p>
+          </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+/**
+ * A plant, as the phone's Plant screen without its buttons: the photo beside its names and pet
+ * toxicity, a row per care type with when it's next Due (or how long Overdue, or Paused) and when
+ * it was last done, whose schedule it follows and its Current Pot, and its Care Log. The Web view
+ * lists only plants in care, so a link to any other says so.
+ */
+function PlantDetail({ garden, id, photoUrl }: { garden: Garden; id: string; photoUrl: PhotoUrl }) {
   const today = localDay(new Date());
   const plant = useMemo(() => {
     const care = evaluateCare(garden.db, today).find((candidate) => candidate.id === id);
@@ -155,6 +190,7 @@ export function PlantScreen({
   if (!plant) {
     return (
       <>
+        <BackLink />
         <h1 tabIndex={-1}>Not in your Garden</h1>
         <p>This plant isn&apos;t in the Garden your phone last synced.</p>
       </>
@@ -162,20 +198,22 @@ export function PlantScreen({
   }
 
   const { row, events } = plant;
-  const scientific = scientificBeneath(plant.displayName, plant.scientificName);
-  const photo = photoUrl(plant.photo);
-  const pot = potLine(row.potSizeCm, row.soil);
 
   return (
     <>
-      {photo && <img className="hero" src={photo} alt={`Photo of ${plant.displayName}`} />}
-      <h1 tabIndex={-1}>{plant.displayName}</h1>
-      {scientific && <p className="scientific">{scientific}</p>}
-      {plant.toxicToPets !== null && (
-        <p className={plant.toxicToPets ? 'badge toxic' : 'badge'}>
-          {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
-        </p>
-      )}
+      <BackLink />
+      <div className="head">
+        <Thumb src={photoUrl(plant.photo)} size="xl" alt={`Photo of ${plant.displayName}`} />
+        <div>
+          <h1 tabIndex={-1}>{plant.displayName}</h1>
+          <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+          {plant.toxicToPets !== null && (
+            <p className={plant.toxicToPets ? 'badge toxic' : 'badge'}>
+              {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
+            </p>
+          )}
+        </div>
+      </div>
 
       <h2>Care</h2>
       <dl className="group care">
@@ -199,18 +237,17 @@ export function PlantScreen({
           );
         })}
       </dl>
-      <p className="quiet">{whoseSchedule(row)}</p>
-
-      <h2>Current Pot</h2>
-      <p>{pot || 'Not recorded.'}</p>
+      <p className="quiet">
+        {[whoseSchedule(row), potLine(row.potSizeCm, row.soil)].filter(Boolean).join(' · ')}
+      </p>
 
       <h2>Care Log</h2>
       {events.length === 0 ? (
         <p className="quiet">Nothing logged yet.</p>
       ) : (
-        <ol className="timeline">
+        <ol className="group log">
           {events.map((event) => (
-            <TimelineEntry key={event.id} event={event} today={today} />
+            <CareLogRow key={event.id} event={event} today={today} />
           ))}
         </ol>
       )}
@@ -218,39 +255,29 @@ export function PlantScreen({
   );
 }
 
-/** A Care Event on the timeline: its symbol beside its day, what was done, and its details. */
-function TimelineEntry({ event, today }: { event: CareEvent; today: string }) {
+/** Back to the Garden's list, shown only where the panes fold into one. */
+function BackLink() {
+  return (
+    <a className="back" href="#/garden">
+      ‹ Garden
+    </a>
+  );
+}
+
+/** A Care Event: its symbol, what was done and its details, and its day on the right. */
+function CareLogRow({ event, today }: { event: CareEvent; today: string }) {
   const detail = [potLine(event.potSizeCm, event.soil), event.note].filter(Boolean).join(' · ');
   return (
     <li>
       <CareIcon type={event.type} size={16} />
+      <span className="grow">
+        <strong>{CARE_WORDS[event.type].done}</strong>
+        {detail && <span className="quiet">{detail}</span>}
+      </span>
       <time className="quiet" dateTime={event.occurredOn}>
         {dayLabel(event.occurredOn, today)}
       </time>
-      <strong>{CARE_WORDS[event.type].done}</strong>
-      {detail && <p>{detail}</p>}
     </li>
-  );
-}
-
-/** A plant's photo or the leaf beside its Display Name and scientific name. */
-function PlantName({
-  photo,
-  name,
-  scientificName,
-}: {
-  photo: string | undefined;
-  name: string;
-  scientificName: string | null;
-}) {
-  return (
-    <span className="plant">
-      <Thumb src={photo} />
-      <span>
-        <span className="name">{name}</span>
-        <Scientific name={name} scientificName={scientificName} />
-      </span>
-    </span>
   );
 }
 
