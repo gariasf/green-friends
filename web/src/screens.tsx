@@ -65,7 +65,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
                   {dueCare(plant).map(({ type, daysOverdue }) => (
                     <li key={type}>
                       <CareIcon type={type} size={16} />
-                      <span className="care-label">{CARE_WORDS[type].label}</span>
+                      <span>{CARE_WORDS[type].label}</span>
                       {daysOverdue > 0 ? (
                         <span className="overdue">{plural(daysOverdue, 'day')} overdue</span>
                       ) : (
