@@ -1,5 +1,18 @@
 {
   "version": 2,
+  "aliases": {
+    "Spathiphyllum floribundum": "Q761494",
+    "Aloe variegata": "Q39719922",
+    "Asclepias carnosa": "Q134347",
+    "Caladium colocasia": "Q227997",
+    "Caladium metallicum": "Q15314291",
+    "Cotyledon ovata": "Q157299",
+    "Eranthemum sanguinolentum": "Q5959593",
+    "Ficus karet": "Q160576",
+    "Ficus retusa nitida": "Q714180",
+    "Peperomia cuneifolia": "Q7166271",
+    "Tradescantia striata": "Q601079"
+  },
   "species": [
     { "id": "Q161077", "scientificName": "Monstera deliciosa", "colloquialName": "Monstera", "wateringGrowingDays": 7, "wateringDormantDays": 14, "fertilizingGrowingDays": 30, "fertilizingDormantDays": null, "repottingMonths": 24, "toxicToPets": true },
     { "id": "Q500991", "scientificName": "Monstera adansonii", "colloquialName": "Swiss cheese vine", "wateringGrowingDays": 7, "wateringDormantDays": 12, "fertilizingGrowingDays": 30, "fertilizingDormantDays": null, "repottingMonths": 18, "toxicToPets": true },

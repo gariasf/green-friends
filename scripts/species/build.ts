@@ -14,6 +14,11 @@
  *   references such as the ASPCA's toxic and non-toxic plant lists; none of them is imported. A
  *   species is toxic where such a reference lists it or a relative sharing its toxic principle, and
  *   non-toxic only where one lists it, or its whole genus or family, as non-toxic.
+ * - GBIF Backbone Taxonomy, CC BY 4.0 (GBIF Secretariat, https://doi.org/10.15468/39omei). Only
+ *   the name index, assets/species-index.json, draws on it: each Species' GBIF keys, accepted name
+ *   and synonyms, so Identify (ADR-0007) can map Pl@ntNet's candidates to the catalog on the phone.
+ *   Wikidata's GBIF taxon ID (P14607; P846 is retired) comes first, else GBIF's match on the P225
+ *   name. Aliases in curated.json cover names where Pl@ntNet's taxonomy and GBIF's disagree.
  * - No Perenual data: its terms forbid redistribution. Open Plantbook thresholds are not bundled
  *   because nothing in v1 reads them; openplantbook-coverage.ts runs the coverage spot-check.
  *
@@ -26,12 +31,15 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
+import type { SpeciesIndex } from '../../src/core/identify';
 import type { Species, SpeciesDataset } from '../../src/core/species';
 
 const REPO_ROOT = new URL('../../', import.meta.url);
 const CURATED_PATH = new URL('./curated.json', import.meta.url);
 const OUTPUT_PATH = new URL('assets/species.json', REPO_ROOT);
+const INDEX_PATH = new URL('assets/species-index.json', REPO_ROOT);
 const SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql';
+const GBIF_API = 'https://api.gbif.org/v1';
 const USER_AGENT = 'green-friends-species-build/1.0 (https://github.com/gariasf/green-friends)';
 
 /** Every Species column and how it is validated; the `satisfies` keeps this exhaustive. */
@@ -59,18 +67,26 @@ const SOURCES = [
     url: 'https://github.com/gariasf/green-friends/blob/main/scripts/species/curated.json',
     usedFor: 'Colloquial names, care defaults and pet toxicity',
   },
+  {
+    name: 'GBIF Backbone Taxonomy (GBIF Secretariat)',
+    license: 'CC BY 4.0',
+    url: 'https://doi.org/10.15468/39omei',
+    usedFor: 'Taxon keys, accepted names and synonyms in the name index (species-index.json)',
+  },
 ];
 
 type BundledDataset = SpeciesDataset & { sources: typeof SOURCES };
+/** curated.json: the dataset plus Identify's aliases, a Pl@ntNet or GBIF name → QID. */
+type Curated = SpeciesDataset & { aliases: Record<string, string> };
 
 async function main(): Promise<void> {
-  const curated = JSON.parse(readFileSync(CURATED_PATH, 'utf8')) as SpeciesDataset;
+  const curated = JSON.parse(readFileSync(CURATED_PATH, 'utf8')) as Curated;
   failOn(validate(curated));
 
-  const taxonNames = await fetchTaxonNames(curated.species.map((s) => s.id));
+  const taxa = await fetchTaxa(curated.species.map((s) => s.id));
   failOn(
     curated.species.flatMap((s) => {
-      const name = taxonNames.get(s.id);
+      const name = taxa.get(s.id)?.name;
       if (name === s.scientificName) return [];
       return [
         `${s.id}: Wikidata taxon name is ${name ?? 'missing'}, curated says ${s.scientificName}`,
@@ -88,8 +104,133 @@ async function main(): Promise<void> {
   const shipped = readShipped();
   if (shipped) failOn(checkAgainstShipped(dataset, shipped));
 
+  const index = await buildIndex(dataset.species, taxa, curated.aliases);
+
   writeFileSync(OUTPUT_PATH, render(dataset));
+  writeFileSync(INDEX_PATH, `${JSON.stringify(index, null, 1)}\n`);
   console.log(`Wrote ${dataset.species.length} species, dataset version ${dataset.version}`);
+  console.log(
+    `Wrote the name index: ${Object.keys(index.names).length} names, ${Object.keys(index.gbif).length} GBIF keys`,
+  );
+}
+
+/**
+ * Identify's name index (ADR-0007): every name and GBIF key a Species goes by → its QID. A Species'
+ * own names and keys (curated, accepted, its name's match) beat another's synonyms; a name or key
+ * two Species claim alike fails the build, naming both QIDs: an alias names the one a name belongs
+ * to, and a GBIF key clash has no such way out, since aliases are names.
+ */
+async function buildIndex(
+  species: Species[],
+  taxa: Map<string, Taxon>,
+  aliases: Record<string, string>,
+): Promise<SpeciesIndex> {
+  const ids = new Set(species.map((s) => s.id));
+  const unknown = Object.entries(aliases).filter(([, id]) => !ids.has(id));
+  failOn(unknown.map(([name, id]) => `alias ${name}: ${id} is not in the catalog`));
+  const settled = new Map(Object.entries(aliases).map(([name, id]) => [foldName(name), id]));
+
+  // Each key keeps only its strongest claims: 0 for a Species' own, 1 for a synonym.
+  type Claims = Map<string, { strength: number; ids: Set<string> }>;
+  const claims = { names: new Map() as Claims, gbif: new Map() as Claims };
+  const claim = (kind: keyof typeof claims, key: string, id: string, strength: number) => {
+    const known = claims[kind].get(key);
+    if (known && known.strength < strength) return;
+    if (known?.strength === strength) known.ids.add(id);
+    else claims[kind].set(key, { strength, ids: new Set([id]) });
+  };
+
+  const found = await mapLimit(species, 8, (s) =>
+    gbifNames(s.scientificName, taxa.get(s.id)?.gbif),
+  );
+  species.forEach((s, i) => {
+    const { own, synonyms } = found[i];
+    if (own.keys.length === 0) console.warn(`${s.id} (${s.scientificName}): no GBIF match`);
+    for (const [strength, gbifTaxa] of [own, synonyms].entries()) {
+      for (const key of gbifTaxa.keys) claim('gbif', String(key), s.id, strength);
+      for (const name of gbifTaxa.names) claim('names', foldName(name), s.id, strength);
+    }
+    claim('names', foldName(s.scientificName), s.id, 0);
+  });
+
+  const problems: string[] = [];
+  const settle = (kind: keyof typeof claims): Record<string, string> =>
+    Object.fromEntries(
+      [...claims[kind]]
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .flatMap(([key, { ids }]): [string, string][] => {
+          if (ids.size === 1) return [[key, [...ids][0]]];
+          const what = kind === 'names' ? 'name' : 'GBIF key';
+          problems.push(`${what} ${key} maps to ${[...ids].sort().join(' and ')}: add an alias`);
+          return [];
+        }),
+    );
+  // An alias is the last word on its name, whatever else claims it.
+  for (const [name, id] of settled) claims.names.set(name, { strength: -1, ids: new Set([id]) });
+  const index = { names: settle('names'), gbif: settle('gbif') };
+  failOn(problems);
+  return index;
+}
+
+type GbifTaxa = { keys: number[]; names: string[] };
+
+/**
+ * A Species' GBIF keys and the names they carry: its own (its name's match and the accepted taxon,
+ * Wikidata's key first) and the accepted taxon's synonyms.
+ */
+async function gbifNames(
+  name: string,
+  wikidataKey: number | undefined,
+): Promise<{ own: GbifTaxa; synonyms: GbifTaxa }> {
+  const match = await gbif<{ usageKey?: number; acceptedUsageKey?: number }>(
+    `/species/match?${new URLSearchParams({ name, kingdom: 'Plantae', strict: 'true' })}`,
+  );
+  const acceptedKey = wikidataKey ?? match.acceptedUsageKey ?? match.usageKey;
+  if (acceptedKey === undefined) {
+    return { own: { keys: [], names: [] }, synonyms: { keys: [], names: [] } };
+  }
+  const accepted = await gbif<{ key: number; canonicalName?: string }>(`/species/${acceptedKey}`);
+  const synonyms = await gbif<{ results: { key: number; canonicalName?: string }[] }>(
+    `/species/${acceptedKey}/synonyms?limit=1000`,
+  );
+  const names = (taxa: { canonicalName?: string }[]) =>
+    taxa.flatMap((t) => (t.canonicalName ? [t.canonicalName] : []));
+  return {
+    own: {
+      keys: [accepted.key, ...(match.usageKey ? [match.usageKey] : [])],
+      names: names([accepted]),
+    },
+    synonyms: { keys: synonyms.results.map((t) => t.key), names: names(synonyms.results) },
+  };
+}
+
+async function gbif<T>(path: string): Promise<T> {
+  const response = await fetch(`${GBIF_API}${path}`, { headers: { 'User-Agent': USER_AGENT } });
+  if (!response.ok) throw new Error(`GBIF ${path} failed: HTTP ${response.status}`);
+  return (await response.json()) as T;
+}
+
+/** `run` over each item, `limit` at a time, results in order. */
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  run: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await run(items[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: limit }, worker));
+  return results;
+}
+
+/** A name as the index keys it; keep in step with `foldName` in src/core/identify.ts. */
+function foldName(name: string): string {
+  return name.toLowerCase().replace(/×/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function validate({ version, species }: SpeciesDataset): string[] {
@@ -134,30 +275,41 @@ function validate({ version, species }: SpeciesDataset): string[] {
   return problems;
 }
 
-/** Taxon name (P225) per QID, straight from Wikidata's SPARQL endpoint. */
-async function fetchTaxonNames(ids: string[]): Promise<Map<string, string>> {
-  const query = `SELECT ?item ?name WHERE {
+type Taxon = { name: string; gbif?: number };
+
+/** Taxon name (P225) and GBIF taxon ID (P14607) per QID, straight from Wikidata's SPARQL endpoint. */
+async function fetchTaxa(ids: string[]): Promise<Map<string, Taxon>> {
+  const query = `SELECT ?item ?name ?gbif WHERE {
     VALUES ?item { ${ids.map((id) => `wd:${id}`).join(' ')} }
     ?item wdt:P225 ?name .
+    OPTIONAL { ?item wdt:P14607 ?gbif }
   }`;
   const response = await fetch(`${SPARQL_ENDPOINT}?${new URLSearchParams({ query })}`, {
     headers: { Accept: 'application/sparql-results+json', 'User-Agent': USER_AGENT },
   });
   if (!response.ok) throw new Error(`Wikidata query failed: HTTP ${response.status}`);
   const body = (await response.json()) as {
-    results: { bindings: { item: { value: string }; name: { value: string } }[] };
+    results: {
+      bindings: { item: { value: string }; name: { value: string }; gbif?: { value: string } }[];
+    };
   };
 
-  const names = new Map<string, string>();
-  for (const { item, name } of body.results.bindings) {
+  const taxa = new Map<string, Taxon>();
+  for (const { item, name, gbif } of body.results.bindings) {
     const id = item.value.slice(item.value.lastIndexOf('/') + 1);
-    const known = names.get(id);
-    if (known && known !== name.value) {
-      throw new Error(`${id} carries several taxon names on Wikidata: ${known}, ${name.value}`);
+    const known = taxa.get(id);
+    if (known && known.name !== name.value) {
+      throw new Error(
+        `${id} carries several taxon names on Wikidata: ${known.name}, ${name.value}`,
+      );
     }
-    names.set(id, name.value);
+    const key = gbif ? Number(gbif.value) : undefined;
+    if (known?.gbif !== undefined && key !== undefined && known.gbif !== key) {
+      throw new Error(`${id} carries several GBIF taxon IDs on Wikidata: ${known.gbif}, ${key}`);
+    }
+    taxa.set(id, { name: name.value, gbif: known?.gbif ?? key });
   }
-  return names;
+  return taxa;
 }
 
 /**

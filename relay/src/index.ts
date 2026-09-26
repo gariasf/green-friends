@@ -1,10 +1,17 @@
 // The blind relay (ADR-0006, spec #35): stores each garden's encrypted Snapshots in R2, one per
 // UTC day for 7 days, under `<garden id>/<YYYY-MM-DD>`, beside `<garden id>/token`, the SHA-256 of
 // the write token the first PUT claimed the id with. It never logs a body or a token.
+//
+// It also forwards Identify's photos to Pl@ntNet (ADR-0007, spec #44) under the owner's key, the
+// PLANTNET_KEY secret, keeping nothing: no photo, and never the key or the URL carrying it in a log.
 
 const MAX_BYTES = 25 * 1024 * 1024;
 const KEEP_DAYS = 7;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const IDENTIFY_MAX_BYTES = 5 * 1024 * 1024;
+const PLANTNET_URL = 'https://my-api.plantnet.org/v2/identify/useful';
+/** Below this many identifications left today, Identify is refused, keeping a margin of the quota. */
+const QUOTA_FLOOR = 50;
 const ROUTE = /^\/gardens\/([0-9a-f]{64})(?:\/snapshots(?:\/(\d{4}-\d{2}-\d{2}))?)?$/;
 
 export default {
@@ -21,6 +28,9 @@ export default {
 
 async function route(request: Request, env: Env): Promise<Response> {
   const { pathname } = new URL(request.url);
+  if (pathname === '/identify') {
+    return request.method === 'POST' ? identify(request, env.PLANTNET_KEY) : status(405);
+  }
   const match = ROUTE.exec(pathname);
   if (!match) return status(404);
   const [, id, day] = match;
@@ -65,6 +75,63 @@ async function remove(request: Request, bucket: R2Bucket, id: string): Promise<R
   const keys = (await bucket.list({ prefix: `${id}/` })).objects.map((o) => o.key);
   if (keys.length) await bucket.delete(keys);
   return status(204);
+}
+
+/** Pl@ntNet's answer, as far as Identify reads it. */
+type PlantNetResult = {
+  score: number;
+  species: { scientificNameWithoutAuthor: string; genus: { scientificNameWithoutAuthor: string } };
+  gbif?: { id: string | number } | null;
+};
+
+/** One JPEG to Pl@ntNet, and its candidates back as `[{ name, genus, gbif, score }]`. */
+async function identify(request: Request, key: string): Promise<Response> {
+  const length = request.headers.get('Content-Length');
+  if (length === null) return status(411);
+  if (Number(length) > IDENTIFY_MAX_BYTES) return status(413);
+
+  const form = new FormData();
+  form.append(
+    'images',
+    new Blob([await request.arrayBuffer()], { type: 'image/jpeg' }),
+    'photo.jpg',
+  );
+  form.append('organs', 'auto');
+  const url = `${PLANTNET_URL}?${new URLSearchParams({ 'api-key': key, 'nb-results': '20' })}`;
+  let upstream: Response;
+  try {
+    upstream = await fetch(url, { method: 'POST', body: form });
+  } catch {
+    // The error could carry the URL, and with it the key: say nothing of it.
+    return status(502);
+  }
+
+  // Pl@ntNet's 404 means no plant in the photo.
+  if (upstream.status === 404) return Response.json([]);
+  if (upstream.status === 429) {
+    const retryAfter = upstream.headers.get('Retry-After');
+    return new Response(null, {
+      status: 429,
+      headers: retryAfter ? { 'Retry-After': retryAfter } : {},
+    });
+  }
+  if (!upstream.ok) return status(502);
+  let body: { results: PlantNetResult[]; remainingIdentificationRequests?: number };
+  try {
+    body = await upstream.json();
+  } catch {
+    return status(502);
+  }
+  if (!Array.isArray(body?.results)) return status(502);
+  if ((body.remainingIdentificationRequests ?? Infinity) < QUOTA_FLOOR) return status(429);
+  return Response.json(
+    body.results.map((r) => ({
+      name: r.species.scientificNameWithoutAuthor,
+      genus: r.species.genus.scientificNameWithoutAuthor,
+      gbif: r.gbif?.id ? Number(r.gbif.id) : null,
+      score: r.score,
+    })),
+  );
 }
 
 /** A refusal, or null once the bearer token matches the garden's (or claims it, on a first PUT). */

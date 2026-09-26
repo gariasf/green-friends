@@ -7,6 +7,11 @@ compatibility_date = "2026-08-22"
 # The Web view's origin, the only one CORS lets read Snapshots from a browser.
 ALLOWED_ORIGIN = "https://green-friends.gariasf.workers.dev"
 
+# Pl@ntNet's API key for Identify (ADR-0007): `tr -d '\n' < ~/.plantnet-key | npx wrangler secret put PLANTNET_KEY`,
+# and a git-ignored .dev.vars for `wrangler dev`. Never in the repo.
+[secrets]
+required = ["PLANTNET_KEY"]
+
 [[r2_buckets]]
 binding = "SNAPSHOTS"
 bucket_name = "green-friends-snapshots"

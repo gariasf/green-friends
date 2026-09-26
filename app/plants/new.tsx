@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { setPlantPhoto } from '@/src/core/photos';
 import {
@@ -18,7 +18,8 @@ import { alertError, Field, optionalNumber, TextButton, WhenPicker } from '@/src
 import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
-import { group, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { useIdentify, type IdentifyState } from '@/src/ui/useIdentify';
 
 /** "When did you last …?", per care type. */
 const LAST_DONE_LABEL: Record<CareType, string> = {
@@ -39,6 +40,7 @@ export default function NewPlantScreen() {
   const [soil, setSoil] = useState('');
   /** The prepared photo's file, filed with the plant once it is added. */
   const [prepared, setPrepared] = useState<string | null>(null);
+  const identify = useIdentify();
   // Without a Species, a plant's Overrides are its whole schedule (ADR-0003).
   const schedule = useCareSchedule(NO_SCHEDULE, null);
   /** The day each care type was last done; unanswered ones count from the plant's creation. */
@@ -72,6 +74,15 @@ export default function NewPlantScreen() {
   };
 
   const addWithoutSpecies = () => setOwnSchedule(true);
+  const pickSpecies = (picked: Species) => {
+    setSpecies(picked);
+    setOwnSchedule(false);
+  };
+  // Suggestions belong to the photo they came from.
+  const pickPhoto = (next: string) => {
+    identify.clear();
+    setPrepared(next);
+  };
 
   return (
     <ScrollView
@@ -113,7 +124,7 @@ export default function NewPlantScreen() {
         />
       ) : (
         <SpeciesSearch
-          onPick={setSpecies}
+          onPick={pickSpecies}
           fallback={{
             label: 'Add without a species',
             line: 'Check the spelling, or add it without a species and give it its own schedule.',
@@ -127,8 +138,19 @@ export default function NewPlantScreen() {
       </Text>
       <View style={styles.photoRow}>
         <PlantPhoto uri={prepared} size={64} />
-        <PhotoButton hasPhoto={prepared !== null} onPick={setPrepared} />
+        <PhotoButton hasPhoto={prepared !== null} onPick={pickPhoto} />
       </View>
+      {prepared && (
+        <IdentifyFromPhoto
+          state={identify.state}
+          onIdentify={() => identify.run(prepared)}
+          onPick={(picked) => {
+            pickSpecies(picked);
+            identify.clear();
+          }}
+          onDismiss={identify.clear}
+        />
+      )}
       <Field
         label="Nickname"
         placeholder={ownSchedule ? 'Required' : 'Optional'}
@@ -177,6 +199,81 @@ export default function NewPlantScreen() {
 }
 
 /**
+ * Identify from photo (ADR-0007): the row that sends the photo, only on its tap, and beneath it the
+ * Suggestions, "Not in the catalog", or why it didn't work, inline.
+ */
+function IdentifyFromPhoto({
+  state,
+  onIdentify,
+  onPick,
+  onDismiss,
+}: {
+  state: IdentifyState;
+  onIdentify: () => void;
+  onPick: (species: Species) => void;
+  onDismiss: () => void;
+}) {
+  const running = state.kind === 'running';
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={running ? 'Identifying' : 'Identify from photo'}
+        accessibilityState={{ disabled: running, busy: running }}
+        disabled={running}
+        onPress={onIdentify}
+        style={({ pressed }) => [styles.identify, pressed && pressedStyle.button]}
+      >
+        <Text style={[styles.identifyLabel, running && styles.identifyRunning]}>
+          Identify from photo
+        </Text>
+        {running && <ActivityIndicator accessibilityLabel="Identifying" />}
+      </Pressable>
+      {state.kind === 'failed' && <Text style={text.subheadline}>{state.message}</Text>}
+      {state.kind === 'suggestions' && (
+        <>
+          {state.suggestions.length === 0 ? (
+            <Text style={text.subheadline}>Not in the catalog</Text>
+          ) : (
+            <View>
+              {state.suggestions.map(({ species, confidence }, index) => {
+                const scientific = scientificBeneath(
+                  species.colloquialName,
+                  species.scientificName,
+                );
+                return (
+                  <Pressable
+                    key={species.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={[species.colloquialName, scientific, confidence]
+                      .filter(Boolean)
+                      .join(', ')}
+                    style={({ pressed }) => [
+                      styles.suggestion,
+                      index > 0 && group.divider,
+                      pressed && pressedStyle.row,
+                    ]}
+                    onPress={() => onPick(species)}
+                  >
+                    <View style={styles.grow}>
+                      <Text style={text.body}>{species.colloquialName}</Text>
+                      {scientific && <Text style={text.subheadline}>{scientific}</Text>}
+                    </View>
+                    <Text style={text.subheadline}>{confidence}</Text>
+                  </Pressable>
+                );
+              })}
+              <TextButton label="None of these" onPress={onDismiss} style={styles.none} />
+            </View>
+          )}
+          <Text style={text.footnote}>Identified with Pl@ntNet</Text>
+        </>
+      )}
+    </>
+  );
+}
+
+/**
  * Why the plant can't be added yet, or null once it can: without a Species it needs what the core
  * asks of one (validatePlant), a nickname and its own schedule for a care type at least.
  */
@@ -200,4 +297,16 @@ const styles = StyleSheet.create({
   screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
   heading: { ...group.header, marginTop: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
+  identify: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.s },
+  identifyLabel: { ...text.body, color: colors.tint },
+  identifyRunning: { color: colors.tertiaryLabel },
+  grow: { flex: 1 },
+  suggestion: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.m,
+    paddingVertical: space.s,
+  },
+  none: { marginTop: space.s, alignSelf: 'flex-start' },
 });

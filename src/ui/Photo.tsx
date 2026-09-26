@@ -93,15 +93,15 @@ async function pickPhoto(): Promise<string | null> {
   }
 }
 
-/** The image at `uri` as a JPEG at most LONG_EDGE pixels on its long edge. */
-async function prepare(uri: string): Promise<string> {
+/** The image at `uri` as a new JPEG at most `longEdge` pixels on its long edge. */
+export async function prepare(uri: string, longEdge = LONG_EDGE): Promise<string> {
   // Decoded first, EXIF orientation applied, so the long edge is the one the photo shows with.
   const loading = ImageManipulator.manipulate(uri);
   const original = await loading.renderAsync();
   const resizing = ImageManipulator.manipulate(original);
   const { width, height } = original;
-  if (Math.max(width, height) > LONG_EDGE) {
-    resizing.resize(width >= height ? { width: LONG_EDGE } : { height: LONG_EDGE });
+  if (Math.max(width, height) > longEdge) {
+    resizing.resize(width >= height ? { width: longEdge } : { height: longEdge });
   }
   const resized = await resizing.renderAsync();
   const prepared = await resized.saveAsync({ compress: 0.8, format: SaveFormat.JPEG });

@@ -11,6 +11,12 @@
       "name": "Green Friends curated care layer",
       "url": "https://github.com/gariasf/green-friends/blob/main/scripts/species/curated.json",
       "usedFor": "Colloquial names, care defaults and pet toxicity"
+    },
+    {
+      "name": "GBIF Backbone Taxonomy (GBIF Secretariat)",
+      "license": "CC BY 4.0",
+      "url": "https://doi.org/10.15468/39omei",
+      "usedFor": "Taxon keys, accepted names and synonyms in the name index (species-index.json)"
     }
   ],
   "species": [
