@@ -16,6 +16,14 @@ _Avoid_: specimen, item
 A read-only catalog entry (colloquial + scientific name) bundled with the app, carrying care defaults and whether it is toxic to pets. Never user-editable.
 _Avoid_: variety, plant type
 
+**Identify**:
+Sending a plant's photo off the phone to learn which Species it shows, only when the user taps for it while adding a plant. Only catalog Species come back; the user picks one or none.
+_Avoid_: scan, detect, recognise, AI
+
+**Suggestion**:
+One of up to three Species that Identify offers for a photo, with a confidence word. Choosing one sets the plant's Species as searching for it would.
+_Avoid_: match, result, prediction
+
 **Display Name**:
 What the UI calls a plant: its nickname where set, otherwise its species' colloquial name. A plant without a species must have a nickname.
 _Avoid_: title, label
