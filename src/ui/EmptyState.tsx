@@ -1,4 +1,4 @@
-import { SymbolView, type SFSymbol } from 'expo-symbols';
+import { Icon, type IconName } from '@/src/ui/Icon';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { TextButton } from '@/src/ui/Form';
@@ -14,14 +14,14 @@ export function EmptyState({
   line,
   action,
 }: {
-  symbol: SFSymbol;
+  symbol: IconName;
   title: string;
   line: string;
   action?: { label: string; onPress: () => void };
 }) {
   return (
     <View style={styles.empty}>
-      <SymbolView accessibilityElementsHidden name={symbol} size={44} tintColor={colors.tint} />
+      <Icon name={symbol} size={44} color={colors.tint} />
       <Text accessibilityRole="header" style={styles.title}>
         {title}
       </Text>
@@ -33,7 +33,7 @@ export function EmptyState({
 
 const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: space.s, padding: space.xxxl },
-  title: { ...text.title3, textAlign: 'center' },
+  title: { ...text.title2, textAlign: 'center' },
   line: { ...text.subheadline, textAlign: 'center' },
   action: { marginTop: space.s },
 });

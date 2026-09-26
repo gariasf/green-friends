@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
@@ -34,12 +34,7 @@ export function PlantRow({
           <Text style={text.body}>{name}</Text>
           {detail && <Text style={text.subheadline}>{detail}</Text>}
         </View>
-        <SymbolView
-          name="chevron.right"
-          size={14}
-          weight="semibold"
-          tintColor={colors.tertiaryLabel}
-        />
+        <Icon name="next" size={14} color={colors.tertiaryLabel} weight="bold" />
       </View>
     </Pressable>
   );

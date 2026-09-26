@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import { SymbolView, type SFSymbol } from 'expo-symbols';
+import { Icon, type IconName } from '@/src/ui/Icon';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
-import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, text, font } from '@/src/ui/theme';
 
 import type { Guide, Season } from './careGuide';
 
@@ -39,7 +39,7 @@ export function Row({
   onPress,
   first,
 }: {
-  symbol: SFSymbol;
+  symbol: IconName;
   tint: ColorValue;
   title: string;
   body?: string;
@@ -48,20 +48,12 @@ export function Row({
 }) {
   const content = (
     <>
-      <SymbolView accessibilityElementsHidden name={symbol} size={20} tintColor={tint} />
+      <Icon name={symbol} size={20} color={tint} />
       <View style={styles.rowText}>
         <Text style={text.headline}>{title}</Text>
         {body ? <Text style={text.subheadline}>{body}</Text> : null}
       </View>
-      {onPress && (
-        <SymbolView
-          accessibilityElementsHidden
-          name="chevron.right"
-          size={13}
-          weight="semibold"
-          tintColor={colors.tertiaryLabel}
-        />
-      )}
+      {onPress && <Icon name="next" size={13} color={colors.tertiaryLabel} weight="bold" />}
     </>
   );
   if (!onPress) return <View style={[styles.row, !first && group.divider]}>{content}</View>;
@@ -104,13 +96,13 @@ export function SummaryRows({ id, guide }: { id: string; guide: Guide }) {
               body={season === 'dormant' ? profile.fertilizer.dormant : profile.fertilizer.type}
             />
             <Row
-              symbol="sun.max.fill"
-              tint={colors.caution}
+              symbol="light"
+              tint={colors.secondaryLabel}
               title="Light"
               body={firstSentence(profile.light)}
             />
             <Row
-              symbol="book.fill"
+              symbol="guide"
               tint={colors.tint}
               title="Full Care Guide"
               onPress={() => openGuide(id)}
@@ -120,7 +112,7 @@ export function SummaryRows({ id, guide }: { id: string; guide: Guide }) {
           <NoProfile first />
         )}
         <Row
-          symbol="stethoscope"
+          symbol="symptom"
           tint={colors.secondaryLabel}
           title="Something wrong?"
           body="Brown tips, yellow leaves, pests"
@@ -137,7 +129,7 @@ export function SummaryCard({ id, guide }: { id: string; guide: Guide }) {
   return (
     <View style={[styles.card, styles.section]}>
       <View style={styles.cardHead}>
-        <Text accessibilityRole="header" style={text.title3}>
+        <Text accessibilityRole="header" style={text.headline}>
           How to care for it
         </Text>
         <Text style={styles.pill}>{season === 'dormant' ? 'Dormant' : 'Growing'}</Text>
@@ -154,7 +146,7 @@ export function SummaryCard({ id, guide }: { id: string; guide: Guide }) {
                 : firstSentence(profile.fertilizer.growing)
             }
           />
-          <Line symbol="sun.max.fill" tint={colors.caution} line={firstSentence(profile.light)} />
+          <Line symbol="light" tint={colors.secondaryLabel} line={firstSentence(profile.light)} />
         </View>
       ) : (
         <Text style={text.subheadline}>Set a Species to see how to water, feed and place it.</Text>
@@ -167,10 +159,10 @@ export function SummaryCard({ id, guide }: { id: string; guide: Guide }) {
   );
 }
 
-function Line({ symbol, tint, line }: { symbol: SFSymbol; tint: ColorValue; line: string }) {
+function Line({ symbol, tint, line }: { symbol: IconName; tint: ColorValue; line: string }) {
   return (
     <View style={styles.line}>
-      <SymbolView accessibilityElementsHidden name={symbol} size={17} tintColor={tint} />
+      <Icon name={symbol} size={17} color={tint} />
       <Text style={[text.body, styles.grow]}>{line}</Text>
     </View>
   );
@@ -192,7 +184,7 @@ function NoProfile({ first }: { first?: boolean }) {
   return (
     <Row
       first={first}
-      symbol="leaf.fill"
+      symbol="leaf"
       tint={colors.tint}
       title="No Care Guide yet"
       body="Set a Species to see how to water, feed and place it."
@@ -213,7 +205,7 @@ export function GuideBody({ id, guide }: { id: string; guide: Guide }) {
         <View style={group.box}>
           <NoProfile first />
           <Row
-            symbol="stethoscope"
+            symbol="symptom"
             tint={colors.secondaryLabel}
             title="Something wrong?"
             onPress={() => openSymptoms(id)}
@@ -247,16 +239,16 @@ export function GuideBody({ id, guide }: { id: string; guide: Guide }) {
         <Schedule line={guide.schedule.fertilize} />
       </Section>
 
-      <Section symbol="sun.max.fill" tint={colors.caution} title="Light and warmth">
+      <Section symbol="light" tint={colors.secondaryLabel} title="Light and warmth">
         <Text style={text.body}>{profile.light}</Text>
       </Section>
 
-      <Section symbol="square.stack.3d.up.fill" tint={colors.secondaryLabel} title="Soil">
+      <Section symbol="soil" tint={colors.secondaryLabel} title="Soil">
         <Text style={text.body}>{profile.soil}</Text>
       </Section>
 
       {guide.careNotes && (
-        <Section symbol="leaf.fill" tint={colors.tint} title="This plant">
+        <Section symbol="leaf" tint={colors.tint} title="This plant">
           <Text style={text.body}>{guide.careNotes}</Text>
         </Section>
       )}
@@ -264,7 +256,7 @@ export function GuideBody({ id, guide }: { id: string; guide: Guide }) {
       <View style={group.box}>
         <Row
           first
-          symbol="stethoscope"
+          symbol="symptom"
           tint={colors.secondaryLabel}
           title="Something wrong?"
           body="Brown tips, yellow leaves, pests"
@@ -275,12 +267,7 @@ export function GuideBody({ id, guide }: { id: string; guide: Guide }) {
       {guide.funFact && (
         <View style={[styles.card, styles.fact]}>
           <View style={styles.line}>
-            <SymbolView
-              accessibilityElementsHidden
-              name="lightbulb.fill"
-              size={17}
-              tintColor={colors.tint}
-            />
+            <Icon name="fact" size={17} color={colors.tint} weight="fill" />
             <Text style={text.headline}>Fun fact</Text>
           </View>
           <Text style={text.body}>{guide.funFact.text}</Text>
@@ -303,7 +290,7 @@ function Section({
   title,
   children,
 }: {
-  symbol: SFSymbol;
+  symbol: IconName;
   tint: ColorValue;
   title: string;
   children: React.ReactNode;
@@ -311,8 +298,8 @@ function Section({
   return (
     <View style={styles.card}>
       <View style={styles.line}>
-        <SymbolView accessibilityElementsHidden name={symbol} size={18} tintColor={tint} />
-        <Text accessibilityRole="header" style={text.title3}>
+        <Icon name={symbol} size={18} color={tint} />
+        <Text accessibilityRole="header" style={text.headline}>
           {title}
         </Text>
       </View>
@@ -324,12 +311,7 @@ function Section({
 function Schedule({ line }: { line: string }) {
   return (
     <View style={styles.line}>
-      <SymbolView
-        accessibilityElementsHidden
-        name="calendar"
-        size={14}
-        tintColor={colors.secondaryLabel}
-      />
+      <Icon name="schedule" size={14} color={colors.secondaryLabel} />
       <Text style={text.footnote}>Your schedule: {line}</Text>
     </View>
   );
@@ -365,7 +347,7 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pill: {
     ...text.footnote,
-    fontWeight: '600',
+    ...font.semibold,
     overflow: 'hidden',
     paddingHorizontal: space.s,
     paddingVertical: 2,
@@ -382,9 +364,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.fill,
   },
-  chipText: { ...text.subheadline, fontWeight: '600', color: colors.tint },
+  chipText: { ...text.subheadline, ...font.semibold, color: colors.tint },
   body: { gap: space.l, paddingTop: space.l, paddingBottom: space.xxl },
   inset: { gap: space.s, marginHorizontal: space.xl },
   fact: { backgroundColor: colors.tintSoft },
-  link: { ...text.subheadline, fontWeight: '600', color: colors.tint },
+  link: { ...text.subheadline, ...font.semibold, color: colors.tint },
 });

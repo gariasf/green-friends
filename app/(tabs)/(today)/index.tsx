@@ -2,7 +2,7 @@ import { Button, Host, Menu, RNHostView, Section } from '@expo/ui/swift-ui';
 import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -21,7 +21,7 @@ import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
+import { colors, group, pressedStyle, space, target, text, font } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
@@ -83,11 +83,7 @@ export default function TodayScreen() {
           ))}
           {needingAttention.length === 0 && plants.length > 0 && (
             <Animated.View entering={FadeIn}>
-              <EmptyState
-                symbol="checkmark.seal"
-                title="All caught up"
-                line="Nothing needs you today."
-              />
+              <EmptyState symbol="allDone" title="All caught up" line="Nothing needs you today." />
             </Animated.View>
           )}
           {plants.length === 0 && (
@@ -134,7 +130,7 @@ function openPlant(plant: PlantCare) {
 /** What a card's ⋯ offers besides the one-tap log. */
 const MORE = [
   { id: 'log', title: 'Log earlier…', image: 'calendar' },
-  { id: 'note', title: 'Add note', image: CARE_COPY.note.symbol },
+  { id: 'note', title: 'Add note', image: 'note.text' },
   { id: 'edit', title: 'Edit plant', image: 'pencil' },
 ] as const;
 
@@ -207,12 +203,7 @@ function CareCard({
               <RNHostView matchContents>
                 <View style={target.icon}>
                   <View style={styles.more}>
-                    <SymbolView
-                      name="ellipsis"
-                      size={16}
-                      weight="bold"
-                      tintColor={colors.secondaryLabel}
-                    />
+                    <Icon name="more" size={18} color={colors.secondaryLabel} weight="bold" />
                   </View>
                 </View>
               </RNHostView>
@@ -267,10 +258,11 @@ function CareCard({
               onPress={() => tick([type])}
             >
               {({ pressed }) => (
-                <SymbolView
-                  name={done || pressed ? 'checkmark.circle.fill' : 'circle'}
+                <Icon
+                  name={done || pressed ? 'checkCircle' : 'circle'}
+                  weight={done || pressed ? 'fill' : 'regular'}
                   size={30}
-                  tintColor={done || pressed ? colors.tint : colors.tertiaryLabel}
+                  color={done || pressed ? colors.tint : colors.tertiaryLabel}
                 />
               )}
             </Pressable>
@@ -323,7 +315,7 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
               <Text style={styles.restName} numberOfLines={2}>
                 {plant.displayName}
               </Text>
-              <Text style={text.caption}>{next}</Text>
+              <Text style={text.footnote}>{next}</Text>
             </Pressable>
           );
         })}
@@ -352,7 +344,7 @@ const styles = StyleSheet.create({
     padding: space.m,
     paddingLeft: space.l,
   },
-  scientific: { ...text.caption, fontStyle: 'italic' },
+  scientific: { ...text.footnote, ...font.italic },
   more: {
     width: 32,
     height: 32,
@@ -376,8 +368,8 @@ const styles = StyleSheet.create({
     gap: space.m,
     paddingVertical: space.m,
   },
-  rowLabel: { ...text.subheadline, fontWeight: '600', color: colors.label },
-  status: { ...text.footnote, fontWeight: '600' },
+  rowLabel: { ...text.subheadline, ...font.semibold, color: colors.label },
+  status: { ...text.footnote, ...font.semibold },
   overdue: { color: colors.caution },
   dueToday: { color: colors.dueToday },
   cardFoot: {
@@ -390,5 +382,5 @@ const styles = StyleSheet.create({
   restHeading: { marginTop: space.xxl, marginBottom: space.s, marginHorizontal: space.l },
   restStrip: { gap: space.m, paddingHorizontal: space.l, paddingVertical: space.s },
   restPlant: { gap: space.xs },
-  restName: { ...text.caption, fontWeight: '600', color: colors.label },
+  restName: { ...text.footnote, ...font.semibold, color: colors.label },
 });

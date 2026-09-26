@@ -58,7 +58,7 @@ export default function LogCareSheet() {
       <View style={styles.header}>
         <View style={styles.grow}>
           <Text style={text.footnote}>{displayName}</Text>
-          <Text style={text.title3}>Log care</Text>
+          <Text style={text.title2}>Log care</Text>
         </View>
         <CloseButton />
       </View>

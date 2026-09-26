@@ -40,7 +40,19 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/nunito-sans/400Regular/NunitoSans_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/nunito-sans/400Regular_Italic/NunitoSans_400Regular_Italic.ttf",
+            "./node_modules/@expo-google-fonts/nunito-sans/600SemiBold/NunitoSans_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/nunito-sans/700Bold/NunitoSans_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/nunito-sans/800ExtraBold/NunitoSans_800ExtraBold.ttf"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

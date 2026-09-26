@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, pressedStyle, space, text, font } from '@/src/ui/theme';
 
 /** A selectable pill on a fill. */
 export function Chip({
@@ -68,6 +68,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
   },
   chipSelected: { backgroundColor: colors.tint },
-  label: { ...text.subheadline, fontWeight: '500', color: colors.label },
-  labelSelected: { fontWeight: '600', color: colors.onTint },
+  label: { ...text.subheadline, color: colors.label },
+  labelSelected: { ...font.semibold, color: colors.onTint },
 });

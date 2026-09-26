@@ -24,7 +24,7 @@ export default function ArchivedScreen() {
     <ScrollView contentContainerStyle={styles.list}>
       {plants.length === 0 ? (
         <EmptyState
-          symbol="archivebox"
+          symbol="archive"
           title="No archived plants"
           line="A plant archived from Edit keeps its Care Log and photo here."
         />

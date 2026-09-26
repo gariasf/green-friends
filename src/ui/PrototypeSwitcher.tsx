@@ -1,7 +1,9 @@
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { font } from './theme';
 
 /**
  * PROTOTYPE (UI pass): flips between the design variants of one screen. Not part of any design,
@@ -33,13 +35,13 @@ export function PrototypeSwitcher({
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: insets.bottom + 4 }]}>
       <View style={styles.bar}>
         <Pressable accessibilityLabel="Previous variant" hitSlop={12} onPress={() => go(-1)}>
-          <SymbolView name="chevron.left" size={14} weight="bold" tintColor="#fff" />
+          <Icon name="previous" size={14} color="#fff" weight="bold" />
         </Pressable>
         <Text style={styles.label}>
           {String.fromCharCode(65 + index)} · {labels[index]}
         </Text>
         <Pressable accessibilityLabel="Next variant" hitSlop={12} onPress={() => go(1)}>
-          <SymbolView name="chevron.right" size={14} weight="bold" tintColor="#fff" />
+          <Icon name="next" size={14} color="#fff" weight="bold" />
         </Pressable>
       </View>
     </View>
@@ -61,5 +63,5 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
   },
-  label: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  label: { color: '#fff', fontSize: 13, ...font.bold },
 });

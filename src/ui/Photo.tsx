@@ -1,7 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { ActionSheetIOS, Image, StyleSheet, View } from 'react-native';
 
 import type { PhotoFiles } from '@/src/core/photos';
@@ -130,7 +130,7 @@ export function PlantPhoto({ uri, size }: { uri: string | null; size: number }) 
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} />
       ) : (
-        <SymbolView name="leaf.fill" size={size * 0.45} tintColor={colors.tint} />
+        <Icon name="leaf" size={size * 0.45} color={colors.tint} weight="fill" />
       )}
     </View>
   );

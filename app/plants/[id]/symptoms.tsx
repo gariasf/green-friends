@@ -14,7 +14,7 @@ export default function SymptomsScreen() {
       <Row
         key={symptom.id}
         first={index === 0}
-        symbol={pests.has(symptom.id) ? 'ant.fill' : 'leaf.fill'}
+        symbol={pests.has(symptom.id) ? 'pest' : 'leaf'}
         tint={pests.has(symptom.id) ? colors.secondaryLabel : colors.tint}
         title={symptom.name}
         onPress={() =>

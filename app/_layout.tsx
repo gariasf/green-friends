@@ -8,7 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
-import { colors, navigationTheme } from '@/src/ui/theme';
+import { colors, navigationTheme, headerFonts } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 import { useSync } from '@/src/ui/useSync';
 
@@ -53,6 +53,7 @@ export default function RootLayout() {
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack
         screenOptions={{
+          ...headerFonts,
           contentStyle: { backgroundColor: colors.background },
           headerBackButtonDisplayMode: 'minimal',
         }}

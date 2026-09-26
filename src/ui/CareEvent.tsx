@@ -1,4 +1,4 @@
-import { SymbolView, type SFSymbol } from 'expo-symbols';
+import { Icon, type IconName } from '@/src/ui/Icon';
 import { useState, type ReactNode } from 'react';
 import type { ColorValue } from 'react-native';
 
@@ -13,12 +13,12 @@ import { CARE_WORDS } from '@/src/ui/words';
  */
 export const CARE_COPY: Record<
   CareEventType,
-  { symbol: SFSymbol; hue: ColorValue; label: string; done: string }
+  { symbol: IconName; hue: ColorValue; label: string; done: string }
 > = {
-  water: { symbol: 'drop.fill', hue: colors.water, ...CARE_WORDS.water },
-  fertilize: { symbol: 'sparkles', hue: colors.fertilize, ...CARE_WORDS.fertilize },
-  repot: { symbol: 'shippingbox.fill', hue: colors.repot, ...CARE_WORDS.repot },
-  note: { symbol: 'note.text', hue: colors.note, ...CARE_WORDS.note },
+  water: { symbol: 'water', hue: colors.water, ...CARE_WORDS.water },
+  fertilize: { symbol: 'fertilize', hue: colors.fertilize, ...CARE_WORDS.fertilize },
+  repot: { symbol: 'repot', hue: colors.repot, ...CARE_WORDS.repot },
+  note: { symbol: 'note', hue: colors.note, ...CARE_WORDS.note },
 };
 
 /**
@@ -27,7 +27,7 @@ export const CARE_COPY: Record<
  */
 export function CareSymbol({ type, size }: { type: CareEventType; size: number }) {
   const { symbol, hue } = CARE_COPY[type];
-  return <SymbolView accessibilityElementsHidden name={symbol} size={size} tintColor={hue} />;
+  return <Icon name={symbol} size={size} color={hue} />;
 }
 
 /**

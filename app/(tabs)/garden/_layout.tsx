@@ -1,13 +1,14 @@
 import { router, Stack } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { Pressable } from 'react-native';
 
-import { colors, pressedStyle, target } from '@/src/ui/theme';
+import { colors, pressedStyle, target, headerFonts } from '@/src/ui/theme';
 
 export default function GardenStack() {
   return (
     <Stack
       screenOptions={{
+        ...headerFonts,
         headerLargeTitleEnabled: true,
         contentStyle: { backgroundColor: colors.background },
       }}
@@ -23,7 +24,7 @@ export default function GardenStack() {
               onPress={() => router.push('/plants/new')}
               style={({ pressed }) => [target.icon, pressed && pressedStyle.button]}
             >
-              <SymbolView name="plus" size={22} weight="semibold" tintColor={colors.tint} />
+              <Icon name="add" size={22} color={colors.tint} weight="bold" />
             </Pressable>
           ),
         }}

@@ -8,7 +8,7 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { useId } from 'react';
 import {
   Alert,
@@ -190,7 +190,7 @@ export function CloseButton() {
       onPress={() => router.back()}
       style={({ pressed }) => pressed && pressedStyle.button}
     >
-      <SymbolView name="xmark.circle.fill" size={30} tintColor={colors.tertiaryLabel} />
+      <Icon name="clear" size={30} color={colors.tertiaryLabel} weight="fill" />
     </Pressable>
   );
 }

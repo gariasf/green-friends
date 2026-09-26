@@ -1,11 +1,11 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Icon } from '@/src/ui/Icon';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { localDay } from '@/src/core/dates';
 import { CAUSES, readGuide, SYMPTOMS } from '@/src/proto/careGuide';
-import { colors, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, pressedStyle, space, text, font } from '@/src/ui/theme';
 
 /**
  * PROTOTYPE (Care Guide): one Symptom, its causes in the order likeliest for this plant's profile,
@@ -31,18 +31,13 @@ export default function SymptomScreen() {
         const cause = CAUSES[causeId];
         return (
           <View key={causeId} style={styles.card}>
-            <Text accessibilityRole="header" style={text.title3}>
+            <Text accessibilityRole="header" style={text.headline}>
               {index === 0 ? 'Likeliest: ' : ''}
               {cause.name}
             </Text>
             {cause.fact && (
               <View style={styles.fact}>
-                <SymbolView
-                  accessibilityElementsHidden
-                  name="clock.arrow.circlepath"
-                  size={14}
-                  tintColor={colors.secondaryLabel}
-                />
+                <Icon name="history" size={14} color={colors.secondaryLabel} />
                 <Text style={[text.footnote, styles.grow]}>{guide.fact(cause.fact)}</Text>
               </View>
             )}
@@ -52,12 +47,7 @@ export default function SymptomScreen() {
             <Text style={text.body}>{cause.fix}</Text>
             {cause.petWarning && (
               <View style={styles.warning}>
-                <SymbolView
-                  accessibilityElementsHidden
-                  name="pawprint.fill"
-                  size={13}
-                  tintColor={colors.caution}
-                />
+                <Icon name="pet" size={13} color={colors.caution} weight="fill" />
                 <Text style={[text.footnote, styles.caution, styles.grow]}>
                   Neem oil and rubbing alcohol can harm pets: keep them away until the leaves are
                   dry.
@@ -79,7 +69,7 @@ export default function SymptomScreen() {
               }
               style={({ pressed }) => [styles.logButton, pressed && pressedStyle.button]}
             >
-              <SymbolView name="note.text" size={14} tintColor={colors.tint} />
+              <Icon name="note" size={14} color={colors.tint} />
               <Text style={styles.link}>Log it as a Note</Text>
             </Pressable>
           </View>
@@ -112,5 +102,5 @@ const styles = StyleSheet.create({
   warning: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },
   caution: { color: colors.caution },
   logButton: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
-  link: { ...text.subheadline, fontWeight: '600', color: colors.tint },
+  link: { ...text.subheadline, ...font.semibold, color: colors.tint },
 });

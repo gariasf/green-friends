@@ -31,7 +31,7 @@ export default function GardenScreen() {
       {plants.length === 0 ? (
         archivedCount > 0 ? (
           <EmptyState
-            symbol="archivebox"
+            symbol="archive"
             title="No plants in care"
             line="Every plant is Archived. Unarchive one below, or add a new one."
             action={ADD_PLANT}

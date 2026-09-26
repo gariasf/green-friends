@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { deleteCareEvent } from '@/src/core/careLog';
 import { db } from '@/src/db/client';
 import { TextButton } from '@/src/ui/Form';
-import { colors, space, text } from '@/src/ui/theme';
+import { colors, space, text, font } from '@/src/ui/theme';
 
 const UNDO_MS = 4000;
 
@@ -92,5 +92,5 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
-  toastText: { ...text.subheadline, flex: 1, fontWeight: '600', color: colors.label },
+  toastText: { ...text.subheadline, flex: 1, ...font.semibold, color: colors.label },
 });

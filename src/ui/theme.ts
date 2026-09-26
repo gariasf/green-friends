@@ -85,17 +85,39 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
 /** Spacing steps, for margins, paddings and gaps. */
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 20, xxl: 24, xxxl: 32 } as const;
 
-/** iOS text styles at the default Dynamic Type size, each with its colour. */
+/**
+ * Nunito Sans (SIL OFL), embedded by expo-font's config plugin (app.json), one static face per
+ * weight: SDK 57 draws no variable font. React Native finds a face by family, weight and style;
+ * a PostScript name as the family falls back to the regular face and drops the italic. The Web
+ * view uses the same family (spec #41).
+ */
+const FAMILY = 'Nunito Sans';
+export const font = {
+  regular: { fontFamily: FAMILY, fontWeight: '400' },
+  italic: { fontFamily: FAMILY, fontWeight: '400', fontStyle: 'italic' },
+  semibold: { fontFamily: FAMILY, fontWeight: '600' },
+  bold: { fontFamily: FAMILY, fontWeight: '700' },
+  extraBold: { fontFamily: FAMILY, fontWeight: '800' },
+} as const;
+
+/**
+ * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
+ * Web view's where they can be (28, 22, 15, 13), the hierarchy carried by weight.
+ */
 export const text = StyleSheet.create({
-  title1: { fontSize: 28, fontWeight: '700', color: colors.label },
-  title2: { fontSize: 22, fontWeight: '700', color: colors.label },
-  title3: { fontSize: 20, fontWeight: '600', color: colors.label },
-  headline: { fontSize: 17, fontWeight: '600', color: colors.label },
-  body: { fontSize: 17, color: colors.label },
-  subheadline: { fontSize: 15, color: colors.secondaryLabel },
-  footnote: { fontSize: 13, color: colors.secondaryLabel },
-  caption: { fontSize: 12, color: colors.secondaryLabel },
+  title1: { ...font.extraBold, fontSize: 28, color: colors.label },
+  title2: { ...font.extraBold, fontSize: 22, color: colors.label },
+  headline: { ...font.bold, fontSize: 17, color: colors.label },
+  body: { ...font.regular, fontSize: 17, color: colors.label },
+  subheadline: { ...font.regular, fontSize: 15, color: colors.secondaryLabel },
+  footnote: { ...font.regular, fontSize: 13, color: colors.secondaryLabel },
 });
+
+/** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
+export const headerFonts = {
+  headerTitleStyle: { ...font.bold },
+  headerLargeTitleStyle: { ...font.extraBold },
+} as const;
 
 /**
  * A 44 pt target by its own size, for a control that UIKit or SwiftUI hit-tests rather than React
