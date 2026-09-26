@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 
-import { RELAY_URL, fromBase64url } from '../../src/core/sync';
+import { RELAY_URL, fromBase64url, keyFromFragment } from '../../src/core/sync';
 import fixture from '../../src/test/snapshot-fixture.json';
-import { keyFromFragment, loadSnapshot } from './snapshot';
+import { loadSnapshot } from './snapshot';
 
 const bytes = (base64: string) => Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 

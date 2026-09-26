@@ -210,6 +210,11 @@ export function listPlantRows(db: Db): Plant[] {
   return db.select().from(plants).orderBy(plants.createdAt).all();
 }
 
+/** Whether the Garden has no plants, Archived or not: a new install, or one after Erase all data. */
+export function isGardenEmpty(db: Db): boolean {
+  return !listPlantRows(db).some((plant) => plant.deletedAt === null);
+}
+
 /** Whether a plant's Override for `type` is set (ADR-0003): its Growing interval, or repotting's months, is. */
 export function hasOverride(plant: CareSchedule, type: CareType): boolean {
   return (type === 'repot' ? plant.repottingMonths : plant[SEASONAL[type].growing]) !== null;

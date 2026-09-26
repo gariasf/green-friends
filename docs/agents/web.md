@@ -9,6 +9,7 @@
 - `web/src/snapshot.ts`: the key from a Pairing link's `#k=` (32 bytes), kept in IndexedDB and then cleared from the address bar (a browser that won't keep it keeps the link instead); ids and the AES key from `deriveSyncKeys` over WebCrypto; `GET /gardens/:id` from `RELAY_URL` (`src/core/sync.ts`, shared with the phone), opened as `iv | ciphertext | tag`. "Synced" is the relay's `Last-Modified`.
 - Screens (`web/src/screens.tsx`): Today, Garden and a plant at `#/plant/<id>`, read with core's own reads and the app's words from `src/ui/words.ts`, which imports nothing from React Native so both can use it. Its colours are `src/ui/theme.ts`'s, mirrored as CSS custom properties in `web/src/app.css`: change theme.ts, then app.css. One departs: light mode's secondary label is iOS's Increase Contrast grey, since iOS's own reads 3.3:1 on the page.
 - A Snapshot with a newer `schema_version` throws `NewerExportError` (`src/core/import.ts`), which the page shows as "This page needs an update". So the Web view deploys from the same commit as each app release.
+- Open in Green Friends (hidden where the pointer can hover) hands the key to the app as `greenfriends://pair#k=…`, so a new phone pairs and restores from the Web view. After Reset sync the old key's garden is gone, and the page says No Garden found.
 - A Pairing link pasted into an open tab changes only the fragment, which reloads nothing, so the page loads again on a `hashchange` carrying a key.
 
 ## Commands
@@ -27,5 +28,5 @@ It lives at `https://green-friends.gariasf.workers.dev` (first deployed 2026-09-
 
 - `react` and `react-dom` are pinned to the root's version; bump all four together.
 
-- The key never leaves the browser: no request carries it, nothing logs it, and the page sends no referrer.
+- The key never leaves the browser but through Open in Green Friends, a link to the app on the same device: no request carries it, nothing logs it, and the page sends no referrer.
 - A browser check needs a Snapshot on the relay. Seed a throwaway garden from Node (core's `buildExport`, sealed with WebCrypto under a random key), open its link, then `DELETE /gardens/:id` with its write token.

@@ -1,13 +1,7 @@
-import { RELAY_URL, SNAPSHOT_LAYOUT, deriveSyncKeys, fromBase64url } from '../../src/core/sync';
+import { RELAY_URL, SNAPSHOT_LAYOUT, deriveSyncKeys } from '../../src/core/sync';
 
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) =>
   new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
-
-/** The key a Pairing link carries after its `#k=` (spec #35): 32 bytes, 43 in base64url, or null for anything else. */
-export function keyFromFragment(fragment: string): Uint8Array | null {
-  const match = /^#k=([A-Za-z0-9_-]{43})$/.exec(fragment);
-  return match ? fromBase64url(match[1]) : null;
-}
 
 /**
  * The garden's latest Snapshot, opened into its Export, and when the relay took it; null where the

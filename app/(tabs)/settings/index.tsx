@@ -24,8 +24,8 @@ import {
 import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActionSheetIOS, Alert, StyleSheet } from 'react-native';
 
 import { shareExport, type ShareSheet } from '@/src/core/export';
 import { importExport } from '@/src/core/import';
@@ -41,7 +41,14 @@ import { db, withScratchDb } from '@/src/db/client';
 import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
 import { colors } from '@/src/ui/theme';
-import { pairingLink, sync, useSyncStatus } from '@/src/ui/useSync';
+import {
+  pairingLink,
+  resetSync,
+  restoreSnapshot,
+  snapshotLabel,
+  sync,
+  useSyncStatus,
+} from '@/src/ui/useSync';
 
 /**
  * The months as the phone names them, for the season pickers. Each is named from its 15th: Hermes
@@ -97,8 +104,7 @@ export default function SettingsScreen() {
   const save = (patch: SettingsPatch) => setSettings(updateSettings(db, patch));
 
   const syncStatus = useSyncStatus();
-  // Read from the keychain once Sync is on, not on every render.
-  const link = useMemo(() => (syncStatus.on ? pairingLink() : null), [syncStatus.on]);
+  const link = syncStatus.on ? pairingLink() : null;
   // Last synced is relative to now: read again every half minute while Sync is on. A sync newer
   // than the last tick reads as Just now.
   const [now, setNow] = useState(() => new Date());
@@ -157,6 +163,60 @@ export default function SettingsScreen() {
       importing.current = false;
     }
   };
+
+  // The row shows the days being fetched and the Snapshot restored; a second tap meanwhile does
+  // nothing.
+  const [restoring, setRestoring] = useState(false);
+  const restoreFromSync = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    try {
+      const days = (await sync.days()).reverse();
+      if (days.length === 0) return Alert.alert('No Snapshots yet', 'Nothing has synced so far.');
+      const picked = await new Promise<number>((resolve) =>
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            title: 'Restore from sync',
+            message:
+              "Merges that day's Snapshot into this Garden, as Import does: the newer version of each plant, Care Event and photo wins.",
+            options: [...days.map(snapshotLabel), 'Cancel'],
+            cancelButtonIndex: days.length,
+          },
+          resolve,
+        ),
+      );
+      if (picked === days.length) return;
+      await restoreSnapshot(days[picked]);
+      setSettings(getSettings(db));
+      Alert.alert('Garden restored');
+    } catch (error) {
+      alertError('Could not restore', error);
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const reset = () =>
+    Alert.alert(
+      'Reset sync?',
+      'Every Snapshot is deleted from the relay and Sync starts again under a new Pairing link. The old link stops working, so every browser has to pair again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () =>
+            resetSync().then(
+              () =>
+                Alert.alert(
+                  'Sync reset',
+                  'Save the new Pairing link somewhere safe: the old one no longer opens your Garden.',
+                ),
+              (error) => alertError('Could not reset sync', error),
+            ),
+        },
+      ],
+    );
 
   const erase = () =>
     Alert.alert(
@@ -240,6 +300,20 @@ export default function SettingsScreen() {
               </LabeledContent>
               {syncStatus.problem !== null && <Text>{syncStatus.problem}</Text>}
               <Button label="Sync now" onPress={() => void sync.syncNow()} />
+              <Button
+                onPress={restoreFromSync}
+                modifiers={[
+                  disabled(restoring),
+                  ...(restoring ? [accessibilityValue('Restoring')] : []),
+                ]}
+              >
+                <HStack>
+                  <Text>Restore from sync…</Text>
+                  <Spacer />
+                  {restoring && <ProgressView />}
+                </HStack>
+              </Button>
+              <Button label="Reset sync" role="destructive" onPress={reset} />
             </>
           )}
         </Section>

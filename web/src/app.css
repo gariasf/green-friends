@@ -119,6 +119,7 @@ a:focus-visible {
 /* The tabs. */
 nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   padding-top: 0.75rem;
   padding-bottom: 0.25rem;
@@ -134,6 +135,17 @@ nav a {
 nav a[aria-current='page'] {
   background: var(--fill);
   color: var(--label);
+}
+
+/* Green Friends is an iPhone app: the link shows only where the pointer can't hover. */
+nav .open-app {
+  margin-left: auto;
+}
+
+@media (hover: hover) {
+  nav .open-app {
+    display: none;
+  }
 }
 
 /* A plant's photo and names, in a list or on a card. */

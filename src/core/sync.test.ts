@@ -2,9 +2,13 @@ import { strFromU8, unzipSync } from 'fflate';
 import { webcrypto } from 'node:crypto';
 
 import fixture from '../test/snapshot-fixture.json';
+import { emptyDb } from '../test/db';
 import { MONSTERA, gardenDb } from '../test/garden';
 import { photoStore } from '../test/photos';
-import { createPlant } from './plants';
+import { logCareEvent, listCareEventRows } from './careLog';
+import { buildExport } from './export';
+import { importExport } from './import';
+import { createPlant, listPlantRows } from './plants';
 import {
   SNAPSHOT_CAP_BYTES,
   SNAPSHOT_LAYOUT,
@@ -29,17 +33,22 @@ const NOW = new Date(2026, 8, 24, 8);
 
 /**
  * A Sync over a fake relay, whose puts land in `puts` (the Snapshot unzipped, since the fake seal
- * hands over the Export as it is) or fail while `failing` is set.
+ * hands over the Export as it is) or fail while `failing` is set. The relay's Snapshots by day are
+ * in `snapshots`, and every call to it, and every new key, in `calls`, in order.
  */
 function sync(status: Partial<SyncStatus> = {}, seal: SyncKeys['seal'] = async (zip) => zip) {
   const db = gardenDb();
   const puts: { gardenId: string; token: string; plants: unknown[] }[] = [];
   const statuses: SyncStatus[] = [];
+  const calls: string[] = [];
+  const key = { gardenId: 'garden', writeToken: 'token' };
   const relay = {
     failing: false,
     /** Runs while a put is on its way, once. */
     during: undefined as (() => void) | undefined,
+    snapshots: new Map<string, Uint8Array>(),
     async put(gardenId: string, token: string, snapshot: Uint8Array) {
+      calls.push(`put ${gardenId}`);
       if (relay.failing) throw new Error('Network request failed');
       const json = JSON.parse(strFromU8(unzipSync(snapshot)['export.json']));
       puts.push({ gardenId, token, plants: json.plants });
@@ -47,19 +56,40 @@ function sync(status: Partial<SyncStatus> = {}, seal: SyncKeys['seal'] = async (
       relay.during = undefined;
       during?.();
     },
+    async days(gardenId: string) {
+      calls.push(`days ${gardenId}`);
+      return [...relay.snapshots.keys()];
+    },
+    async get(gardenId: string, day: string) {
+      calls.push(`get ${gardenId} ${day}`);
+      const snapshot = relay.snapshots.get(day);
+      if (!snapshot) throw new Error(`No Snapshot on ${day}`);
+      return snapshot;
+    },
+    async remove(gardenId: string, token: string) {
+      calls.push(`remove ${gardenId} ${token}`);
+      if (relay.failing) throw new Error('Network request failed');
+      relay.snapshots.clear();
+    },
+  };
+  /** Makes a new key, as Reset sync does, and notes it in `calls`. */
+  const newKey = () => {
+    calls.push('new key');
+    Object.assign(key, { gardenId: 'garden2', writeToken: 'token2' });
   };
   const syncer = createSync({
     db,
     files: photoStore().files,
     relay,
-    keys: async () => ({ gardenId: 'garden', writeToken: 'token', seal }),
+    // The fake seal sends the Export as it is, and so the fake open takes it back.
+    keys: async () => ({ ...key, seal, open: async (snapshot) => snapshot }),
     appVersion: '1.2.3',
     status: { ...SYNC_OFF, ...status },
     onStatus: (next) => void statuses.push(next),
     delayMs: DELAY,
     now: () => NOW,
   });
-  return { db, relay, puts, statuses, syncer };
+  return { db, relay, puts, statuses, calls, newKey, syncer };
 }
 
 beforeEach(() => jest.useFakeTimers());
@@ -204,6 +234,145 @@ describe('Sync', () => {
 
     expect(statuses.at(-1)).toEqual(syncer.status());
     expect(statuses[0]).toMatchObject({ on: true, unsynced: true });
+  });
+});
+
+describe('Restore from sync', () => {
+  /** A phone's Garden: a plant with a Care Event, and its Export. */
+  function phone() {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOW);
+    logCareEvent(db, { plantId: plant.id, type: 'water', occurredOn: '2026-09-23' }, NOW);
+    return { db, zip: buildExport(db, photoStore().files, '1.2.3', NOW) };
+  }
+
+  test("lists the relay's days for this garden", async () => {
+    const { relay, syncer } = sync();
+    relay.snapshots.set('2026-09-22', new Uint8Array());
+    relay.snapshots.set('2026-09-23', new Uint8Array());
+
+    expect(await syncer.days()).toEqual(['2026-09-22', '2026-09-23']);
+  });
+
+  test('restoring a Snapshot equals importing its Export', async () => {
+    const { zip } = phone();
+    const { db, relay, calls, syncer } = sync();
+    relay.snapshots.set('2026-09-23', zip);
+    const imported = gardenDb();
+    importExport(imported, photoStore().files, emptyDb(), zip);
+
+    await syncer.restore('2026-09-23', (run) => run(emptyDb()));
+
+    expect(calls).toEqual(['get garden 2026-09-23']);
+    expect(listPlantRows(db)).toEqual(listPlantRows(imported));
+    expect(listCareEventRows(db)).toEqual(listCareEventRows(imported));
+    expect(listPlantRows(db)).toEqual([expect.objectContaining({ nickname: 'Monty' })]);
+  });
+});
+
+describe('Pairing a phone', () => {
+  const noOffer = async () => false;
+
+  test('an empty Garden is offered the latest Snapshot, restores it and turns Sync on without uploading', async () => {
+    const source = gardenDb();
+    createPlant(source, { speciesId: MONSTERA, nickname: 'Monty' }, NOW);
+    const { db, relay, calls, newKey, syncer } = sync();
+    relay.snapshots.set('2026-09-22', new Uint8Array());
+    relay.snapshots.set('2026-09-23', buildExport(source, photoStore().files, '1.2.3', NOW));
+    const offered: string[] = [];
+
+    await syncer.pair(
+      newKey,
+      async (day) => offered.push(day) > 0,
+      (run) => run(emptyDb()),
+    );
+    await jest.advanceTimersByTimeAsync(DELAY);
+
+    expect(offered).toEqual(['2026-09-23']);
+    expect(listPlantRows(db)).toEqual([expect.objectContaining({ nickname: 'Monty' })]);
+    expect(calls).toEqual(['new key', 'days garden2', 'get garden2 2026-09-23']);
+    expect(syncer.status()).toMatchObject({ on: true });
+  });
+
+  test("an empty Garden that declines the restore uploads nothing, so today's Snapshot stays", async () => {
+    const { relay, calls, newKey, syncer } = sync();
+    relay.snapshots.set('2026-09-23', new Uint8Array());
+
+    await syncer.pair(newKey, noOffer, (run) => run(emptyDb()));
+    await jest.advanceTimersByTimeAsync(DELAY);
+
+    expect(calls).toEqual(['new key', 'days garden2']);
+    expect(syncer.status()).toMatchObject({ on: true });
+  });
+
+  test('a Garden with plants is offered nothing and uploads under the new key', async () => {
+    const { db, calls, newKey, syncer } = sync();
+    createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' });
+
+    await syncer.pair(newKey, noOffer, (run) => run(emptyDb()));
+
+    expect(calls).toEqual(['new key', 'put garden2']);
+  });
+
+  test('turns Sync on even when the restore fails', async () => {
+    const { relay, newKey, syncer } = sync();
+    relay.snapshots.set('2026-09-23', new Uint8Array([1, 2, 3]));
+
+    await expect(
+      syncer.pair(
+        newKey,
+        async () => true,
+        (run) => run(emptyDb()),
+      ),
+    ).rejects.toThrow();
+
+    expect(syncer.status()).toMatchObject({ on: true });
+  });
+
+  test('keeps the new key only after an upload on its way', async () => {
+    const { db, calls, newKey, syncer } = sync({ on: true });
+    createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' });
+
+    void syncer.syncNow();
+    await syncer.pair(newKey, noOffer, (run) => run(emptyDb()));
+
+    expect(calls).toEqual(['put garden', 'new key', 'put garden2']);
+  });
+});
+
+describe('Reset sync', () => {
+  test('deletes the garden on the relay before the new key is kept, then uploads under it', async () => {
+    const { relay, calls, newKey, syncer } = sync({
+      on: true,
+      syncedAt: '2026-09-20T00:00:00.000Z',
+    });
+    relay.snapshots.set('2026-09-23', new Uint8Array());
+
+    await syncer.reset(newKey);
+    await jest.advanceTimersByTimeAsync(0);
+
+    expect(calls).toEqual(['remove garden token', 'new key', 'put garden2']);
+    expect(relay.snapshots.size).toBe(0);
+    expect(syncer.status()).toMatchObject({ syncedAt: '2026-09-23T20:00:00.000Z', problem: null });
+  });
+
+  test('waits for an upload on its way, so none lands under the old key after the delete', async () => {
+    const { calls, newKey, syncer } = sync({ on: true });
+
+    void syncer.syncNow();
+    await syncer.reset(newKey);
+    await jest.advanceTimersByTimeAsync(0);
+
+    expect(calls).toEqual(['put garden', 'remove garden token', 'new key', 'put garden2']);
+  });
+
+  test('keeps the key when the relay refuses the delete', async () => {
+    const { relay, calls, newKey, syncer } = sync({ on: true });
+    relay.failing = true;
+
+    await expect(syncer.reset(newKey)).rejects.toThrow('Network request failed');
+
+    expect(calls).toEqual(['remove garden token']);
   });
 });
 

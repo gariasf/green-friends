@@ -1,5 +1,7 @@
 import type { Db } from '../db/types';
 import { buildExport } from './export';
+import { importExport } from './import';
+import { isGardenEmpty } from './plants';
 import type { PhotoFiles } from './photos';
 
 /**
@@ -10,6 +12,9 @@ import type { PhotoFiles } from './photos';
 
 /** The blind relay (docs/agents/relay.md), where the phone puts Snapshots and the Web view reads them. */
 export const RELAY_URL = 'https://green-friends-relay.gariasf.workers.dev';
+
+/** A Pairing link as the app takes it, `greenfriends://pair#k=…` (app.json's scheme). */
+export const APP_PAIRING_LINK = 'greenfriends://pair';
 
 /** The most the relay takes in one Snapshot (relay/src/index.ts). */
 export const SNAPSHOT_CAP_BYTES = 25 * 1024 * 1024;
@@ -24,6 +29,12 @@ export const SNAPSHOT_LAYOUT = { ivLength: 12, tagLength: 16 } as const;
 export type SyncRelay = {
   /** Stores `snapshot` as today's for `gardenId`; throws unless the relay took it. */
   put(gardenId: string, writeToken: string, snapshot: Uint8Array): Promise<void>;
+  /** The days `gardenId` has a Snapshot for, oldest first. */
+  days(gardenId: string): Promise<string[]>;
+  /** The Snapshot `gardenId` has for `day` (UTC YYYY-MM-DD). */
+  get(gardenId: string, day: string): Promise<Uint8Array>;
+  /** Deletes every Snapshot of `gardenId` and its claim; throws unless the relay did. */
+  remove(gardenId: string, writeToken: string): Promise<void>;
 };
 
 /** What Sync needs from the key: where the Snapshots go, the right to write there, and a seal. */
@@ -32,6 +43,8 @@ export type SyncKeys = {
   writeToken: string;
   /** Encrypts an Export into a Snapshot, in SNAPSHOT_LAYOUT. */
   seal(zip: Uint8Array): Promise<Uint8Array>;
+  /** Decrypts a Snapshot back into its Export; throws for one sealed under another key. */
+  open(snapshot: Uint8Array): Promise<Uint8Array>;
 };
 
 /** Sync's state on this device; never Garden data, so never in an Export. */
@@ -57,6 +70,26 @@ export type Sync = {
   syncNow(): Promise<void>;
   turnOn(): Promise<void>;
   turnOff(): void;
+  /** The days the relay has a Snapshot for, oldest first. */
+  days(): Promise<string[]>;
+  /** Imports that day's Snapshot, as Import does its Export; `withScratch` lends the empty database. */
+  restore(day: string, withScratch: (run: (scratch: Db) => void) => void): Promise<void>;
+  /**
+   * Reset sync: deletes the garden on the relay, then has `newKey` keep a new key, and uploads under
+   * it. Throws, keeping the key, when the relay won't delete.
+   */
+  reset(newKey: () => void | Promise<void>): Promise<void>;
+  /**
+   * A Pairing link opened on this phone: `keepKey` keeps its key once no upload is on its way. An
+   * empty Garden is offered the latest Snapshot and uploads nothing until its next write, so it
+   * never replaces a Snapshot; a Garden with plants uploads under the new key. Sync is on after,
+   * even when the restore fails.
+   */
+  pair(
+    keepKey: () => void,
+    offer: (day: string) => Promise<boolean>,
+    withScratch: (run: (scratch: Db) => void) => void,
+  ): Promise<void>;
 };
 
 /**
@@ -123,6 +156,22 @@ export function createSync({
     return queue;
   };
 
+  /** Runs `step` once the uploads before are done, so none reads the key while it changes. */
+  const afterUploads = (step: () => Promise<void> | void) => {
+    clearTimeout(timer);
+    const done = queue.then(step);
+    queue = done.catch(() => {});
+    return done;
+  };
+
+  const days = async () => relay.days((await keys()).gardenId);
+
+  const restore = async (day: string, withScratch: (run: (scratch: Db) => void) => void) => {
+    const { gardenId, open } = await keys();
+    const zip = await open(await relay.get(gardenId, day));
+    withScratch((scratch) => importExport(db, files, scratch, zip));
+  };
+
   return {
     status: () => status,
     afterWrites() {
@@ -146,6 +195,29 @@ export function createSync({
       clearTimeout(timer);
       set({ on: false });
     },
+    days,
+    restore,
+    async reset(newKey) {
+      // Behind any upload on its way, so none lands under the old key after the delete.
+      await afterUploads(async () => {
+        const { gardenId, writeToken } = await keys();
+        await relay.remove(gardenId, writeToken);
+        await newKey();
+        set({ syncedAt: null, problem: null, unsynced: true });
+      });
+      void run();
+    },
+    async pair(keepKey, offer, withScratch) {
+      await afterUploads(keepKey);
+      const empty = isGardenEmpty(db);
+      try {
+        const latest = empty ? (await days()).at(-1) : undefined;
+        if (latest && (await offer(latest))) await restore(latest, withScratch);
+      } finally {
+        set({ on: true, syncedAt: null, problem: null, unsynced: !empty });
+      }
+      if (!empty) await run();
+    },
   };
 }
 
@@ -167,6 +239,15 @@ export async function deriveSyncKeys(
 
 function hex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * The key a Pairing link carries after its `#k=` (spec #35), the Web view's or the app's
+ * `greenfriends://pair#k=…`: 32 bytes, 43 in base64url, or null for anything else.
+ */
+export function keyFromFragment(fragment: string): Uint8Array | null {
+  const match = /^#k=([A-Za-z0-9_-]{43})$/.exec(fragment);
+  return match ? fromBase64url(match[1]) : null;
 }
 
 /** Unpadded base64url, as a Pairing link carries the key after its `#k=`. */

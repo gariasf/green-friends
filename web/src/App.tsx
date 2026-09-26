@@ -6,12 +6,13 @@ import { NewerExportError } from '../../src/core/import';
 import { listPlants } from '../../src/core/plants';
 import { openGarden, type Garden } from './garden';
 import { GardenList, PlantScreen, Today, type PhotoUrl } from './screens';
-import { keyFromFragment, loadSnapshot, storeKey, storedKey } from './snapshot';
+import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
+import { loadSnapshot, storeKey, storedKey } from './snapshot';
 
 type State =
   | { kind: 'loading' }
   | { kind: 'message'; title: string; line: string }
-  | { kind: 'garden'; garden: Garden; takenAt: Date | null };
+  | { kind: 'garden'; garden: Garden; takenAt: Date | null; pairKey: Uint8Array };
 
 const UNPAIRED = {
   kind: 'message',
@@ -47,11 +48,16 @@ async function load(): Promise<State> {
       return {
         kind: 'message',
         title: 'No Garden found',
-        line: "Nothing has synced with this Pairing link. Turn Sync on in Green Friends' Settings, or open the link it shows now.",
+        line: "Nothing has synced with this Pairing link, or Sync was reset since. Turn Sync on in Green Friends' Settings, or open the Pairing link it shows now.",
       };
     }
     const SQL = await initSqlJs({ locateFile: () => wasmUrl });
-    return { kind: 'garden', garden: openGarden(SQL, snapshot.zip), takenAt: snapshot.takenAt };
+    return {
+      kind: 'garden',
+      garden: openGarden(SQL, snapshot.zip),
+      takenAt: snapshot.takenAt,
+      pairKey: key,
+    };
   } catch (error) {
     if (error instanceof NewerExportError) {
       return {
@@ -100,17 +106,26 @@ export function App() {
       </main>
     );
   }
-  return <GardenView garden={state.garden} takenAt={state.takenAt} screen={screen} />;
+  return (
+    <GardenView
+      garden={state.garden}
+      takenAt={state.takenAt}
+      pairKey={state.pairKey}
+      screen={screen}
+    />
+  );
 }
 
 /** The Garden's screens, Today and Garden as tabs and each plant at its own address. */
 function GardenView({
   garden,
   takenAt,
+  pairKey,
   screen,
 }: {
   garden: Garden;
   takenAt: Date | null;
+  pairKey: Uint8Array;
   screen: Route;
 }) {
   const photoUrl = usePhotoUrls(garden);
@@ -128,6 +143,10 @@ function GardenView({
         </a>
         <a href="#/garden" aria-current={screen.tab === 'garden' ? 'page' : undefined}>
           Garden
+        </a>
+        {/* The Pairing link as the app takes it, for a phone to pair and restore from (#40). */}
+        <a className="open-app" href={`${APP_PAIRING_LINK}#k=${toBase64url(pairKey)}`}>
+          Open in Green Friends
         </a>
       </nav>
       <main>
