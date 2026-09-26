@@ -101,7 +101,8 @@ const styles = StyleSheet.create({
     gap: space.m,
     padding: space.m,
     borderRadius: 10,
-    backgroundColor: colors.tintSoft,
+    // Not tintSoft: the tinted action reads only 2.46:1 on Ecru.
+    backgroundColor: colors.surface,
   },
   pickedStacked: { flexDirection: 'column', alignItems: 'flex-start' },
 });

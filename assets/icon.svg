@@ -2,15 +2,15 @@
   The app icon (ticket #29): three leaves rising from behind a pot's rim. The mask is the mark
   (white) less its cut-outs (black), so the mark renders on any ground; each PNG beside it
   changes the two fills (the last two rects):
-    icon.png         #ffffff on #2e7d32   the icon, opaque as iOS requires
-    icon-dark.png    #6fcf73, no ground   the dark icon, on the ground iOS draws behind it,
+    icon.png         #417777 on #c0b490   the icon, opaque as iOS requires
+    icon-dark.png    #c0b490, no ground   the dark icon, on the ground iOS draws behind it,
                                           and the dark splash's mark, on #000000 (app.json)
     icon-tinted.png  #ffffff on #000000   the tinted icon, which iOS tints; Expo would flatten
                                           a transparent one onto white
-    splash-icon.png  #ffffff, no ground   the splash's mark, on #2e7d32 (app.json)
-  The greens are theme.ts's brand green, light and dark. Rendered with
-  `rsvg-convert -w 1024 -h 1024`, then `magick <png> -alpha off PNG24:<png>` for the two opaque
-  ones.
+    splash-icon.png  #417777, no ground   the splash's mark, on #c0b490 (app.json)
+  #417777 is theme.ts's Dark Medici Blue (the tint, light) and #c0b490 its Ecru (ticket #34).
+  Rendered with `rsvg-convert -w 1024 -h 1024`, then `magick <png> -alpha off PNG24:<png>` for
+  the two opaque ones.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
@@ -34,6 +34,6 @@
       </g>
     </mask>
   </defs>
-  <rect width="1024" height="1024" fill="#2e7d32"/>
-  <rect width="1024" height="1024" fill="#ffffff" mask="url(#mark)"/>
+  <rect width="1024" height="1024" fill="#c0b490"/>
+  <rect width="1024" height="1024" fill="#417777" mask="url(#mark)"/>
 </svg>

@@ -1,13 +1,18 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native';
 
-/** Brand green, per appearance. `assets/icon.svg` and app.json's splash repeat it. */
-const GREEN = { light: '#2e7d32', dark: '#6fcf73' };
+// The palette (ticket #34): four colours from Sanzo Wada's A Dictionary of Color Combinations,
+// their hex the naive conversion of the owner's CMYK, each but Olive Ocher with a dark shade.
+/** Dark Medici Blue, the tint: 5.08:1 on white, 7.66:1 on the dark card. */
+const MEDICI = { light: '#417777', dark: '#7fb8b8' };
+/** Ecru. `assets/icon.svg` and app.json's splash repeat it and Medici's light shade. */
+const ECRU = { light: '#c0b490', dark: '#3a3526' };
 
 /**
  * The app's colours, the only ones it uses: iOS semantic colours, which follow light and dark
- * mode and Increase Contrast by themselves, brand green, and two status colours in iOS's shades. React Native draws text black unless
- * told otherwise, so every Text takes its colour from here, through `text`.
+ * mode and Increase Contrast by themselves, the palette above, and two status colours in iOS's
+ * shades. React Native draws text black unless told otherwise, so every Text takes its colour
+ * from here, through `text`.
  */
 export const colors = {
   /** Behind a screen's content. */
@@ -25,11 +30,15 @@ export const colors = {
   separator: Color.ios.separator,
   /** Behind a chip, a field, or a pressed row. */
   fill: Color.ios.tertiarySystemFill,
-  tint: DynamicColorIOS(GREEN),
-  /** Text on a tint fill. */
-  onTint: DynamicColorIOS({ light: '#ffffff', dark: '#0b2410' }),
-  /** A pale tint, behind a photo placeholder or a picked Species. */
-  tintSoft: DynamicColorIOS({ light: '#e8f5e9', dark: '#1d3320' }),
+  tint: DynamicColorIOS(MEDICI),
+  /** Text on a tint fill: 5.08:1 in light mode, 7.14:1 in dark. */
+  onTint: DynamicColorIOS({ light: '#ffffff', dark: '#0e2626' }),
+  /**
+   * A warm ground behind a photo placeholder. Label reads 10.2:1 on it and secondaryLabel about
+   * 5.3:1, but tint only 2.46:1 in light mode, so never tinted text. The placeholder's tinted leaf
+   * is decorative and hidden from VoiceOver, the same pair as the app icon.
+   */
+  tintSoft: DynamicColorIOS(ECRU),
   // The two status colours are iOS's systemRed and systemOrange, but in light mode their Increase
   // Contrast shades: the default ones read about 3.5:1 and 2.2:1 on a card, short of the 4.5:1 a
   // status line needs (ticket #30).
@@ -39,10 +48,12 @@ export const colors = {
   dangerSoft: DynamicColorIOS({ light: '#fdecea', dark: '#361a18' }),
   /** Care Due today. */
   dueToday: DynamicColorIOS({ light: '#c93400', dark: '#ff9f0a', highContrastDark: '#ffb340' }),
-  // Each kind of Care Event's hue, beside its symbol (CARE_COPY).
+  // Each kind of Care Event's hue, beside its symbol (CARE_COPY), always beside its words. Water
+  // stays systemBlue, apart from the tint; fertilize is Olive Ocher, 1.91:1 on white like
+  // systemYellow before it; repot is Hay's Russet, 4.04:1 on the dark card.
   water: Color.ios.systemBlue,
-  fertilize: Color.ios.systemYellow,
-  repot: Color.ios.systemBrown,
+  fertilize: '#d1bd1a',
+  repot: DynamicColorIOS({ light: '#681916', dark: '#c8594c' }),
   note: Color.ios.systemGray,
 };
 
@@ -57,7 +68,7 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
     ...base,
     colors: {
       ...base.colors,
-      primary: dark ? GREEN.dark : GREEN.light,
+      primary: dark ? MEDICI.dark : MEDICI.light,
       // systemGroupedBackground, as `colors.background` resolves it.
       background: dark ? '#000000' : '#f2f2f7',
     },
