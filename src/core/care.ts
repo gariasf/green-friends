@@ -242,7 +242,7 @@ function statusOn(due: DueBySeason, today: string, season: SeasonOn): CareStatus
 }
 
 /** The Season (CONTEXT.md) `day` falls in and when it started, from the growing-month range. */
-function seasonOn(day: string, months: SeasonMonths): SeasonOn {
+export function seasonOn(day: string, months: SeasonMonths): SeasonOn {
   const { growingStartMonth: start, growingEndMonth: end } = months;
   const [year, month] = day.split('-').map(Number);
   const dormantStart = (end % 12) + 1;

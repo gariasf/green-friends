@@ -1,0 +1,332 @@
+{
+  "profiles": [
+    {
+      "id": "tropical-aroid",
+      "name": "Tropical aroid",
+      "watering": {
+        "how": "Water slowly over the whole soil until it runs from the drainage holes, then empty the saucer after a few minutes. Never leave the pot standing in water.",
+        "growing": "Water when the top 3 cm of soil feel dry to your finger.",
+        "dormant": "Let the top half of the soil dry before watering. Growth slows and the roots rot easily in cold, wet soil."
+      },
+      "fertilizer": {
+        "type": "Balanced liquid fertiliser (roughly 3-1-2 or 1-1-1)",
+        "growing": "Feed at half the strength on the label, on moist soil, never on dry roots.",
+        "dormant": "Stop feeding. The plant can't use it, and the salts build up in the soil."
+      },
+      "light": "Bright, indirect light, a metre or two from a bright window. Morning sun is fine; hot midday sun scorches the leaves. It likes warmth (above 15 °C) and more humidity than most homes have, so keep it away from radiators and cold drafts.",
+      "soil": "A chunky, airy mix: about half houseplant compost with bark and perlite. Roots need air as much as water.",
+      "causes": {
+        "brown-tips": [
+          "low-humidity",
+          "underwatering",
+          "salts"
+        ],
+        "yellow-lower": [
+          "overwatering",
+          "age"
+        ],
+        "drooping": [
+          "underwatering",
+          "root-rot"
+        ],
+        "pale-leggy": [
+          "low-light"
+        ],
+        "brown-spots": [
+          "overwatering",
+          "leaf-spot"
+        ]
+      }
+    },
+    {
+      "id": "succulent",
+      "name": "Succulent",
+      "watering": {
+        "how": "Soak the soil until water runs from the drainage holes, then let it drain completely. Water the soil, not the rosette: water sitting in the leaves rots them.",
+        "growing": "Water only when the soil is dry all the way down. Push a wooden skewer to the bottom: if it comes out clean, water.",
+        "dormant": "Water very little, just enough to stop the leaves from wrinkling. Cold, wet soil is what kills succulents in winter."
+      },
+      "fertilizer": {
+        "type": "Cactus and succulent fertiliser, low in nitrogen (roughly 1-2-2)",
+        "growing": "Feed at a quarter to half the strength on the label, a few times across the Growing season, on moist soil.",
+        "dormant": "Stop feeding."
+      },
+      "light": "As much light as you can give: a south- or west-facing window, with direct sun. Move a plant from shade into full sun gradually, or it burns. Dry air is no problem.",
+      "soil": "Gritty, fast-draining cactus mix, or houseplant compost with at least a third of pumice or perlite. Use a pot with a drainage hole, terracotta if you tend to overwater.",
+      "causes": {
+        "soft-mushy": [
+          "overwatering",
+          "root-rot"
+        ],
+        "pale-leggy": [
+          "low-light"
+        ],
+        "scorch": [
+          "sunburn"
+        ],
+        "yellow-lower": [
+          "overwatering",
+          "age"
+        ],
+        "drooping": [
+          "overwatering",
+          "underwatering"
+        ]
+      }
+    }
+  ],
+  "causes": {
+    "underwatering": {
+      "name": "Underwatering",
+      "tell": "The soil is dry and light all the way down, and the pot feels light when you lift it. Leaves are limp or crisp rather than soft.",
+      "fix": "Water thoroughly until it drains. If the soil has shrunk from the pot's sides, stand the pot in water for half an hour so it soaks up again.",
+      "fact": "watering"
+    },
+    "overwatering": {
+      "name": "Overwatering",
+      "tell": "The soil is still damp days after watering, may smell sour, and yellowing starts low on the plant.",
+      "fix": "Let the soil dry further before watering again, empty the saucer, and check that the pot drains. A pot without a hole needs a plastic pot inside it.",
+      "fact": "watering"
+    },
+    "root-rot": {
+      "name": "Root rot",
+      "tell": "Tip the plant out: healthy roots are firm and pale, rotten ones brown, soft and smelly. Stems may go soft at the base.",
+      "fix": "Cut away every soft root with clean scissors, repot into fresh, drier mix and a pot that drains, and water sparingly until new growth shows.",
+      "fact": "watering"
+    },
+    "low-humidity": {
+      "name": "Dry air",
+      "tell": "Only the tips and edges turn brown and papery, often near a radiator or air conditioning, while the soil moisture is right.",
+      "fix": "Move it away from heat sources, group plants together, or stand the pot on a tray of wet pebbles. Misting does little."
+    },
+    "salts": {
+      "name": "Fertiliser or tap-water salts",
+      "tell": "A white crust on the soil or the pot's rim, and tips browning even though watering is right.",
+      "fix": "Flush the soil: run plenty of water through it and let it drain. Feed at half strength, and use rain or filtered water if your tap water is hard.",
+      "fact": "fertilizing"
+    },
+    "age": {
+      "name": "Normal ageing",
+      "tell": "One old leaf at the bottom at a time turns yellow, while new leaves come in healthy.",
+      "fix": "Nothing to fix. Remove the leaf once it's fully yellow."
+    },
+    "low-light": {
+      "name": "Too little light",
+      "tell": "New growth is pale, small and stretched, with long gaps between leaves, and the plant leans toward the window.",
+      "fix": "Move it closer to a window, and turn the pot a quarter each time you water so it grows evenly. Stretched growth won't shorten, but new growth will be compact."
+    },
+    "sunburn": {
+      "name": "Sunburn",
+      "tell": "Bleached, beige or brown patches on the side facing the window, appearing after a move or a sunny spell.",
+      "fix": "Shade it with a sheer curtain or move it back, then bring it into sun gradually. Burnt patches stay; new growth will be fine."
+    },
+    "leaf-spot": {
+      "name": "Leaf spot",
+      "tell": "Brown or black spots with a yellow ring around them, spreading, usually after water sat on the leaves.",
+      "fix": "Remove the spotted leaves, water the soil rather than the leaves, and give the plant more air around it."
+    },
+    "cold": {
+      "name": "Cold or drafts",
+      "tell": "Leaves drop or darken suddenly after a cold night, an open window or a move next to a door.",
+      "fix": "Move it somewhere steadily warm and away from doors and windows that open. Damaged leaves won't recover."
+    },
+    "moved": {
+      "name": "A recent move",
+      "tell": "Leaves drop soon after it came home or changed spot, and nothing else is wrong.",
+      "fix": "Leave it in its new spot and keep watering as usual. Most plants settle in on their own."
+    },
+    "rootbound": {
+      "name": "Outgrown pot",
+      "tell": "Roots circle the pot or grow out of the drainage holes, and water runs straight through.",
+      "fix": "Repot one size up in the Growing season.",
+      "fact": "repotting"
+    },
+    "dormancy": {
+      "name": "Dormant season",
+      "tell": "It's the Dormant season and the plant is otherwise healthy.",
+      "fix": "Nothing to fix. Growth resumes when the Growing season starts.",
+      "fact": "season"
+    },
+    "spider-mites": {
+      "name": "Spider mites",
+      "tell": "Fine pale speckles on the leaves and thin webbing under them and where leaves meet stems. Wipe a leaf's underside with white tissue: tiny moving specks are mites.",
+      "fix": "Shower the plant, undersides too, then wipe or spray the leaves with insecticidal soap every few days until no mites are left. Mites love dry air, so raise the humidity.",
+      "petWarning": false
+    },
+    "mealybugs": {
+      "name": "Mealybugs",
+      "tell": "White, cottony tufts in leaf joints and under leaves, sometimes with sticky residue.",
+      "fix": "Dab each tuft with a cotton bud dipped in rubbing alcohol, then treat with insecticidal soap or neem oil, repeating until none come back. Keep the plant apart from the others meanwhile.",
+      "petWarning": true
+    },
+    "scale": {
+      "name": "Scale insects",
+      "tell": "Small brown or tan bumps on stems and leaf veins that scrape off with a fingernail, and sticky leaves below them.",
+      "fix": "Scrape them off with a fingernail or a cotton bud with rubbing alcohol, then wipe with neem oil or insecticidal soap, repeating until no new bumps appear.",
+      "petWarning": true
+    },
+    "fungus-gnats": {
+      "name": "Fungus gnats",
+      "tell": "Tiny black flies that rise from the soil when you water. They're a nuisance; their larvae in wet soil can nibble roots.",
+      "fix": "Let the top of the soil dry out more between waterings, set yellow sticky traps, and water from the bottom for a while."
+    },
+    "thrips": {
+      "name": "Thrips",
+      "tell": "Silvery streaks and tiny black dots on the leaves, and slender insects that dart away when you shake a leaf over white paper.",
+      "fix": "Shower the plant, set blue or yellow sticky traps, and spray with insecticidal soap or neem oil until the streaks stop spreading.",
+      "petWarning": true
+    }
+  },
+  "symptoms": [
+    {
+      "id": "brown-tips",
+      "name": "Brown, crispy tips",
+      "causes": [
+        "underwatering",
+        "low-humidity",
+        "salts"
+      ]
+    },
+    {
+      "id": "brown-edges",
+      "name": "Brown or crispy edges",
+      "causes": [
+        "low-humidity",
+        "underwatering",
+        "salts",
+        "sunburn"
+      ]
+    },
+    {
+      "id": "yellow-lower",
+      "name": "Yellow lower leaves",
+      "causes": [
+        "age",
+        "overwatering",
+        "underwatering"
+      ]
+    },
+    {
+      "id": "yellow-many",
+      "name": "Many leaves yellowing at once",
+      "causes": [
+        "overwatering",
+        "root-rot",
+        "low-light",
+        "moved"
+      ]
+    },
+    {
+      "id": "drooping",
+      "name": "Drooping or wilting",
+      "causes": [
+        "underwatering",
+        "overwatering",
+        "root-rot",
+        "cold"
+      ]
+    },
+    {
+      "id": "soft-mushy",
+      "name": "Soft, mushy stems or base",
+      "causes": [
+        "root-rot",
+        "overwatering",
+        "cold"
+      ]
+    },
+    {
+      "id": "brown-spots",
+      "name": "Brown spots with a yellow ring",
+      "causes": [
+        "leaf-spot",
+        "overwatering"
+      ]
+    },
+    {
+      "id": "pale-leggy",
+      "name": "Pale, stretched growth",
+      "causes": [
+        "low-light"
+      ]
+    },
+    {
+      "id": "scorch",
+      "name": "Bleached or scorched patches",
+      "causes": [
+        "sunburn",
+        "salts"
+      ]
+    },
+    {
+      "id": "leaf-drop",
+      "name": "Leaves dropping",
+      "causes": [
+        "moved",
+        "cold",
+        "underwatering",
+        "overwatering"
+      ]
+    },
+    {
+      "id": "no-growth",
+      "name": "No new growth",
+      "causes": [
+        "dormancy",
+        "low-light",
+        "rootbound"
+      ]
+    },
+    {
+      "id": "webbing",
+      "name": "Fine webbing, speckled leaves",
+      "causes": [
+        "spider-mites"
+      ]
+    },
+    {
+      "id": "cottony",
+      "name": "White cottony spots",
+      "causes": [
+        "mealybugs"
+      ]
+    },
+    {
+      "id": "sticky-bumps",
+      "name": "Sticky leaves or brown bumps",
+      "causes": [
+        "scale",
+        "mealybugs"
+      ]
+    },
+    {
+      "id": "gnats",
+      "name": "Tiny flies around the soil",
+      "causes": [
+        "fungus-gnats"
+      ]
+    },
+    {
+      "id": "silver-streaks",
+      "name": "Silvery streaks on leaves",
+      "causes": [
+        "thrips",
+        "spider-mites"
+      ]
+    }
+  ],
+  "species": {
+    "Q161077": {
+      "profile": "tropical-aroid",
+      "careNotes": "Give it a moss pole or stake: it's a climber, and leaves grow bigger and more split once its aerial roots have something to hold. Tuck the aerial roots into the pole or the soil rather than cutting them.",
+      "funFact": "\"Deliciosa\" means delicious, after its edible fruit, which tastes of pineapple and jackfruit and gives it the name fruit salad plant. Unripe, the fruit is full of needle-like oxalate crystals that irritate the mouth.",
+      "funFactSource": "https://en.wikipedia.org/wiki/Monstera_deliciosa"
+    },
+    "Q80079": {
+      "profile": "succulent",
+      "careNotes": "Pups grow around the base: cut them off with a few roots once they have four or five leaves, and pot them on their own.",
+      "funFact": "It comes from the Hajar Mountains of Oman and the UAE, but it has been grown around the world for so long, and wild plants are so hard to find, that some botanists think it began as a garden hybrid.",
+      "funFactSource": "https://en.wikipedia.org/wiki/Aloe_vera"
+    }
+  }
+}

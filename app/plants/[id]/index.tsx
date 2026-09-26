@@ -33,9 +33,12 @@ import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
-import { TextButton } from '@/src/ui/Form';
+import { readGuide } from '@/src/proto/careGuide';
+import { GuideBody, SummaryCard, SummaryRows } from '@/src/proto/GuideViews';
+import { Segmented, TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { PrototypeSwitcher, usePrototypeVariant } from '@/src/ui/PrototypeSwitcher';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from '@/src/ui/words';
@@ -52,7 +55,12 @@ export default function PlantScreen() {
   const plant = usePlant(id);
   const undo = useUndoToast();
   const { width, fontScale } = useWindowDimensions();
+  // PROTOTYPE (Care Guide): three ways to show it, switched from the purple bar.
+  const [variant, setVariant] = usePrototypeVariant('care');
+  const [tab, setTab] = useState(0);
   if (!plant) return null;
+  const guide = readGuide(id, plant.today);
+  const guideTab = variant === 2 && tab === 1;
 
   const { care, events, photo, row, today } = plant;
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
@@ -140,7 +148,16 @@ export default function PlantScreen() {
           </View>
         )}
 
-        <View style={styles.logHead}>
+        {care && variant === 0 && <SummaryRows id={id} guide={guide} />}
+        {care && variant === 1 && <SummaryCard id={id} guide={guide} />}
+
+        {variant === 2 ? (
+          <View style={styles.tabs}>
+            <Segmented options={['Care Log', 'Care Guide']} selected={tab} onChange={setTab} />
+          </View>
+        ) : null}
+        {guideTab && <GuideBody id={id} guide={guide} />}
+        <View style={[styles.logHead, guideTab && styles.hidden]}>
           <Text accessibilityRole="header" style={group.header}>
             Care Log
           </Text>
@@ -148,7 +165,7 @@ export default function PlantScreen() {
         </View>
         {/* ponytail: renders every Care Event at once; make the screen a FlatList over the Care Log,
           all above it its header, if one ever runs into the thousands. */}
-        <View style={styles.timeline}>
+        <View style={[styles.timeline, guideTab && styles.hidden]}>
           {events.length === 0 && (
             <EmptyState
               symbol="clock.arrow.circlepath"
@@ -175,6 +192,11 @@ export default function PlantScreen() {
         </View>
       </ScrollView>
       {undo.toast}
+      <PrototypeSwitcher
+        labels={['Rows under the tiles', 'One card', 'Guide beside the Log']}
+        index={variant}
+        onChange={setVariant}
+      />
     </>
   );
 }
@@ -325,7 +347,9 @@ function TimelineEntry({ event, today, last }: { event: CareEvent; today: string
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: space.xxl },
+  content: { paddingBottom: space.xxl * 3 },
+  tabs: { marginTop: space.xxl, marginHorizontal: space.l },
+  hidden: { display: 'none' },
   grow: { flex: 1 },
   hero: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tintSoft },
   title: { gap: space.xs, padding: space.xl, paddingBottom: space.m },

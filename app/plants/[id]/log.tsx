@@ -4,7 +4,12 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { dueCare, evaluateCare } from '@/src/core/care';
-import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
+import {
+  CARE_EVENT_TYPES,
+  logCareEvent,
+  type CareEvent,
+  type CareEventType,
+} from '@/src/core/careLog';
 import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
@@ -18,7 +23,11 @@ import { space, text } from '@/src/ui/theme';
  * Archived plant is out of care, so for one it only adds a Note.
  */
 export default function LogCareSheet() {
-  const { id, type: preset } = useLocalSearchParams<'/plants/[id]/log', { type?: string }>();
+  const {
+    id,
+    type: preset,
+    note,
+  } = useLocalSearchParams<'/plants/[id]/log', { type?: string; note?: string }>();
   const [displayName] = useState(() => getDisplayName(db, id));
   // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants, a core read
   // of one plant by id at hundreds.
@@ -31,7 +40,8 @@ export default function LogCareSheet() {
       : 'note',
   );
   const [day, setDay] = useState(() => localDay(new Date()));
-  const details = useCareEventDetails(type);
+  // PROTOTYPE (Care Guide): a Symptom's "Log it as a Note" prefills the Note.
+  const details = useCareEventDetails(type, note ? ({ note } as CareEvent) : undefined);
 
   const log = () => {
     try {
