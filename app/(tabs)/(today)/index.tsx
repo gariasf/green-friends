@@ -186,7 +186,6 @@ function CareCard({
       exiting={FADE_AWAY}
       style={styles.card}
     >
-      {due.some((item) => item.daysOverdue > 0) && <View style={styles.overdueEdge} />}
       <View style={styles.cardHead}>
         <Pressable
           accessibilityRole="button"
@@ -344,14 +343,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     overflow: 'hidden',
   },
-  overdueEdge: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: colors.danger,
-  },
   cardHead: { flexDirection: 'row', alignItems: 'center', paddingRight: space.s },
   identity: {
     flex: 1,
@@ -387,7 +378,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: { ...text.subheadline, fontWeight: '600', color: colors.label },
   status: { ...text.footnote, fontWeight: '600' },
-  overdue: { color: colors.danger },
+  overdue: { color: colors.caution },
   dueToday: { color: colors.dueToday },
   cardFoot: {
     alignItems: 'flex-end',

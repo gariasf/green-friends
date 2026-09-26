@@ -39,15 +39,22 @@ export const colors = {
    * is decorative and hidden from VoiceOver, the same pair as the app icon.
    */
   tintSoft: DynamicColorIOS(ECRU),
-  // The two status colours are iOS's systemRed and systemOrange, but in light mode their Increase
-  // Contrast shades: the default ones read about 3.5:1 and 2.2:1 on a card, short of the 4.5:1 a
-  // status line needs (ticket #30).
-  /** Overdue care, toxicity, and destructive actions. */
+  /**
+   * Destructive actions: iOS's systemRed, in light mode its Increase Contrast shade, since the
+   * default reads about 3.5:1 on a card (ticket #30).
+   */
   danger: DynamicColorIOS({ light: '#d70015', dark: '#ff453a', highContrastDark: '#ff6961' }),
-  /** A pale danger, behind the toxicity badge: dark enough in dark mode for 4.5:1 with danger. */
-  dangerSoft: DynamicColorIOS({ light: '#fdecea', dark: '#361a18' }),
-  /** Care Due today. */
-  dueToday: DynamicColorIOS({ light: '#c93400', dark: '#ff9f0a', highContrastDark: '#ffb340' }),
+  // The two status colours come from the palette, quieter than iOS's red and orange (ticket #34),
+  // each at least 4.5:1 for a status line.
+  /**
+   * Overdue care and toxicity: Hay's Russet, 12.1:1 on white; its dark shade is lighter than the
+   * repot hue's, 5.16:1 on the dark card.
+   */
+  caution: DynamicColorIOS({ light: '#681916', dark: '#d86f62', highContrastDark: '#e07d70' }),
+  /** A pale caution, behind the toxicity badge: dark enough in dark mode for 4.5:1 with caution. */
+  cautionSoft: DynamicColorIOS({ light: '#fdecea', dark: '#361a18' }),
+  /** Care Due today: the tint, something to do rather than a warning. */
+  dueToday: DynamicColorIOS(MEDICI),
   // Each kind of Care Event's hue, beside its symbol (CARE_COPY), always beside its words. Water
   // stays systemBlue, apart from the tint; fertilize is Olive Ocher, 1.91:1 on white like
   // systemYellow before it; repot is Hay's Russet, 4.04:1 on the dark card.

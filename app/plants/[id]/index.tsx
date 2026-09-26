@@ -234,9 +234,9 @@ function Toxicity({ toxic }: { toxic: boolean }) {
         accessibilityElementsHidden
         name="pawprint.fill"
         size={12}
-        tintColor={toxic ? colors.danger : colors.secondaryLabel}
+        tintColor={toxic ? colors.caution : colors.secondaryLabel}
       />
-      <Text style={[styles.badgeText, toxic && styles.danger]}>
+      <Text style={[styles.badgeText, toxic && styles.caution]}>
         {toxic ? 'Toxic to pets' : 'Non-toxic to pets'}
       </Text>
     </View>
@@ -268,7 +268,7 @@ function CareTile({
   const overdue = due && status.daysOverdue > 0;
   const last = lastLine(lastDone, today);
   return (
-    <View style={[styles.tile, due && (overdue ? styles.tileOverdue : styles.tileDueToday)]}>
+    <View style={styles.tile}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${spoken}. ${last}`}
@@ -280,7 +280,7 @@ function CareTile({
           <CareSymbol type={type} size={18} />
           <Text style={text.footnote}>{label}</Text>
         </View>
-        <Text style={[text.title2, due && (overdue ? styles.danger : styles.dueToday)]}>
+        <Text style={[text.title2, due && (overdue ? styles.caution : styles.dueToday)]}>
           {value}
           {overdue && <Text style={styles.overdueWord}> overdue</Text>}
         </Text>
@@ -392,10 +392,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.fill,
   },
-  badgeToxic: { backgroundColor: colors.dangerSoft },
+  badgeToxic: { backgroundColor: colors.cautionSoft },
   badgeText: { ...text.footnote, fontWeight: '600' },
-  danger: { color: colors.danger },
-  overdueWord: { ...text.footnote, fontWeight: '600', color: colors.danger },
+  caution: { color: colors.caution },
+  overdueWord: { ...text.footnote, fontWeight: '600', color: colors.caution },
   dueToday: { color: colors.dueToday },
   banner: {
     flexDirection: 'row',
@@ -414,13 +414,8 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     borderRadius: 16,
-    borderWidth: 2,
-    // The surface until Due, so a Due tile's border moves nothing.
-    borderColor: colors.surface,
     backgroundColor: colors.surface,
   },
-  tileOverdue: { borderColor: colors.danger },
-  tileDueToday: { borderColor: colors.dueToday },
   // Grows, so the whole of a tile shorter than its row's tallest is one target.
   tileBody: { flexGrow: 1, gap: space.xs, padding: space.m },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
