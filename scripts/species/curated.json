@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "aliases": {
     "Spathiphyllum floribundum": "Q761494",
     "Aloe variegata": "Q39719922",
@@ -309,6 +309,7 @@
     { "id": "Q10881792", "scientificName": "Coleus scutellarioides", "colloquialName": "Coleus", "wateringGrowingDays": 4, "wateringDormantDays": 7, "fertilizingGrowingDays": 14, "fertilizingDormantDays": null, "repottingMonths": 12, "toxicToPets": true },
     { "id": "Q9268236", "scientificName": "Gynura aurantiaca", "colloquialName": "Purple passion", "wateringGrowingDays": 5, "wateringDormantDays": 10, "fertilizingGrowingDays": 30, "fertilizingDormantDays": null, "repottingMonths": 12, "toxicToPets": false },
     { "id": "Q3500365", "scientificName": "Cissus alata", "colloquialName": "Grape ivy", "wateringGrowingDays": 7, "wateringDormantDays": 12, "fertilizingGrowingDays": 30, "fertilizingDormantDays": null, "repottingMonths": 24, "toxicToPets": false },
-    { "id": "Q2697953", "scientificName": "Cissus antarctica", "colloquialName": "Kangaroo vine", "wateringGrowingDays": 7, "wateringDormantDays": 12, "fertilizingGrowingDays": 30, "fertilizingDormantDays": null, "repottingMonths": 24, "toxicToPets": false }
+    { "id": "Q2697953", "scientificName": "Cissus antarctica", "colloquialName": "Kangaroo vine", "wateringGrowingDays": 7, "wateringDormantDays": 12, "fertilizingGrowingDays": 30, "fertilizingDormantDays": null, "repottingMonths": 24, "toxicToPets": false },
+    { "id": "Q17251288", "scientificName": "Ruschia uncinata", "colloquialName": "Ruschia", "wateringGrowingDays": 14, "wateringDormantDays": 30, "fertilizingGrowingDays": 60, "fertilizingDormantDays": null, "repottingMonths": 36, "toxicToPets": false }
   ]
 }

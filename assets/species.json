@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "sources": [
     {
       "name": "Wikidata",
@@ -281,6 +281,7 @@
     {"id":"Q136525","scientificName":"Rhipsalis baccifera","colloquialName":"Mistletoe cactus","wateringGrowingDays":7,"wateringDormantDays":12,"fertilizingGrowingDays":30,"fertilizingDormantDays":null,"repottingMonths":24,"toxicToPets":false},
     {"id":"Q291080","scientificName":"Rhipsalis cereuscula","colloquialName":"Rice cactus","wateringGrowingDays":7,"wateringDormantDays":12,"fertilizingGrowingDays":30,"fertilizingDormantDays":null,"repottingMonths":24,"toxicToPets":false},
     {"id":"Q5914721","scientificName":"Rhododendron simsii","colloquialName":"Florist's azalea","wateringGrowingDays":4,"wateringDormantDays":7,"fertilizingGrowingDays":30,"fertilizingDormantDays":null,"repottingMonths":24,"toxicToPets":true},
+    {"id":"Q17251288","scientificName":"Ruschia uncinata","colloquialName":"Ruschia","wateringGrowingDays":14,"wateringDormantDays":30,"fertilizingGrowingDays":60,"fertilizingDormantDays":null,"repottingMonths":36,"toxicToPets":false},
     {"id":"Q161174","scientificName":"Sarracenia","colloquialName":"Trumpet pitcher","wateringGrowingDays":3,"wateringDormantDays":7,"fertilizingGrowingDays":null,"fertilizingDormantDays":null,"repottingMonths":24,"toxicToPets":false},
     {"id":"Q159002","scientificName":"Saxifraga stolonifera","colloquialName":"Strawberry begonia","wateringGrowingDays":5,"wateringDormantDays":9,"fertilizingGrowingDays":30,"fertilizingDormantDays":null,"repottingMonths":12,"toxicToPets":false},
     {"id":"Q312047","scientificName":"Schlumbergera truncata","colloquialName":"Christmas cactus","wateringGrowingDays":7,"wateringDormantDays":10,"fertilizingGrowingDays":30,"fertilizingDormantDays":null,"repottingMonths":36,"toxicToPets":false},
