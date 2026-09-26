@@ -21,3 +21,7 @@ Versioned-docs-first rules, commands, and house rules for the app code. See `doc
 ### Relay
 
 Sync's Cloudflare Worker in `relay/`: routes, commands, deploys and never committing a token. See `docs/agents/relay.md`.
+
+### Web view
+
+Sync's read-only Web view in `web/`: how it runs `src/core` over sql.js, commands, deploys. See `docs/agents/web.md`.

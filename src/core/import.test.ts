@@ -14,7 +14,7 @@ import {
 } from './careLog';
 import { evaluateCare } from './care';
 import { shareExport } from './export';
-import { importExport } from './import';
+import { NewerExportError, importExport } from './import';
 import { listPhotoRows, setPlantPhoto, type PhotoFiles } from './photos';
 import {
   NO_SCHEDULE,
@@ -353,6 +353,8 @@ describe('Import', () => {
       expect(() => importInto(tablet, zip)).toThrow(
         'This export is from a newer version of Green Friends. Update the app to import it',
       );
+      // Its own class, so the Web view can say it needs the update instead.
+      expect(() => importInto(tablet, zip)).toThrow(NewerExportError);
 
       expect(contents(tablet)).toEqual(before);
     });

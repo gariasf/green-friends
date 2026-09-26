@@ -1,0 +1,6 @@
+# The Web view (spec #35): static files only, served from the same account as the relay.
+name = "green-friends"
+compatibility_date = "2026-08-22"
+
+[assets]
+directory = "./dist"

@@ -11,6 +11,7 @@ module.exports = defineConfig([
     '.expo/*',
     'expo-env.d.ts',
     'relay/worker-configuration.d.ts',
+    'web/dist/*',
   ]),
   expoConfig,
   eslintPluginPrettierRecommended,
@@ -45,5 +46,10 @@ module.exports = defineConfig([
     // The relay's `cloudflare:*` modules exist only inside the Workers runtime.
     files: ['relay/**/*.ts'],
     rules: { 'import/no-unresolved': ['error', { ignore: ['^cloudflare:'] }] },
+  },
+  {
+    // Vite's `?url` imports resolve at build time only.
+    files: ['web/**/*.{ts,tsx}'],
+    rules: { 'import/no-unresolved': ['error', { ignore: ['\\?url$'] }] },
   },
 ]);

@@ -39,7 +39,7 @@ export function importExport(
 ): void {
   const { json, archive } = openExport(zip);
   if (json.schema_version > getSchemaVersion(db)) {
-    throw new Error(
+    throw new NewerExportError(
       'This export is from a newer version of Green Friends. Update the app to import it',
     );
   }
@@ -79,6 +79,9 @@ export function importExport(
     [...liveBefore, ...written].filter((filename) => !liveAfter.has(filename)),
   );
 }
+
+/** An Export from a newer schema version than the database's: its reader needs an update. */
+export class NewerExportError extends Error {}
 
 /** export.json, parsed, and the other files in the zip; throws for a file that is no Export. */
 function openExport(zip: Uint8Array) {

@@ -5,7 +5,7 @@ compatibility_date = "2026-08-22"
 
 [vars]
 # The Web view's origin, the only one CORS lets read Snapshots from a browser.
-ALLOWED_ORIGIN = "https://green-friends.pages.dev"
+ALLOWED_ORIGIN = "https://green-friends.gariasf.workers.dev"
 
 [[r2_buckets]]
 binding = "SNAPSHOTS"

@@ -1,0 +1,30 @@
+# Web view
+
+`web/` is Sync's read-only Web view (ADR-0006, spec #35): a Vite + React single-page app that opens the latest Snapshot in the browser. It's its own npm package, like `relay/`: root `npm test` and `npm run typecheck` leave it out (`tsconfig.json` excludes it), root `npm run lint` covers it.
+
+## How it works
+
+- It imports the app's own `../src/core`, `../src/db`, `../drizzle` and `../assets/species.json` directly (no workspace, ADR-0001). drizzle-orm and fflate resolve from the root `node_modules`, so `web/` never installs its own copy. `vite.config.ts` turns each `drizzle/*.sql` into a string, as babel's inline-import does for the app, and lets the dev server read one level up.
+- `web/src/garden.ts` (`openGarden`): a sql.js database through drizzle-orm's `sql-js` driver, migrated by the app's `migrate`, seeded with the bundled catalog (an Export never carries it, ADR-0002), and the Snapshot's Export run through `importExport`, photos held in memory, a second sql.js database as scratch. Core reads it as it reads the phone's.
+- `web/src/snapshot.ts`: the key from a Pairing link's `#k=` (32 bytes), kept in IndexedDB and then cleared from the address bar (a browser that won't keep it keeps the link instead); ids and the AES key from `deriveSyncKeys` over WebCrypto; `GET /gardens/:id` from `RELAY_URL` (`src/core/sync.ts`, shared with the phone), opened as `iv | ciphertext | tag`. "Synced" is the relay's `Last-Modified`.
+- A Snapshot with a newer `schema_version` throws `NewerExportError` (`src/core/import.ts`), which the page shows as "This page needs an update". So the Web view deploys from the same commit as each app release.
+- A Pairing link pasted into an open tab changes only the fragment, which reloads nothing, so the page loads again on a `hashchange` carrying a key.
+
+## Commands
+
+```bash
+npm --prefix web ci          # the Web view's own dependencies (root npm install doesn't reach them)
+npm run web:test             # vitest in Node: the smoke test (a phone's Export opened through sql.js) and the Snapshot's opening
+npm --prefix web run typecheck
+npm --prefix web run dev     # vite; it reads the deployed relay, whose CORS allows only the deployed origin
+npm run web:deploy           # vite build, then wrangler deploy, by hand (no CI deploys)
+```
+
+It lives at `https://green-friends.gariasf.workers.dev` (first deployed 2026-09-26): static assets on a Worker, `web/wrangler.toml`. Spec #35 planned `*.pages.dev`, but Cloudflare now backs a new Pages project with Workers static assets on the account's `workers.dev` subdomain. That origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`); change all three together, then deploy the relay.
+
+## House rules
+
+- `react` and `react-dom` are pinned to the root's version; bump all four together.
+
+- The key never leaves the browser: no request carries it, nothing logs it, and the page sends no referrer.
+- A browser check needs a Snapshot on the relay. Seed a throwaway garden from Node (core's `buildExport`, sealed with WebCrypto under a random key), open its link, then `DELETE /gardens/:id` with its write token.

@@ -8,6 +8,9 @@ import type { PhotoFiles } from './photos';
  * expo-crypto, which core can't import; tests hand in fakes.
  */
 
+/** The blind relay (docs/agents/relay.md), where the phone puts Snapshots and the Web view reads them. */
+export const RELAY_URL = 'https://green-friends-relay.gariasf.workers.dev';
+
 /** The most the relay takes in one Snapshot (relay/src/index.ts). */
 export const SNAPSHOT_CAP_BYTES = 25 * 1024 * 1024;
 

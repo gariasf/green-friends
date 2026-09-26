@@ -12,6 +12,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import {
+  RELAY_URL,
   SYNC_OFF,
   createSync,
   deriveSyncKeys,
@@ -25,9 +26,8 @@ import { db } from '@/src/db/client';
 import { photoFiles } from '@/src/ui/Photo';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
-/** The blind relay (docs/agents/relay.md) and the Web view, whose origin it lets read. */
-const RELAY = 'https://green-friends-relay.gariasf.workers.dev';
-const WEB_VIEW = 'https://green-friends.pages.dev';
+/** The Web view (web/), whose origin the relay lets read. */
+const WEB_VIEW = 'https://green-friends.gariasf.workers.dev';
 
 /**
  * Sync's key, in the keychain on this device only: never in an iCloud backup nor on a new phone,
@@ -80,7 +80,7 @@ async function keys(): Promise<SyncKeys> {
 
 const relay: SyncRelay = {
   async put(gardenId, writeToken, snapshot) {
-    const response = await fetch(`${RELAY}/gardens/${gardenId}`, {
+    const response = await fetch(`${RELAY_URL}/gardens/${gardenId}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${writeToken}` },
       // Sealed by expo-crypto into a plain ArrayBuffer, never a shared one.
