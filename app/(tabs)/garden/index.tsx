@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
+import { PressScale } from '@/src/ui/MotionPrototype';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
-import { accessibilitySize, font, pressedStyle, radius, space, text } from '@/src/ui/theme';
+import { accessibilitySize, font, radius, space, text } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 const ADD_PLANT = { label: 'Add a plant', onPress: () => router.push('/plants/new') };
@@ -53,11 +54,10 @@ export default function GardenScreen() {
           {plants.map((plant) => {
             const scientific = scientificBeneath(plant.displayName, plant.scientificName);
             return (
-              <Pressable
+              <PressScale
                 key={plant.id}
-                accessibilityRole="button"
                 onPress={() => router.push({ pathname: '/plants/[id]', params: { id: plant.id } })}
-                style={({ pressed }) => [{ width: cell }, pressed && pressedStyle.button]}
+                style={{ width: cell }}
               >
                 <PlantPhoto
                   uri={photoUri(plant.photo)}
@@ -73,7 +73,7 @@ export default function GardenScreen() {
                     {scientific}
                   </Text>
                 )}
-              </Pressable>
+              </PressScale>
             );
           })}
         </View>

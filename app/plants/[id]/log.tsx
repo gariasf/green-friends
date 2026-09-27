@@ -1,7 +1,7 @@
-import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { dueCare, evaluateCare } from '@/src/core/care';
 import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
@@ -10,6 +10,7 @@ import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
 import { alertError, CloseButton, PrimaryButton, Segmented, WhenPicker } from '@/src/ui/Form';
+import { taskHaptic, useSheetEntering } from '@/src/ui/MotionPrototype';
 import { space, text } from '@/src/ui/theme';
 
 /**
@@ -37,11 +38,12 @@ export default function LogCareSheet() {
   const [day, setDay] = useState(() => localDay(new Date()));
   // A Symptom's Log it as a Note fills the Note.
   const details = useCareEventDetails(type, { note });
+  const enter = useSheetEntering();
 
   const log = () => {
     try {
       logCareEvent(db, { plantId: id, type, occurredOn: day, ...details.values });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      taskHaptic();
       router.back();
     } catch (error) {
       alertError('Could not log it', error);
@@ -58,19 +60,25 @@ export default function LogCareSheet() {
         <CloseButton />
       </View>
       {inCare && (
-        <Segmented
-          options={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
-          selected={CARE_EVENT_TYPES.indexOf(type)}
-          onChange={(index) => setType(CARE_EVENT_TYPES[index])}
-        />
+        <Animated.View entering={enter(1)}>
+          <Segmented
+            options={CARE_EVENT_TYPES.map((option) => CARE_COPY[option].label)}
+            selected={CARE_EVENT_TYPES.indexOf(type)}
+            onChange={(index) => setType(CARE_EVENT_TYPES[index])}
+          />
+        </Animated.View>
       )}
-      <WhenPicker label="When did it happen?" value={day} onChange={setDay} />
-      {details.fields}
-      <PrimaryButton
-        label={type === 'note' ? 'Add note' : `Mark as ${CARE_COPY[type].done.toLowerCase()}`}
-        disabled={!details.complete}
-        onPress={log}
-      />
+      <Animated.View entering={enter(2)} style={styles.part}>
+        <WhenPicker label="When did it happen?" value={day} onChange={setDay} />
+        {details.fields}
+      </Animated.View>
+      <Animated.View entering={enter(3)}>
+        <PrimaryButton
+          label={type === 'note' ? 'Add note' : `Mark as ${CARE_COPY[type].done.toLowerCase()}`}
+          disabled={!details.complete}
+          onPress={log}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -79,4 +87,5 @@ const styles = StyleSheet.create({
   sheet: { gap: space.l, padding: space.xl, paddingTop: space.xxl },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.m },
   grow: { flex: 1 },
+  part: { gap: space.l },
 });

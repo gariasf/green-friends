@@ -1,15 +1,9 @@
 import { Button, Host, Menu, RNHostView, Section } from '@expo/ui/swift-ui';
 import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  LayoutAnimationConfig,
-  LinearTransition,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, LayoutAnimationConfig } from 'react-native-reanimated';
 
 import { dueCare, evaluateCare, needsAttention, nextCare, type PlantCare } from '@/src/core/care';
 import { logCareEvent } from '@/src/core/careLog';
@@ -20,6 +14,13 @@ import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
+import {
+  taskHaptic,
+  TICK_MS,
+  TickMark,
+  tickHaptic,
+  useTodayMotion,
+} from '@/src/ui/MotionPrototype';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import {
   colors,
@@ -35,15 +36,6 @@ import {
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
-
-/** How long a circle shows its tick before the care is logged and its row folds away. */
-const TICK_MS = 250;
-
-/**
- * How a row or a card leaves: a fade quicker than the move of what takes its place, so that never
- * shows through it.
- */
-const FADE_AWAY = FadeOut.duration(150);
 
 /**
  * Today (spec #8, prototype #6; spec #22): the day and how many plants need you, then one card per
@@ -173,12 +165,14 @@ function CareCard({
   const [ticked, setTicked] = useState<CareType[]>([]);
   const raised = useRaised();
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
+  const { layout, entering, exiting } = useTodayMotion();
 
   const tick = (types: CareType[]) => {
     const fresh = types.filter((type) => !ticked.includes(type));
     if (fresh.length === 0) return;
     setTicked([...ticked, ...fresh]);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (fresh.length > 1) taskHaptic();
+    else tickHaptic();
     setTimeout(() => {
       onLog(plant, fresh);
       // Undone, the rows come back unticked.
@@ -188,9 +182,9 @@ function CareCard({
 
   return (
     <Animated.View
-      layout={LinearTransition}
-      entering={FadeIn}
-      exiting={FADE_AWAY}
+      layout={layout}
+      entering={entering}
+      exiting={exiting}
       style={[styles.card, raised]}
     >
       <View style={styles.cardHead}>
@@ -240,9 +234,9 @@ function CareCard({
         return (
           <Animated.View
             key={type}
-            layout={LinearTransition}
-            entering={FadeIn}
-            exiting={FADE_AWAY}
+            layout={layout}
+            entering={entering}
+            exiting={exiting}
             style={[styles.row, group.divider]}
           >
             <Pressable
@@ -269,10 +263,11 @@ function CareCard({
               onPress={() => tick([type])}
             >
               {({ pressed }) => (
-                <Icon
-                  name={done || pressed ? 'checkCircle' : 'circle'}
+                <TickMark
+                  done={done || pressed}
                   size={30}
-                  color={done || pressed ? colors.tint : colors.tertiaryLabel}
+                  circle={<Icon name="circle" size={30} color={colors.tertiaryLabel} />}
+                  check={<Icon name="checkCircle" size={30} color={colors.tint} />}
                 />
               )}
             </Pressable>
@@ -280,11 +275,7 @@ function CareCard({
         );
       })}
       {due.length > 1 && (
-        <Animated.View
-          layout={LinearTransition}
-          exiting={FADE_AWAY}
-          style={[styles.cardFoot, group.divider]}
-        >
+        <Animated.View layout={layout} exiting={exiting} style={[styles.cardFoot, group.divider]}>
           <TextButton
             label="Log all"
             accessibilityLabel={`Log all due care for ${plant.displayName}`}
@@ -298,11 +289,12 @@ function CareCard({
 
 /** The plants that need nothing today, each with its next care, in a strip. */
 function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string }) {
+  const { layout } = useTodayMotion();
   // Text grows by fontScale at every size, so a plant this much wider wraps its words as it does
   // at the default size.
   const width = 84 * useWindowDimensions().fontScale;
   return (
-    <Animated.View layout={LinearTransition}>
+    <Animated.View layout={layout}>
       <Text accessibilityRole="header" style={[group.header, styles.restHeading]}>
         Everything else
       </Text>

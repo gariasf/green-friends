@@ -1,15 +1,13 @@
-import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  interpolate,
+  useAnimatedRef,
+  useAnimatedStyle,
+  useReducedMotion,
+  useScrollOffset,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { evaluateCare, plantSeasonOn, type CareStatus } from '@/src/core/care';
@@ -38,6 +36,13 @@ import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
+import {
+  heroDrift,
+  heroStretch,
+  motion,
+  tickHaptic,
+  useHeroEntering,
+} from '@/src/ui/MotionPrototype';
 import { choosePhoto, photoFiles, photoUri, PlantPhoto } from '@/src/ui/Photo';
 import {
   accessibilitySize,
@@ -70,6 +75,18 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   // Whether the photo has scrolled up under the navigation bar.
   const [pastHero, setPastHero] = useState(false);
+  const heroHeight = width * 0.92;
+  // PROTOTYPE: the hero's motion on scroll, and the bar's fade in B and C.
+  const scroll = useAnimatedRef<Animated.ScrollView>();
+  const offset = useScrollOffset(scroll);
+  const reduced = useReducedMotion();
+  const turn = heroHeight - insets.top - 44;
+  const stretchStyle = useAnimatedStyle(() => heroStretch(offset.value, heroHeight, reduced));
+  const driftStyle = useAnimatedStyle(() => heroDrift(offset.value, reduced));
+  const barStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(offset.value, [turn - 48, turn], [0, 1], 'clamp'),
+  }));
+  const heroEntering = useHeroEntering();
   if (!plant) return null;
 
   const { care, events, photo, row, today } = plant;
@@ -79,29 +96,42 @@ export default function PlantScreen() {
   const openLog = (type?: CareEventType) =>
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
   const pickPhoto = () => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared));
-  const heroHeight = width * 0.92;
   const badge = plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />;
 
   return (
     <>
-      <ScrollView
+      <Animated.ScrollView
+        ref={scroll}
         // With a photo, the photo starts at the screen's top edge, under a clear navigation bar.
         contentInsetAdjustmentBehavior={uri ? 'never' : 'automatic'}
         scrollEventThrottle={32}
         // Once the photo has scrolled up under the bar, the bar turns opaque and takes the plant's
         // name, as Apple Music's album pages do.
         onScroll={
-          uri
-            ? (event) =>
-                setPastHero(event.nativeEvent.contentOffset.y > heroHeight - insets.top - 44)
-            : undefined
+          uri ? (event) => setPastHero(event.nativeEvent.contentOffset.y > turn) : undefined
         }
         contentContainerStyle={[styles.content, uri && { paddingBottom: insets.bottom }]}
       >
         <Stack.Screen
           options={{
             headerTransparent: !!uri,
-            headerStyle: { backgroundColor: uri && !pastHero ? 'transparent' : colors.background },
+            headerStyle: {
+              backgroundColor:
+                uri && (!pastHero || motion !== 'A') ? 'transparent' : colors.background,
+            },
+            // PROTOTYPE: in B and C the bar's ground fades in over the last of the photo.
+            headerBackground:
+              uri && motion !== 'A'
+                ? () => (
+                    <Animated.View
+                      style={[
+                        StyleSheet.absoluteFill,
+                        { backgroundColor: colors.background },
+                        barStyle,
+                      ]}
+                    />
+                  )
+                : undefined,
             title: uri && pastHero ? plant.displayName : '',
             headerRight: () => (
               <TextButton
@@ -121,7 +151,17 @@ export default function PlantScreen() {
                 onPress={pickPhoto}
                 style={({ pressed }) => [StyleSheet.absoluteFill, pressed && pressedStyle.button]}
               >
-                <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+                {/* PROTOTYPE: the outer view stretches (C, pulled down), the inner clips the
+                    photo's drift (B and C, scrolled up). */}
+                <Animated.View style={[StyleSheet.absoluteFill, stretchStyle]}>
+                  <View style={[StyleSheet.absoluteFill, styles.clip]}>
+                    <Animated.Image
+                      entering={heroEntering}
+                      source={{ uri }}
+                      style={[StyleSheet.absoluteFill, driftStyle]}
+                    />
+                  </View>
+                </Animated.View>
               </Pressable>
               {/* Over the photo but outside its button, so VoiceOver reads the name as the
                   screen's header, apart from Replace photo. */}
@@ -184,7 +224,7 @@ export default function PlantScreen() {
                 onOpen={() => openLog(type)}
                 onDone={() => {
                   const event = logCareEvent(db, { plantId: id, type });
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  tickHaptic();
                   undo.offer(`${CARE_COPY[type].done} ${plant.displayName}`, [event.id]);
                 }}
               />
@@ -227,7 +267,7 @@ export default function PlantScreen() {
           {row.soil !== null && <Text style={styles.chip}>{row.soil}</Text>}
           <Text style={styles.chip}>{whoseSchedule(row)}</Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
       {undo.toast}
     </>
   );
@@ -378,6 +418,7 @@ function TimelineEntry({ event, today, last }: { event: CareEvent; today: string
 const styles = StyleSheet.create({
   content: { paddingBottom: space.xxl },
   grow: { flex: 1 },
+  clip: { overflow: 'hidden' },
   // The hero's scrim, under the names at the photo's foot.
   scrim: {
     position: 'absolute',

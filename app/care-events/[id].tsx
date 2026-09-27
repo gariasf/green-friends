@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { deleteCareEvent, editCareEvent, getCareEvent } from '@/src/core/careLog';
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol, useCareEventDetails } from '@/src/ui/CareEvent';
 import { alertError, CloseButton, PrimaryButton, TextButton, WhenPicker } from '@/src/ui/Form';
+import { useSheetEntering } from '@/src/ui/MotionPrototype';
 import { space, text } from '@/src/ui/theme';
 
 /**
@@ -17,6 +19,7 @@ export default function CareEventSheet() {
   const [event] = useState(() => getCareEvent(db, id));
   const [occurredOn, setOccurredOn] = useState(event.occurredOn);
   const details = useCareEventDetails(event.type, event);
+  const enter = useSheetEntering();
 
   const save = () => {
     try {
@@ -49,10 +52,14 @@ export default function CareEventSheet() {
         </Text>
         <CloseButton />
       </View>
-      <WhenPicker label="When did it happen?" value={occurredOn} onChange={setOccurredOn} />
-      {details.fields}
-      <PrimaryButton label="Save" disabled={!details.complete} onPress={save} />
-      <TextButton label="Delete" destructive onPress={remove} style={styles.delete} />
+      <Animated.View entering={enter(1)} style={styles.part}>
+        <WhenPicker label="When did it happen?" value={occurredOn} onChange={setOccurredOn} />
+        {details.fields}
+      </Animated.View>
+      <Animated.View entering={enter(2)} style={styles.part}>
+        <PrimaryButton label="Save" disabled={!details.complete} onPress={save} />
+        <TextButton label="Delete" destructive onPress={remove} style={styles.delete} />
+      </Animated.View>
     </View>
   );
 }
@@ -62,4 +69,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   grow: { flex: 1 },
   delete: { alignSelf: 'center' },
+  part: { gap: space.l },
 });
