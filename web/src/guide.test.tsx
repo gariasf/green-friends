@@ -40,14 +40,16 @@ test("a Monstera's Care group opens its Care Guide, with its light step and dire
   const { render, monty } = await snapshotGarden();
 
   const pane = render(monty);
-  expect(pane).toContain('Bright indirect');
+  expect(pane).toContain('Bright indirect light');
   expect(pane).toContain(`href="#/plant/${monty}/guide"`);
   expect(pane).toContain(`href="#/plant/${monty}/symptoms"`);
 
   const guide = render(monty, { page: 'guide' });
   expect(guide).toContain('Tropical aroid');
   expect(guide).toContain('Morning sun');
-  expect(guide).toContain('Your schedule: every 7 days, every 14 in Dormant');
+  expect(guide).toContain('N-P-K roughly 3-1-2');
+  expect(guide).toContain('nitrogen, phosphorus and potassium');
+  expect(guide).toContain('Your schedule: every 7 days, every 14 days in the Dormant season');
   expect(guide).toContain('More on Wikipedia');
 });
 

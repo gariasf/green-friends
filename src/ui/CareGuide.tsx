@@ -15,9 +15,10 @@ import { Segmented } from '@/src/ui/Form';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 import {
   feedLine,
-  LIGHT_WORDS,
   lightLabel,
+  lightWords,
   NO_CARE_GUIDE,
+  npkNote,
   PET_WARNING,
   seasonLine,
   SOMETHING_WRONG,
@@ -114,7 +115,7 @@ function SomethingWrong({ id, first }: { id: string; first?: boolean }) {
 
 /**
  * The shared light scale, dimmest first, with this profile's step filled in, and its step and
- * direct sun in words beneath: "Bright indirect · Morning sun". VoiceOver reads `lightLabel` from
+ * direct sun in words beneath: "Bright indirect light · Morning sun". VoiceOver reads `lightLabel` from
  * the row or card holding it.
  */
 function LightScale({ light }: { light: CareProfile['light'] }) {
@@ -125,9 +126,7 @@ function LightScale({ light }: { light: CareProfile['light'] }) {
           <View key={level} style={[styles.step, level === light.level && styles.stepMarked]} />
         ))}
       </View>
-      <Text style={text.subheadline}>
-        {LIGHT_WORDS.level[light.level]} · {LIGHT_WORDS.directSun[light.directSun]}
-      </Text>
+      <Text style={text.subheadline}>{lightWords(light).join(' · ')}</Text>
     </View>
   );
 }
@@ -234,6 +233,9 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
 
       <Card symbol={FEED.symbol} tint={FEED.hue} title="Fertiliser">
         <Text style={text.headline}>{profile.fertilizer.type}</Text>
+        {npkNote(profile.fertilizer.type) && (
+          <Text style={text.footnote}>{npkNote(profile.fertilizer.type)}</Text>
+        )}
         <Text style={text.body}>{profile.fertilizer[season]}</Text>
         <YourSchedule line={yourSchedule(schedule.fertilize)} />
       </Card>

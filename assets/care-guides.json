@@ -9,7 +9,7 @@
         "dormant": "Let the top half of the soil dry before watering. Growth slows and the roots rot easily in cold, wet soil."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 3-1-2 or 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 3-1-2 or 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil, never on dry roots.",
         "dormant": "Stop feeding. The plant can't use it, and the salts build up in the soil."
       },
@@ -36,7 +36,7 @@
         "dormant": "Water very little, just enough to stop the leaves from wrinkling. Cold, wet soil is what kills succulents in winter."
       },
       "fertilizer": {
-        "type": "Cactus and succulent fertiliser, low in nitrogen (roughly 1-2-2)",
+        "type": "Cactus and succulent fertiliser, low in nitrogen (N-P-K roughly 1-2-2)",
         "growing": "Feed at a quarter to half the strength on the label, a few times across the Growing season, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -63,7 +63,7 @@
         "dormant": "Let the top 2 cm of soil dry before watering, but never let the whole pot dry out."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -89,7 +89,7 @@
         "dormant": "Water a little less, letting just the surface dry, but keep the root ball moist."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Feed at a quarter to half the strength on the label: ferns are light feeders and their roots burn easily.",
         "dormant": "Stop feeding."
       },
@@ -115,7 +115,7 @@
         "dormant": "Let a little more of the soil dry, about the top third, before watering."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 3-1-2 or 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 3-1-2 or 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -141,7 +141,7 @@
         "dormant": "Let the top half of the soil dry before watering."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -167,7 +167,7 @@
         "dormant": "Water a little less, letting the top 2 cm dry. Most keep flowering in a warm, bright room."
       },
       "fertilizer": {
-        "type": "Flowering houseplant fertiliser (roughly 1-2-1)",
+        "type": "Flowering houseplant fertiliser (N-P-K roughly 1-2-1)",
         "growing": "Feed at a quarter to half the strength on the label, on moist soil.",
         "dormant": "Feed at a quarter of the strength while it's flowering; otherwise stop."
       },
@@ -193,7 +193,7 @@
         "dormant": "Let the top half of the soil dry before watering. Cold, wet roots are the usual reason an indoor tree drops its leaves in winter."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 3-1-2)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 3-1-2)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -219,7 +219,7 @@
         "dormant": "Water very little: only when the soil is dry right through, and less still in a cool room. Far more of these die of water than of neglect."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label a couple of times across the Growing season.",
         "dormant": "Stop feeding."
       },
@@ -245,7 +245,7 @@
         "dormant": "Let the top half of the soil dry before watering."
       },
       "fertilizer": {
-        "type": "Palm fertiliser, or a balanced one with magnesium (roughly 3-1-3)",
+        "type": "Palm fertiliser, or a balanced one with magnesium (N-P-K roughly 3-1-3)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -271,7 +271,7 @@
         "dormant": "Water less, letting the bark dry right through. Many orchids rest after flowering."
       },
       "fertilizer": {
-        "type": "Orchid fertiliser (roughly 1-1-1)",
+        "type": "Orchid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Feed at a quarter to half the strength on the label, and flush the bark with plain water now and then.",
         "dormant": "Stop feeding, or feed at a quarter of the strength if it's still growing."
       },
@@ -297,7 +297,7 @@
         "dormant": "Keep the soil on the dry side, and the cup only a little wet, or empty in a cool room."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1), or an orchid one",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), or an orchid one",
         "growing": "Feed at a quarter of the strength on the label, on the soil or misted on the leaves.",
         "dormant": "Stop feeding."
       },
@@ -321,7 +321,7 @@
         "dormant": "Soak it less often and more briefly in a cool room, and dry it well."
       },
       "fertilizer": {
-        "type": "Bromeliad or orchid fertiliser (roughly 1-1-1)",
+        "type": "Bromeliad or orchid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Now and then, add a quarter of the strength on the label to the soaking water.",
         "dormant": "Stop feeding."
       },
@@ -346,7 +346,7 @@
         "dormant": "Water sparingly: let the soil dry right through, then water lightly."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1)",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -373,7 +373,7 @@
         "dormant": "Keep it almost dry: water only if it starts to shrivel. A cool, dry rest is what makes most cacti flower."
       },
       "fertilizer": {
-        "type": "Cactus fertiliser, low in nitrogen (roughly 1-2-2)",
+        "type": "Cactus fertiliser, low in nitrogen (N-P-K roughly 1-2-2)",
         "growing": "Feed at a quarter to half the strength on the label, a few times across the Growing season, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -400,7 +400,7 @@
         "dormant": "Keep it cooler and drier, letting the top half of the soil dry. This rest sets the next flower buds."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1), or a bloom one once buds form",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), or a bloom one once buds form",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -451,7 +451,7 @@
         "dormant": "Let the surface dry a little more between waterings. It needs no cold rest: keep it warm."
       },
       "fertilizer": {
-        "type": "No fertiliser, or orchid fertiliser (roughly 1-1-1) at a quarter strength",
+        "type": "No fertiliser, or orchid fertiliser (N-P-K roughly 1-1-1) at a quarter strength",
         "growing": "It feeds itself through its pitchers. If it grows no new pitchers, drop a pinch of quarter-strength orchid fertiliser into one or two of them, never onto the soil.",
         "dormant": "Don't feed it."
       },
@@ -476,7 +476,7 @@
         "dormant": "Water only when the soil is nearly dry right through. Wet roots in winter kill these more often than cold does."
       },
       "fertilizer": {
-        "type": "Low-nitrogen fertiliser (roughly 1-2-2), or none",
+        "type": "Low-nitrogen fertiliser (N-P-K roughly 1-2-2), or none",
         "growing": "Feed lightly, at a quarter to half the strength on the label, a few times across the Growing season. Rich soil makes them soft and less fragrant.",
         "dormant": "Stop feeding."
       },
@@ -502,7 +502,7 @@
         "dormant": "Water less, letting the surface dry. Many die back or run to seed in the cold; tender ones like basil need a warm, bright windowsill indoors."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1), organic if you eat the leaves",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), organic if you eat the leaves",
         "growing": "Feed lightly, at half the strength on the label: too much makes big leaves with little flavour.",
         "dormant": "Stop feeding."
       },
@@ -529,7 +529,7 @@
         "dormant": "Water only when the soil is dry a good way down. Outdoors, rain may be enough; indoors in a cool, bright room, water sparingly."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (roughly 1-1-1), or a high-potash one (roughly 1-1-2) for flowering kinds",
+        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), or a high-potash one (N-P-K roughly 1-1-2) for flowering kinds",
         "growing": "Feed at the strength on the label, on moist soil.",
         "dormant": "Stop feeding, so new growth can toughen up before the cold."
       },
@@ -555,7 +555,7 @@
         "dormant": "Let the top half of the soil dry before watering. A cool, bright spot (5 to 12 °C) suits it better than a warm, dark room."
       },
       "fertilizer": {
-        "type": "Citrus fertiliser with iron and magnesium (roughly 3-1-2)",
+        "type": "Citrus fertiliser with iron and magnesium (N-P-K roughly 3-1-2)",
         "growing": "Feed at the strength on the label, on moist soil.",
         "dormant": "Stop feeding, or feed at half the strength if it's kept warm and still growing."
       },
@@ -581,7 +581,7 @@
         "dormant": "Water when the top 2 cm of soil are dry, and don't let the root ball dry out while buds are forming."
       },
       "fertilizer": {
-        "type": "Ericaceous fertiliser for acid-loving plants (roughly 1-1-1)",
+        "type": "Ericaceous fertiliser for acid-loving plants (N-P-K roughly 1-1-1)",
         "growing": "Feed at the strength on the label, on moist soil, from the end of flowering through the Growing season.",
         "dormant": "Stop feeding."
       },
@@ -606,7 +606,7 @@
         "dormant": "Many are grown for one season and finish with the cold. Ones kept over winter want a cool, bright spot and just enough water to stop the soil drying out."
       },
       "fertilizer": {
-        "type": "High-potash liquid feed, such as tomato feed (roughly 1-1-3)",
+        "type": "High-potash liquid feed, such as tomato feed (N-P-K roughly 1-1-3)",
         "growing": "Feed at the strength on the label from the first flowers on: potash keeps the flowers and fruit coming.",
         "dormant": "Stop feeding."
       },
@@ -634,7 +634,7 @@
         "dormant": "Once flowering ends and the leaves yellow, water less, and stop once they've died back. Keep the resting bulb dry and cool until new shoots appear, then start again."
       },
       "fertilizer": {
-        "type": "High-potash liquid fertiliser (roughly 1-1-2)",
+        "type": "High-potash liquid fertiliser (N-P-K roughly 1-1-2)",
         "growing": "Feed at half the strength on the label from the first flowers until the leaves start to yellow: this refills the bulb for next time.",
         "dormant": "Don't feed a resting bulb."
       },

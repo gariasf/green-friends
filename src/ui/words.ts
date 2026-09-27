@@ -130,10 +130,13 @@ export function whoseSchedule(plant: Plant): string {
   return `Own schedule for ${own.map((type) => CARE_WORDS[type].label).join(' and ')}`;
 }
 
-/** A seasonal schedule as the Care Guide shows it: "every 7 days, every 14 in Dormant". */
+/** A seasonal schedule as the Care Guide shows it: "every 7 days, every 14 days in the Dormant season". */
 export function scheduleLine({ growing, dormant }: SeasonalSchedule): string {
   if (growing === null) return 'no schedule';
-  const inDormant = dormant === null ? 'paused in Dormant' : `every ${dormant} in Dormant`;
+  const inDormant =
+    dormant === null
+      ? 'paused in the Dormant season'
+      : `every ${plural(dormant, 'day')} in the Dormant season`;
   return `every ${plural(growing, 'day')}, ${inDormant}`;
 }
 
@@ -148,7 +151,7 @@ const FACT_DONE = { watering: 'Last watered', fertilizing: 'Last fed', repotting
 
 /**
  * What the Care Log says beside a cause, with no diagnosis in it: "Last watered 6 days ago.
- * Schedule: every 7 days, every 14 in Dormant", "Last fed: never logged. No schedule".
+ * Schedule: every 7 days, every 14 days in the Dormant season", "Last fed: never logged. No schedule".
  */
 export function causeFactLine(fact: CauseFact, today: string): string {
   if (fact.kind === 'season') return seasonLine(fact.season, today);
@@ -171,32 +174,53 @@ function agoLine(day: string, today: string): string {
   return `${plural(count, unit)} ago`;
 }
 
-/**
- * The light scale's steps and the direct-sun words, as the Care group's Light row and the Care
- * Guide show them (spec #48).
- */
-export const LIGHT_WORDS = {
-  level: {
-    low: 'Low',
-    medium: 'Medium',
-    'bright-indirect': 'Bright indirect',
-    direct: 'Direct sun',
-  },
-  directSun: {
-    none: 'No direct sun',
-    morning: 'Morning sun',
-    some: 'A few hours of sun',
-    'all-day': 'Full sun',
-  },
+const LIGHT_LEVEL = {
+  low: 'Low light',
+  medium: 'Medium light',
+  'bright-indirect': 'Bright indirect light',
+  direct: 'Direct sun',
 } as const;
 
-/** A profile's light in one line, for VoiceOver: "Light: bright indirect, morning sun". */
-export function lightLabel({
+const DIRECT_SUN = {
+  none: 'No direct sun',
+  morning: 'Morning sun',
+  some: 'A few hours of sun',
+  'all-day': 'Sun all day',
+} as const;
+
+/** Direct sun says itself once, as gardeners do, then its hours. */
+const IN_SUN = {
+  some: ['Part sun', '3 to 6 hours a day'],
+  'all-day': ['Full sun', '6 hours or more a day'],
+} as const;
+
+/**
+ * A profile's light in the two parts the Care group's Light row and the Care Guide show beneath
+ * the scale (spec #48): how bright, then how much direct sun. "Bright indirect light · Morning
+ * sun", "Full sun · 6 hours or more a day".
+ */
+export function lightWords({
   level,
   directSun,
-}: Pick<CareProfile['light'], 'level' | 'directSun'>) {
-  const words = [LIGHT_WORDS.level[level], LIGHT_WORDS.directSun[directSun]];
-  return `Light: ${words.map((word) => word.toLowerCase()).join(', ')}`;
+}: Pick<CareProfile['light'], 'level' | 'directSun'>): readonly [string, string] {
+  if (level === 'direct' && (directSun === 'some' || directSun === 'all-day')) {
+    return IN_SUN[directSun];
+  }
+  return [LIGHT_LEVEL[level], DIRECT_SUN[directSun]];
+}
+
+/** A profile's light in one line, for VoiceOver: "Light: bright indirect light, morning sun". */
+export function lightLabel(light: Pick<CareProfile['light'], 'level' | 'directSun'>) {
+  return `Light: ${lightWords(light)
+    .map((word) => word.toLowerCase())
+    .join(', ')}`;
+}
+
+/** Beneath a fertiliser's name, what its ratio's three numbers are; none for "No fertiliser". */
+export function npkNote(type: string): string | null {
+  return type.includes('N-P-K')
+    ? 'N-P-K: the three numbers on the label, for nitrogen, phosphorus and potassium.'
+    : null;
 }
 
 /** The Symptom list's two groups, in order. */
@@ -225,7 +249,7 @@ export function feedLine(profile: CareProfile, season: SeasonOn['season']): stri
   return season === 'dormant' ? profile.fertilizer.dormant : profile.fertilizer.type;
 }
 
-/** Under Watering and Fertiliser: "Your schedule: every 7 days, every 14 in Dormant". */
+/** Under Watering and Fertiliser: "Your schedule: every 7 days, every 14 days in the Dormant season". */
 export function yourSchedule(schedule: SeasonalSchedule): string {
   return `Your schedule: ${scheduleLine(schedule)}`;
 }

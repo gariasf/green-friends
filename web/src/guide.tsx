@@ -12,9 +12,10 @@ import {
   causeFactLine,
   causesIntro,
   feedLine,
-  LIGHT_WORDS,
   lightLabel,
+  lightWords,
   NO_CARE_GUIDE,
+  npkNote,
   PET_WARNING,
   seasonLine,
   SOMETHING_WRONG,
@@ -136,7 +137,7 @@ function LightScale({ light }: { light: CareProfile['light'] }) {
         ))}
       </span>
       <span className="quiet" aria-hidden="true">
-        {LIGHT_WORDS.level[light.level]} · {LIGHT_WORDS.directSun[light.directSun]}
+        {lightWords(light).join(' · ')}
       </span>
     </span>
   );
@@ -198,6 +199,9 @@ export function GuideView({
         <p>
           <strong>{profile.fertilizer.type}</strong>
         </p>
+        {npkNote(profile.fertilizer.type) && (
+          <p className="quiet">{npkNote(profile.fertilizer.type)}</p>
+        )}
         <p>{profile.fertilizer[season]}</p>
         <p className="quiet">{yourSchedule(schedule.fertilize)}</p>
       </section>

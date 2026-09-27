@@ -1,4 +1,12 @@
-import { causeFactLine, dueLine, LIGHT_WORDS, lightLabel, scheduleLine, seasonLine } from './words';
+import {
+  causeFactLine,
+  dueLine,
+  lightLabel,
+  lightWords,
+  npkNote,
+  scheduleLine,
+  seasonLine,
+} from './words';
 
 describe('dueLine', () => {
   it('says what is Overdue, then what is Due today', () => {
@@ -20,8 +28,12 @@ describe('dueLine', () => {
 
 describe('Care Guide lines', () => {
   it('says a seasonal schedule in one line', () => {
-    expect(scheduleLine({ growing: 7, dormant: 14 })).toBe('every 7 days, every 14 in Dormant');
-    expect(scheduleLine({ growing: 30, dormant: null })).toBe('every 30 days, paused in Dormant');
+    expect(scheduleLine({ growing: 7, dormant: 14 })).toBe(
+      'every 7 days, every 14 days in the Dormant season',
+    );
+    expect(scheduleLine({ growing: 30, dormant: null })).toBe(
+      'every 30 days, paused in the Dormant season',
+    );
     expect(scheduleLine({ growing: null, dormant: null })).toBe('no schedule');
   });
 
@@ -40,10 +52,10 @@ describe('Care Guide lines', () => {
   it('says what the Care Log says beside a cause', () => {
     const schedule = { growing: 7, dormant: 14 };
     expect(causeFactLine({ kind: 'watering', lastOn: '2026-09-16', schedule }, '2026-09-22')).toBe(
-      'Last watered 6 days ago. Schedule: every 7 days, every 14 in Dormant',
+      'Last watered 6 days ago. Schedule: every 7 days, every 14 days in the Dormant season',
     );
     expect(causeFactLine({ kind: 'watering', lastOn: '2026-09-21', schedule }, '2026-09-22')).toBe(
-      'Last watered yesterday. Schedule: every 7 days, every 14 in Dormant',
+      'Last watered yesterday. Schedule: every 7 days, every 14 days in the Dormant season',
     );
     expect(
       causeFactLine(
@@ -65,14 +77,43 @@ describe('Care Guide lines', () => {
     ).toBe('Growing season');
   });
 
-  it('says a light step and its direct sun, and both in one line for VoiceOver', () => {
-    expect(LIGHT_WORDS.level['bright-indirect']).toBe('Bright indirect');
-    expect(LIGHT_WORDS.directSun.some).toBe('A few hours of sun');
+  it('says how bright, then how much direct sun', () => {
+    expect(lightWords({ level: 'bright-indirect', directSun: 'morning' })).toEqual([
+      'Bright indirect light',
+      'Morning sun',
+    ]);
+    expect(lightWords({ level: 'medium', directSun: 'none' })).toEqual([
+      'Medium light',
+      'No direct sun',
+    ]);
+    expect(lightWords({ level: 'bright-indirect', directSun: 'some' })).toEqual([
+      'Bright indirect light',
+      'A few hours of sun',
+    ]);
+  });
+
+  it('says direct sun once, with its hours', () => {
+    expect(lightWords({ level: 'direct', directSun: 'all-day' })).toEqual([
+      'Full sun',
+      '6 hours or more a day',
+    ]);
+    expect(lightWords({ level: 'direct', directSun: 'some' })).toEqual([
+      'Part sun',
+      '3 to 6 hours a day',
+    ]);
+  });
+
+  it('says the light in one line for VoiceOver', () => {
     expect(lightLabel({ level: 'bright-indirect', directSun: 'morning' })).toBe(
-      'Light: bright indirect, morning sun',
+      'Light: bright indirect light, morning sun',
     );
     expect(lightLabel({ level: 'direct', directSun: 'all-day' })).toBe(
-      'Light: direct sun, full sun',
+      'Light: full sun, 6 hours or more a day',
     );
+  });
+
+  it('explains N-P-K beneath a fertiliser that names it', () => {
+    expect(npkNote('Balanced liquid fertiliser (N-P-K roughly 1-1-1)')).toMatch(/nitrogen/);
+    expect(npkNote('No fertiliser')).toBeNull();
   });
 });
