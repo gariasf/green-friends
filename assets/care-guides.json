@@ -443,6 +443,31 @@
       }
     },
     {
+      "id": "tropical-pitcher",
+      "name": "Tropical pitcher plant",
+      "watering": {
+        "how": "Use only rain, distilled or reverse-osmosis water: the minerals in tap water kill it. Water over the soil until it drains, and keep a little water in the pitchers.",
+        "growing": "Keep the soil moist but never standing in water: water as soon as the surface feels dry.",
+        "dormant": "Let the surface dry a little more between waterings. It needs no cold rest: keep it warm."
+      },
+      "fertilizer": {
+        "type": "No fertiliser, or orchid fertiliser (roughly 1-1-1) at a quarter strength",
+        "growing": "It feeds itself through its pitchers. If it grows no new pitchers, drop a pinch of quarter-strength orchid fertiliser into one or two of them, never onto the soil.",
+        "dormant": "Don't feed it."
+      },
+      "light": {
+        "level": "bright-indirect",
+        "directSun": "morning",
+        "text": "Bright, indirect light: an east window, or a metre back from a south or west one. Morning sun is fine; hot midday sun burns it. It needs warmth (above 15 °C) and humid air, or it stops making pitchers."
+      },
+      "soil": "Nutrient-free and airy: sphagnum moss with perlite and orchid bark, in a hanging pot so the pitchers can dangle. Never ordinary compost.",
+      "causes": {
+        "brown-edges": ["salts", "low-humidity", "underwatering"],
+        "pale-leggy": ["low-light"],
+        "no-growth": ["dormancy", "low-light"]
+      }
+    },
+    {
       "id": "mediterranean-herb",
       "name": "Mediterranean herb",
       "watering": {
@@ -1110,8 +1135,8 @@
       "funFactSource": "https://en.wikipedia.org/wiki/Aloysia_citrodora"
     },
     "Q1493": {
-      "profile": "bromeliad",
-      "careNotes": "It takes full sun and drier soil than other bromeliads.",
+      "profile": "succulent",
+      "careNotes": "A bromeliad grown like a succulent: full sun and soil that dries between waterings. Keep a little water in its central cup while it's growing, and grow new plants from the leafy top of a shop-bought pineapple.",
       "funFact": "In 18th-century Europe a pineapple was such a costly status symbol that hosts showed off the same fruit at dinner after dinner until it rotted. In the wild, hummingbirds do most of the pollinating.",
       "funFactSource": "https://en.wikipedia.org/wiki/Pineapple"
     },
@@ -2588,8 +2613,7 @@
       "funFactSource": "https://en.wikipedia.org/wiki/Neoregelia_carolinae"
     },
     "Q217530": {
-      "profile": "carnivorous",
-      "careNotes": "A tropical kind: it needs no cold rest and dislikes full sun. Keep it warm and humid, in bright, indirect light, with the soil moist but not standing in water, and a little water in the pitchers.",
+      "profile": "tropical-pitcher",
       "funFact": "The name monkey cups seemed far-fetched to one National Geographic writer until, in Sarawak, a freed pet orangutan took a pitcher he offered and neatly drank it down. Some of the largest species occasionally trap frogs or small mammals.",
       "funFactSource": "https://en.wikipedia.org/wiki/Nepenthes"
     },
