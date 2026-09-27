@@ -21,7 +21,8 @@
   --repot: #681916;
   --note: #8e8e93; /* systemGray */
   --sun: var(--fertilize); /* Olive Ocher, as theme.ts's sun */
-  --segment: #ffffff; /* a segmented control's selected segment, as iOS draws it */
+  /* A segmented control's selected segment, as iOS draws it; the app draws SwiftUI's own, so theme.ts has none. */
+  --segment: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -638,13 +639,13 @@ nav a[aria-current='page'] {
 }
 
 /* The Care Guide (spec #48): the Plant pane's Care group, the full guide and the Symptoms. */
-.guide-sun,
-.guide-fact {
+.guide-sun {
   --hue: var(--sun);
 }
 
 .guide-guide,
-.guide-leaf {
+.guide-leaf,
+.guide-fact {
   --hue: var(--tint);
 }
 

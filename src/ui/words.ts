@@ -208,9 +208,32 @@ export const SYMPTOM_GROUPS: { kind: Symptom['kind']; title: string }[] = [
 /** Beneath Something wrong?, what the Symptoms cover. */
 export const SOMETHING_WRONG = 'Brown tips, yellow leaves, pests';
 
-/** Beside a cause whose treatment can harm pets. */
-export const PET_WARNING =
-  'Rubbing alcohol, neem oil and insecticidal soap can harm pets: keep them away until the leaves are dry.';
+/** Beside a cause whose treatment can harm pets; the cause's What to do names the treatment. */
+export const PET_WARNING = 'This treatment can harm pets: keep them away until the leaves are dry.';
+
+/** A plant without a Care Profile, in place of the Care group's rows. */
+export const NO_CARE_GUIDE = {
+  title: 'No Care Guide yet',
+  line: 'Set a Species to see how to water, feed and place it.',
+};
+
+/** The Symptom list's title. */
+export const SYMPTOMS_TITLE = 'What do you see?';
+
+/** The Care group's Feed row: the fertiliser while Growing, the Dormant advice (usually stop) while Dormant. */
+export function feedLine(profile: CareProfile, season: SeasonOn['season']): string {
+  return season === 'dormant' ? profile.fertilizer.dormant : profile.fertilizer.type;
+}
+
+/** Under Watering and Fertiliser: "Your schedule: every 7 days, every 14 in Dormant". */
+export function yourSchedule(schedule: SeasonalSchedule): string {
+  return `Your schedule: ${scheduleLine(schedule)}`;
+}
+
+/** The Note a cause's Log it as a Note fills in: "Brown, crispy tips: maybe dry air." */
+export function symptomNote(symptom: Symptom, causeName: string): string {
+  return `${symptom.name}: maybe ${causeName.toLowerCase()}.`;
+}
 
 /** The first line above a Symptom's causes. */
 export function causesIntro(profile: CareProfile | null): string {

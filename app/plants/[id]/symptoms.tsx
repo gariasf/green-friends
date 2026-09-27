@@ -2,15 +2,15 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { guides, Row } from '@/src/ui/CareGuide';
-import { colors, group, space, text } from '@/src/ui/theme';
-import { SYMPTOM_GROUPS } from '@/src/ui/words';
+import { colors, group, space } from '@/src/ui/theme';
+import { SYMPTOM_GROUPS, SYMPTOMS_TITLE } from '@/src/ui/words';
 
 /** What can be seen going wrong, to pick from (spec #48): leaves and stems, then pests. */
 export default function SymptomsScreen() {
   const { id } = useLocalSearchParams<'/plants/[id]/symptoms'>();
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'What do you see?' }} />
+      <Stack.Screen options={{ title: SYMPTOMS_TITLE }} />
       {SYMPTOM_GROUPS.map(({ kind, title }) => (
         <View key={kind}>
           <Text accessibilityRole="header" style={[group.header, styles.head]}>
@@ -37,9 +37,6 @@ export default function SymptomsScreen() {
           </View>
         </View>
       ))}
-      <Text style={[text.footnote, styles.head]}>
-        Pick what you see, and the causes most likely for this plant come first.
-      </Text>
     </ScrollView>
   );
 }

@@ -8,7 +8,7 @@ import { localDay } from '@/src/core/dates';
 import { db } from '@/src/db/client';
 import { guides } from '@/src/ui/CareGuide';
 import { colors, pressedStyle, space, text } from '@/src/ui/theme';
-import { causeFactLine, causesIntro, PET_WARNING } from '@/src/ui/words';
+import { causeFactLine, causesIntro, PET_WARNING, symptomNote } from '@/src/ui/words';
 
 /**
  * One Symptom (spec #48): its causes, those typical of the plant's Care Profile first, each with
@@ -45,9 +45,13 @@ export default function SymptomScreen() {
                 </Text>
               </View>
             )}
-            <Text style={text.headline}>How to tell</Text>
+            <Text accessibilityRole="header" style={text.headline}>
+              How to tell
+            </Text>
             <Text style={text.body}>{cause.tell}</Text>
-            <Text style={text.headline}>What to do</Text>
+            <Text accessibilityRole="header" style={text.headline}>
+              What to do
+            </Text>
             <Text style={text.body}>{cause.fix}</Text>
             {cause.petWarning && (
               <View accessible style={styles.warning}>
@@ -71,7 +75,7 @@ export default function SymptomScreen() {
                   params: {
                     id,
                     type: 'note',
-                    note: `${symptom.name}: maybe ${cause.name.toLowerCase()}.`,
+                    note: symptomNote(symptom, cause.name),
                   },
                 })
               }

@@ -14,7 +14,15 @@ import {
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
-import { LIGHT_WORDS, lightLabel, scheduleLine, seasonLine, SOMETHING_WRONG } from '@/src/ui/words';
+import {
+  feedLine,
+  LIGHT_WORDS,
+  lightLabel,
+  NO_CARE_GUIDE,
+  seasonLine,
+  SOMETHING_WRONG,
+  yourSchedule,
+} from '@/src/ui/words';
 
 /**
  * The phone's Care Guide (spec #48, the prototype's variant A): the Care group on the Plant screen,
@@ -28,7 +36,7 @@ type Season = SeasonOn['season'];
 const WATER = CARE_COPY.water;
 const FEED = CARE_COPY.fertilize;
 
-export function openSymptoms(id: string) {
+function openSymptoms(id: string) {
   router.push({ pathname: '/plants/[id]/symptoms', params: { id } });
 }
 
@@ -110,7 +118,7 @@ function SomethingWrong({ id, first }: { id: string; first?: boolean }) {
  * direct sun in words beneath: "Bright indirect · Morning sun". VoiceOver reads `lightLabel` from
  * the row or card holding it.
  */
-export function LightScale({ light }: { light: CareProfile['light'] }) {
+function LightScale({ light }: { light: CareProfile['light'] }) {
   return (
     <View style={styles.scale}>
       <View style={styles.steps}>
@@ -161,12 +169,7 @@ export function CareGroup({
               title="Water"
               body={profile.watering[now]}
             />
-            <Row
-              symbol={FEED.symbol}
-              tint={FEED.hue}
-              title="Feed"
-              body={now === 'dormant' ? profile.fertilizer.dormant : profile.fertilizer.type}
-            />
+            <Row symbol={FEED.symbol} tint={FEED.hue} title="Feed" body={feedLine(profile, now)} />
             <Row
               symbol="sun.max.fill"
               tint={colors.sun}
@@ -197,8 +200,8 @@ function NoCareGuide() {
       first
       symbol="leaf.fill"
       tint={colors.tint}
-      title="No Care Guide yet"
-      body="Set a Species to see how to water, feed and place it."
+      title={NO_CARE_GUIDE.title}
+      body={NO_CARE_GUIDE.line}
     />
   );
 }
@@ -227,13 +230,13 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
       <Card symbol={WATER.symbol} tint={WATER.hue} title="Watering">
         <Text style={text.body}>{profile.watering[season]}</Text>
         <Text style={text.body}>{profile.watering.how}</Text>
-        <YourSchedule line={scheduleLine(schedule.water)} />
+        <YourSchedule line={yourSchedule(schedule.water)} />
       </Card>
 
       <Card symbol={FEED.symbol} tint={FEED.hue} title="Fertiliser">
         <Text style={text.headline}>{profile.fertilizer.type}</Text>
         <Text style={text.body}>{profile.fertilizer[season]}</Text>
-        <YourSchedule line={scheduleLine(schedule.fertilize)} />
+        <YourSchedule line={yourSchedule(schedule.fertilize)} />
       </Card>
 
       <Card symbol="sun.max.fill" tint={colors.sun} title="Light and warmth">
@@ -274,7 +277,7 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
 }
 
 /** A card on the background: a symbol and a heading, then what it holds. */
-export function Card({
+function Card({
   symbol,
   tint,
   title,
@@ -307,7 +310,7 @@ function YourSchedule({ line }: { line: string }) {
         size={14}
         tintColor={colors.secondaryLabel}
       />
-      <Text style={[text.footnote, styles.grow]}>Your schedule: {line}</Text>
+      <Text style={[text.footnote, styles.grow]}>{line}</Text>
     </View>
   );
 }

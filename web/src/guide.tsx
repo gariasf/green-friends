@@ -13,13 +13,16 @@ import {
 import {
   causeFactLine,
   causesIntro,
+  feedLine,
   LIGHT_WORDS,
   lightLabel,
+  NO_CARE_GUIDE,
   PET_WARNING,
-  scheduleLine,
   seasonLine,
   SOMETHING_WRONG,
   SYMPTOM_GROUPS,
+  SYMPTOMS_TITLE,
+  yourSchedule,
 } from '../../src/ui/words';
 import type { Garden } from './garden';
 import { CareIcon, GuideIcon } from './icons';
@@ -64,15 +67,14 @@ export function CareRows({
               <CareIcon type="fertilize" />
               <span className="grow">
                 <strong>Feed</strong>
-                <span className="quiet">
-                  {now === 'dormant' ? profile.fertilizer.dormant : profile.fertilizer.type}
-                </span>
+                <span className="quiet">{feedLine(profile, now)}</span>
               </span>
             </li>
             <li>
               <GuideIcon name="sun" />
               <span className="grow">
-                <strong>Light</strong>
+                {/* The scale's label starts "Light:", so a screen reader hears it once. */}
+                <strong aria-hidden="true">Light</strong>
                 <LightScale light={profile.light} />
               </span>
             </li>
@@ -88,8 +90,8 @@ export function CareRows({
           <li>
             <GuideIcon name="leaf" />
             <span className="grow">
-              <strong>No Care Guide yet</strong>
-              <span className="quiet">Set a Species to see how to water, feed and place it.</span>
+              <strong>{NO_CARE_GUIDE.title}</strong>
+              <span className="quiet">{NO_CARE_GUIDE.line}</span>
             </span>
           </li>
         )}
@@ -183,7 +185,7 @@ export function GuideView({
         </h2>
         <p>{profile.watering[season]}</p>
         <p>{profile.watering.how}</p>
-        <p className="quiet">Your schedule: {scheduleLine(schedule.water)}</p>
+        <p className="quiet">{yourSchedule(schedule.water)}</p>
       </section>
 
       <section className="guide-card">
@@ -195,7 +197,7 @@ export function GuideView({
           <strong>{profile.fertilizer.type}</strong>
         </p>
         <p>{profile.fertilizer[season]}</p>
-        <p className="quiet">Your schedule: {scheduleLine(schedule.fertilize)}</p>
+        <p className="quiet">{yourSchedule(schedule.fertilize)}</p>
       </section>
 
       <section className="guide-card">
@@ -250,7 +252,7 @@ export function SymptomsView({ id, name }: { id: string; name: string }) {
   return (
     <>
       <BackToPlant id={id} name={name} />
-      <h1 tabIndex={-1}>What do you see?</h1>
+      <h1 tabIndex={-1}>{SYMPTOMS_TITLE}</h1>
       {SYMPTOM_GROUPS.map(({ kind, title }) => (
         <section key={kind}>
           <h2>{title}</h2>
@@ -269,9 +271,6 @@ export function SymptomsView({ id, name }: { id: string; name: string }) {
           </ul>
         </section>
       ))}
-      <p className="quiet">
-        Pick what you see, and the causes most likely for this plant come first.
-      </p>
     </>
   );
 }
@@ -300,7 +299,7 @@ export function SymptomView({
   return (
     <>
       <a className="back-plant" href={`#/plant/${id}/symptoms`}>
-        ‹ What do you see?
+        ‹ {SYMPTOMS_TITLE}
       </a>
       <h1 tabIndex={-1}>{symptom.name}</h1>
       <p className="quiet">{causesIntro(profile)}</p>
