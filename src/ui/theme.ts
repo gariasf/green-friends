@@ -113,14 +113,14 @@ export const font = {
  * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
  * Web view's where they can be (28, 22, 15, 13), in set B's weights (ticket #54): SemiBold 600 for
  * what stands out, Regular 400 for the rest. The titles are Young Serif in its one weight (spec
- * #57), the tiles' values with them; no step uses Nunito's 700 yet.
+ * #57); the tiles' values keep title2's size in Nunito Bold 700, which the owner preferred there.
  *
  *   step         size  face         use
  *   large title  34    Young Serif  a tab's navigation bar (Today, Garden, Settings)
  *   nav title    17    Nunito 600   a pushed screen's or a sheet's navigation bar
  *   title1       28    Young Serif  a plant's name on its screen
- *   title2       22    Young Serif  a tile's value, a sheet's title, a Care Guide card's heading,
- *                                   a cause's name, an empty state
+ *   title2       22    Young Serif  a sheet's title, a Care Guide card's heading, a cause's name,
+ *                                   an empty state; a tile's value in Nunito 700 (font.bold)
  *   headline     17    Nunito 600   plant names in a card, section headings, a button's label
  *   body         17    Nunito 400   everything else
  *   subheadline  15    Nunito 400   second lines; 600 (font.semibold) for a care row's label

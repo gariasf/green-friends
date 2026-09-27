@@ -280,7 +280,7 @@ function CareTile({
           <CareSymbol type={type} size={18} />
           <Text style={text.footnote}>{label}</Text>
         </View>
-        <Text style={[text.title2, due && (overdue ? styles.caution : styles.dueToday)]}>
+        <Text style={[styles.tileValue, due && (overdue ? styles.caution : styles.dueToday)]}>
           {value}
           {overdue && <Text style={styles.overdueWord}> overdue</Text>}
         </Text>
@@ -377,6 +377,7 @@ const styles = StyleSheet.create({
   // Grows, so the whole of a tile shorter than its row's tallest is one target.
   tileBody: { flexGrow: 1, gap: space.xs, padding: space.m },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  tileValue: { ...text.title2, ...font.bold },
   done: {
     flexDirection: 'row',
     alignItems: 'center',
