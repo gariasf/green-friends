@@ -97,17 +97,28 @@ export const font = {
   italic: { fontFamily: FAMILY, fontWeight: '400', fontStyle: 'italic' },
   semibold: { fontFamily: FAMILY, fontWeight: '600' },
   bold: { fontFamily: FAMILY, fontWeight: '700' },
-  extraBold: { fontFamily: FAMILY, fontWeight: '800' },
 } as const;
 
 /**
  * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
- * Web view's where they can be (28, 22, 15, 13), the hierarchy carried by weight.
+ * Web view's where they can be (28, 22, 15, 13), the hierarchy carried by weight. The weights are
+ * set B from ticket #54: Nunito's round letters look lighter than their number, so Bold 700 is as
+ * heavy as a title needs and SemiBold 600 marks the rest that stands out.
+ *
+ *   step         size  weight  use
+ *   large title  34    700     a tab's navigation bar (Today, Garden, Settings)
+ *   nav title    17    600     a pushed screen's or a sheet's navigation bar
+ *   title1       28    700     a plant's name on its screen
+ *   title2       22    700     a tile's value, a sheet's title, an empty state
+ *   headline     17    600     plant names in a card, section headings, a button's label
+ *   body         17    400     everything else
+ *   subheadline  15    400     second lines; 600 (font.semibold) for a care row's label
+ *   footnote     13    400     statuses and badges, 600 where they need to stand out
  */
 export const text = StyleSheet.create({
-  title1: { ...font.extraBold, fontSize: 28, color: colors.label },
-  title2: { ...font.extraBold, fontSize: 22, color: colors.label },
-  headline: { ...font.bold, fontSize: 17, color: colors.label },
+  title1: { ...font.bold, fontSize: 28, color: colors.label },
+  title2: { ...font.bold, fontSize: 22, color: colors.label },
+  headline: { ...font.semibold, fontSize: 17, color: colors.label },
   body: { ...font.regular, fontSize: 17, color: colors.label },
   subheadline: { ...font.regular, fontSize: 15, color: colors.secondaryLabel },
   footnote: { ...font.regular, fontSize: 13, color: colors.secondaryLabel },
@@ -115,8 +126,8 @@ export const text = StyleSheet.create({
 
 /** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
 export const headerFonts = {
-  headerTitleStyle: { ...font.bold },
-  headerLargeTitleStyle: { ...font.extraBold },
+  headerTitleStyle: { ...font.semibold },
+  headerLargeTitleStyle: { ...font.bold },
 } as const;
 
 /**
