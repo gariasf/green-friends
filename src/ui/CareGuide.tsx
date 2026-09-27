@@ -12,7 +12,7 @@ import {
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
 import { Icon, type IconName } from '@/src/ui/Icon';
-import { colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, font, group, pressedStyle, radius, space, text } from '@/src/ui/theme';
 import {
   feedLine,
   lightLabel,
@@ -371,13 +371,13 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   scale: { gap: space.xs, marginTop: space.xs },
   steps: { flexDirection: 'row', gap: space.xs },
-  step: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.fill },
+  step: { flex: 1, height: 6, borderRadius: radius.pill, backgroundColor: colors.fill },
   stepMarked: { backgroundColor: colors.sun },
   card: {
     gap: space.s,
     marginHorizontal: space.l,
     padding: space.l,
-    borderRadius: 20,
+    borderRadius: radius.surface,
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
   },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.s,
     padding: space.s,
-    borderRadius: 10,
+    borderRadius: radius.inner,
     backgroundColor: colors.fill,
   },
   warning: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },

@@ -1,14 +1,13 @@
 /*
  * The app's colours, mirrored from src/ui/theme.ts, which stays their source: change one there,
- * then here. iOS's semantic colours are their light and dark values. secondaryLabel is the one
- * departure: iOS's reads 3.3:1 on the background, so this is its Increase Contrast grey, 4.7:1,
- * to #30's 4.5:1 bar.
+ * then here. iOS's semantic colours are their light and dark values.
  */
 :root {
-  --background: #f2f2f7; /* systemGroupedBackground */
-  --surface: #ffffff; /* secondarySystemGroupedBackground */
+  --background: #f5f2e9; /* the warm ground */
+  --surface: #fffdf8; /* a group of rows, flat on the ground */
+  --raised: #fffdf8; /* what you act on, raised: Today's cards, the Care group */
   --label: #000000;
-  --secondary-label: #6c6c70;
+  --secondary-label: #6b665c;
   --separator: rgb(60 60 67 / 0.29);
   --fill: rgb(118 118 128 / 0.12); /* tertiarySystemFill */
   --tint: #417777; /* Dark Medici Blue */
@@ -21,14 +20,19 @@
   --repot: #8a4a3e;
   --note: #8e8e93; /* systemGray */
   --sun: #d1bd1a; /* Olive Ocher, as theme.ts's sun */
-  /* A segmented control's selected segment, as iOS draws it; the app draws SwiftUI's own, so theme.ts has none. */
-  --segment: #ffffff;
+  /* A segmented control's selected segment, on the warm ground; the app draws SwiftUI's own, so theme.ts has none. */
+  --segment: #fffdf8;
+  /* theme.ts's three radii: a surface on the ground, a photo or a control, a pill. */
+  --radius-surface: 24px;
+  --radius-inner: 12px;
+  --radius-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
-    --surface: #1c1c1e;
+    --background: #15130f;
+    --surface: #211e19;
+    --raised: #29251f;
     --label: #ffffff;
     --secondary-label: rgb(235 235 245 / 0.6);
     --separator: rgb(84 84 88 / 0.6);
@@ -40,7 +44,7 @@
     --water: #8aa9c6;
     --fertilize: #bdb070;
     --repot: #c07b6e;
-    --segment: #636366;
+    --segment: #4a453c;
   }
 }
 
@@ -205,7 +209,7 @@ nav a {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-inner);
   font-weight: 500;
 }
 
@@ -224,7 +228,7 @@ nav a[aria-current='page'] {
 .count {
   min-width: 1.25rem;
   padding: 0 0.375rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--tint);
   color: var(--surface);
   font-size: var(--text-xs);
@@ -331,20 +335,18 @@ nav a[aria-current='page'] {
   flex: none;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-inner);
   object-fit: cover;
 }
 
 .thumb.lg {
   width: 64px;
   height: 64px;
-  border-radius: 14px;
 }
 
 .thumb.xl {
   width: 88px;
   height: 88px;
-  border-radius: 18px;
 }
 
 /* Decorative and hidden from screen readers, so tint on Ecru's 2.46:1 is allowed, as on the phone. */
@@ -412,7 +414,7 @@ nav a[aria-current='page'] {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem;
-  border-radius: 10px;
+  border-radius: var(--radius-inner);
 }
 
 .list a:hover {
@@ -453,7 +455,7 @@ nav a[aria-current='page'] {
   flex: none;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
 }
 
 .dot.overdue {
@@ -474,7 +476,7 @@ nav a[aria-current='page'] {
 }
 
 .group {
-  border-radius: 16px;
+  border-radius: var(--radius-surface);
   background: var(--surface);
   overflow: hidden;
 }
@@ -506,8 +508,8 @@ nav a[aria-current='page'] {
   height: 100%;
   box-sizing: border-box;
   padding: 1rem;
-  border-radius: 16px;
-  background: var(--surface);
+  border-radius: var(--radius-surface);
+  background: var(--raised);
 }
 
 .card-body {
@@ -592,7 +594,7 @@ nav a[aria-current='page'] {
   display: inline-block;
   margin-top: 0.5rem;
   padding: 0.25rem 0.625rem;
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   font-size: var(--text-xs);
   font-weight: 600;
@@ -605,6 +607,23 @@ nav a[aria-current='page'] {
 
 .care {
   margin: 0 0 0.5rem;
+  background: var(--raised);
+}
+
+/* Raised off the ground, as the phone's useRaised: a warm two-part shadow in light mode; in dark
+   mode the lighter surface does the lifting. */
+.card,
+.care {
+  box-shadow:
+    0 1px 2px rgb(70 56 24 / 0.08),
+    0 6px 18px rgb(70 56 24 / 0.09);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card,
+  .care {
+    box-shadow: none;
+  }
 }
 
 .care > div {
@@ -712,7 +731,7 @@ nav a[aria-current='page'] {
 .steps > span {
   flex: 1;
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
 }
 
@@ -736,7 +755,7 @@ nav a[aria-current='page'] {
   max-width: 24rem;
   margin: 0.75rem 0 1rem;
   padding: 2px;
-  border-radius: 10px;
+  border-radius: var(--radius-inner);
   background: var(--fill);
 }
 
@@ -744,7 +763,7 @@ nav a[aria-current='page'] {
   flex: 1;
   min-height: 2.25rem;
   border: 0;
-  border-radius: 8px;
+  border-radius: calc(var(--radius-inner) - 2px); /* inside the switch's 2px */
   background: none;
   color: var(--label);
   font: inherit;
@@ -764,7 +783,7 @@ nav a[aria-current='page'] {
 .guide-card {
   margin: 1rem 0;
   padding: 1rem 1.25rem;
-  border-radius: 16px;
+  border-radius: var(--radius-surface);
   background: var(--surface);
 }
 
@@ -800,7 +819,7 @@ nav a[aria-current='page'] {
 
 .guide-card .fact {
   padding: 0.5rem 0.75rem;
-  border-radius: 10px;
+  border-radius: var(--radius-inner);
   background: var(--fill);
 }
 

@@ -6,7 +6,15 @@ import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { Field, TextButton } from '@/src/ui/Form';
 import { scientificBeneath } from '@/src/ui/words';
-import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import {
+  accessibilitySize,
+  colors,
+  group,
+  pressedStyle,
+  radius,
+  space,
+  text,
+} from '@/src/ui/theme';
 
 /**
  * A Species search, as New plant and Edit plant pick one: a search field, the matches best first
@@ -100,7 +108,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.m,
     padding: space.m,
-    borderRadius: 10,
+    borderRadius: radius.surface,
+    borderCurve: 'continuous',
     // Not tintSoft: the tinted action reads only 2.46:1 on Ecru.
     backgroundColor: colors.surface,
   },

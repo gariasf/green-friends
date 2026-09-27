@@ -39,7 +39,17 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
 import { choosePhoto, Initial, photoFiles, photoUri } from '@/src/ui/Photo';
-import { accessibilitySize, colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
+import {
+  accessibilitySize,
+  colors,
+  font,
+  group,
+  pressedStyle,
+  radius,
+  space,
+  text,
+  useRaised,
+} from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from '@/src/ui/words';
@@ -256,8 +266,9 @@ function CareTile({
   const due = status.state === 'due';
   const overdue = due && status.daysOverdue > 0;
   const last = lastLine(lastDone, today);
+  const raised = useRaised();
   return (
-    <View style={styles.tile}>
+    <View style={[styles.tile, raised]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${spoken}. ${last}`}
@@ -336,7 +347,7 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
     paddingHorizontal: space.s,
     paddingVertical: space.xs,
-    borderRadius: 12,
+    borderRadius: radius.pill,
     backgroundColor: colors.fill,
   },
   badgeToxic: { backgroundColor: colors.cautionSoft },
@@ -352,17 +363,14 @@ const styles = StyleSheet.create({
     marginBottom: space.m,
     // At least the Unarchive button's hitSlop, above and below it.
     padding: space.m,
-    borderRadius: 12,
+    borderRadius: radius.surface,
+    borderCurve: 'continuous',
     backgroundColor: colors.surface,
   },
   bannerStacked: { flexDirection: 'column', alignItems: 'flex-start' },
   tiles: { flexDirection: 'row', gap: space.s, paddingHorizontal: space.l },
   tilesStacked: { flexDirection: 'column' },
-  tile: {
-    flex: 1,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-  },
+  tile: { flex: 1, borderRadius: radius.surface, borderCurve: 'continuous' },
   // Grows, so the whole of a tile shorter than its row's tallest is one target.
   tileBody: { flexGrow: 1, gap: space.xs, padding: space.m },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
@@ -375,7 +383,7 @@ const styles = StyleSheet.create({
     marginHorizontal: space.m,
     marginBottom: space.m,
     paddingVertical: space.xs,
-    borderRadius: 10,
+    borderRadius: radius.inner,
     backgroundColor: colors.tint,
   },
   doneLabel: { ...text.subheadline, ...font.semibold, color: colors.onTint },
@@ -390,7 +398,7 @@ const styles = StyleSheet.create({
   timeline: { paddingHorizontal: space.xl },
   entry: { flexDirection: 'row', gap: space.m },
   rail: { alignItems: 'center', width: 12 },
-  dot: { width: 12, height: 12, borderRadius: 6, marginTop: space.xs },
+  dot: { width: 12, height: 12, borderRadius: radius.pill, marginTop: space.xs },
   line: { flex: 1, width: 2, marginVertical: 2, backgroundColor: colors.separator },
   entryBody: { flex: 1, paddingBottom: space.l },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s, padding: space.xl },
@@ -399,7 +407,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: space.m,
     paddingVertical: space.xs,
-    borderRadius: 14,
+    borderRadius: radius.pill,
     backgroundColor: colors.fill,
   },
 });

@@ -1,5 +1,5 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
-import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native';
+import { DynamicColorIOS, StyleSheet, useColorScheme, type ColorSchemeName } from 'react-native';
 
 // The palette (ticket #34): four colours from Sanzo Wada's A Dictionary of Color Combinations,
 // their hex the naive conversion of the owner's CMYK, each but Olive Ocher with a dark shade.
@@ -11,22 +11,43 @@ const ECRU = { light: '#c0b490', dark: '#3a3526' };
 const OLIVE = '#d1bd1a';
 
 /**
- * The app's colours, the only ones it uses: iOS semantic colours, which follow light and dark
- * mode and Increase Contrast by themselves, the palette above, and two status colours in iOS's
- * shades. React Native draws text black unless told otherwise, so every Text takes its colour
+ * The warm ground and its surfaces (spec #61), from Ecru's hue. The light ground is as pale as the
+ * tint's 4.5:1 on it allows (4.54:1); dark mode's is a warm near-black, and its raised surface a
+ * step lighter, as light as caution's 4.5:1 on it allows (4.62:1). `navigationTheme` repeats the
+ * ground.
+ */
+const GROUND = { light: '#f5f2e9', dark: '#15130f' };
+const SURFACE = { light: '#fffdf8', dark: '#211e19' };
+const RAISED = { light: '#fffdf8', dark: '#29251f' };
+
+/**
+ * The app's colours, the only ones it uses: the warm ground and surfaces above, iOS semantic
+ * colours, which follow light and dark mode and Increase Contrast by themselves, the palette, and
+ * the status colours. React Native draws text black unless told otherwise, so every Text takes its colour
  * from here, through `text`.
  */
 export const colors = {
   /** Behind a screen's content. */
-  background: Color.ios.systemGroupedBackground,
-  /** A card or a group of rows on the background. */
-  surface: Color.ios.secondarySystemGroupedBackground,
+  background: DynamicColorIOS(GROUND),
+  /** A group of rows or a banner, flat on the background. */
+  surface: DynamicColorIOS(SURFACE),
+  /** What you act on, raised off the background (`useRaised`): Today's cards, the tiles. */
+  raised: DynamicColorIOS(RAISED),
   /** Behind a sheet's content: opaque, and lifted in dark mode. */
   sheet: Color.ios.systemBackground,
   /** Something floating above the screen, such as the undo toast. */
   floating: Color.ios.tertiarySystemBackground,
   label: Color.ios.label,
-  secondaryLabel: Color.ios.secondaryLabel,
+  /**
+   * Every second line. iOS's reads 3.3:1 on a light ground, so light mode takes a warm grey, 5.1:1
+   * on the ground and 5.6:1 on a surface; dark mode keeps iOS's, 5.5:1 or better, and its
+   * Increase Contrast shade.
+   */
+  secondaryLabel: DynamicColorIOS({
+    light: '#6b665c',
+    dark: 'rgba(235, 235, 245, 0.6)',
+    highContrastDark: 'rgba(235, 235, 245, 0.7)',
+  }),
   tertiaryLabel: Color.ios.tertiaryLabel,
   placeholder: Color.ios.placeholderText,
   separator: Color.ios.separator,
@@ -84,10 +105,33 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
     colors: {
       ...base.colors,
       primary: dark ? MEDICI.dark : MEDICI.light,
-      // systemGroupedBackground, as `colors.background` resolves it.
-      background: dark ? '#000000' : '#f2f2f7',
+      background: dark ? GROUND.dark : GROUND.light,
     },
   };
+}
+
+/**
+ * Three radii (spec #61): `surface` for a surface on the ground (a group, a card, a tile, a banner),
+ * `inner` for a photo or a control inside one (the surface's less its 12 pt padding) or on its own,
+ * and `pill` for chips, badges and anything round. Settings' Form keeps SwiftUI's own.
+ */
+export const radius = { surface: 24, inner: 12, pill: 999 } as const;
+
+const RAISED_STYLE = StyleSheet.create({
+  light: {
+    backgroundColor: colors.raised,
+    boxShadow: '0 1px 2px rgba(70, 56, 24, 0.08), 0 6px 18px rgba(70, 56, 24, 0.09)',
+  },
+  dark: { backgroundColor: colors.raised },
+});
+
+/**
+ * What you act on, lifted off the ground: a soft two-part shadow, warm rather than black, in light
+ * mode; in dark mode the lighter surface does the lifting. iOS clips a shadow with its view's
+ * content, so a raised view never sets `overflow: 'hidden'`.
+ */
+export function useRaised() {
+  return RAISED_STYLE[useColorScheme() === 'dark' ? 'dark' : 'light'];
 }
 
 /** Spacing steps, for margins, paddings and gaps. */
@@ -175,7 +219,7 @@ export const group = StyleSheet.create({
   /** A rounded group of rows, inset from the screen's edges. */
   box: {
     marginHorizontal: space.l,
-    borderRadius: 26,
+    borderRadius: radius.surface,
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
     overflow: 'hidden',

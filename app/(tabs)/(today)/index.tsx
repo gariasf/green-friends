@@ -21,7 +21,17 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { colors, font, group, pressedStyle, space, target, text } from '@/src/ui/theme';
+import {
+  colors,
+  font,
+  group,
+  pressedStyle,
+  radius,
+  space,
+  target,
+  text,
+  useRaised,
+} from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
@@ -161,6 +171,7 @@ function CareCard({
 }) {
   const due = dueCare(plant);
   const [ticked, setTicked] = useState<CareType[]>([]);
+  const raised = useRaised();
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
 
   const tick = (types: CareType[]) => {
@@ -180,7 +191,7 @@ function CareCard({
       layout={LinearTransition}
       entering={FadeIn}
       exiting={FADE_AWAY}
-      style={styles.card}
+      style={[styles.card, raised]}
     >
       <View style={styles.cardHead}>
         <Pressable
@@ -330,9 +341,8 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: space.l,
     marginTop: space.m,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
+    borderRadius: radius.surface,
+    borderCurve: 'continuous',
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', paddingRight: space.s },
   identity: {
@@ -347,7 +357,7 @@ const styles = StyleSheet.create({
   more: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.fill,

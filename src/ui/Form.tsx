@@ -27,7 +27,15 @@ import {
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
 import { Icon } from '@/src/ui/Icon';
-import { accessibilitySize, colors, pressedStyle, space, target, text } from '@/src/ui/theme';
+import {
+  accessibilitySize,
+  colors,
+  pressedStyle,
+  radius,
+  space,
+  target,
+  text,
+} from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
 
@@ -299,7 +307,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 44,
     paddingHorizontal: space.m,
-    borderRadius: 10,
+    borderRadius: radius.inner,
     backgroundColor: colors.fill,
   },
   input: { ...text.body, flex: 1, paddingVertical: space.s },
@@ -317,7 +325,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
     marginTop: space.m,
     paddingHorizontal: space.xl,
-    borderRadius: 12,
+    borderRadius: radius.inner,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.tint,

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { deleteCareEvent } from '@/src/core/careLog';
 import { db } from '@/src/db/client';
 import { TextButton } from '@/src/ui/Form';
-import { colors, font, space, text } from '@/src/ui/theme';
+import { colors, font, radius, space, text } from '@/src/ui/theme';
 
 const UNDO_MS = 4000;
 
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     gap: space.m,
     paddingVertical: space.m,
     paddingHorizontal: space.l,
-    borderRadius: 14,
+    borderRadius: radius.inner,
     backgroundColor: colors.floating,
     // Black, iOS's default shadow colour.
     shadowOpacity: 0.2,

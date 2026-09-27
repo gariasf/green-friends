@@ -15,10 +15,13 @@ import {
 } from '@expo/ui/swift-ui';
 import {
   accessibilityValue,
+  background,
   datePickerStyle,
   disabled,
   environment,
+  listRowBackground,
   pickerStyle,
+  scrollContentBackground,
   tag,
 } from '@expo/ui/swift-ui/modifiers';
 import Constants from 'expo-constants';
@@ -49,6 +52,10 @@ import {
   sync,
   useSyncStatus,
 } from '@/src/ui/useSync';
+
+// The Form on the app's warm ground, its rows on the surface, as the groups React Native draws.
+const FORM = [scrollContentBackground('hidden'), background(colors.background)];
+const ROWS = [listRowBackground(colors.surface)];
 
 /**
  * The months as the phone names them, for the season pickers. Each is named from its 15th: Hermes
@@ -241,8 +248,9 @@ export default function SettingsScreen() {
 
   return (
     <Host style={styles.form} seedColor={colors.tint}>
-      <Form>
+      <Form modifiers={FORM}>
         <Section
+          modifiers={ROWS}
           title="Growing season"
           footer={
             <Text>
@@ -264,6 +272,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={ROWS}
           title="Daily Digest"
           footer={<Text>One notification at this time, and only on days a plant needs you.</Text>}
         >
@@ -280,6 +289,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={ROWS}
           title="Sync"
           footer={
             <Text>
@@ -320,6 +330,7 @@ export default function SettingsScreen() {
 
         {link !== null && (
           <Section
+            modifiers={ROWS}
             title="Pairing link"
             footer={
               <Text>
@@ -335,6 +346,7 @@ export default function SettingsScreen() {
         )}
 
         <Section
+          modifiers={ROWS}
           title="Backup"
           footer={
             <Text>
@@ -359,6 +371,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={ROWS}
           footer={
             <Text>
               Erases every plant, Archived ones too, with its Care Log and photo, and these
@@ -370,6 +383,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={ROWS}
           title="About"
           footer={<Text>Species IDs and scientific names come from Wikidata, under CC0.</Text>}
         >
