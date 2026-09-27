@@ -1,6 +1,7 @@
 // The app's words for care, with nothing from React Native, so the Web view (web/) says the same.
 // Relative imports, as in src/core: the Web view's build has no `@/`.
-import type { CareStatus, DueCare, NextCare } from '../core/care';
+import type { CareStatus, DueCare, NextCare, SeasonOn } from '../core/care';
+import type { CauseFact, SeasonalSchedule } from '../core/careGuide';
 import type { CareEventType } from '../core/careLog';
 import { daysBetween, localNoon } from '../core/dates';
 import { CARE_TYPES, hasOverride, type Plant } from '../core/plants';
@@ -127,4 +128,45 @@ export function whoseSchedule(plant: Plant): string {
   // A plant without a Species has its own schedule or none, care type by care type.
   if (plant.speciesId === null || own.length === CARE_TYPES.length) return 'Own schedule';
   return `Own schedule for ${own.map((type) => CARE_WORDS[type].label).join(' and ')}`;
+}
+
+/** A seasonal schedule as the Care Guide shows it: "every 7 days, every 14 in Dormant". */
+export function scheduleLine({ growing, dormant }: SeasonalSchedule): string {
+  if (growing === null) return 'no schedule';
+  const inDormant = dormant === null ? 'paused in Dormant' : `every ${dormant} in Dormant`;
+  return `every ${plural(growing, 'day')}, ${inDormant}`;
+}
+
+/** Today's Season, as the Plant screen heads its Care rows: "Growing season", "Dormant season, until Mar 1". */
+export function seasonLine(season: SeasonOn, today: string): string {
+  return season.season === 'dormant'
+    ? `Dormant season, until ${dateLabel(season.resumesOn, today)}`
+    : 'Growing season';
+}
+
+const FACT_DONE = { watering: 'Last watered', fertilizing: 'Last fed', repotting: 'Last repotted' };
+
+/**
+ * What the Care Log says beside a cause, with no diagnosis in it: "Last watered 6 days ago.
+ * Schedule: every 7 days, every 14 in Dormant", "Last fed: never logged. No schedule".
+ */
+export function causeFactLine(fact: CauseFact, today: string): string {
+  if (fact.kind === 'season') return seasonLine(fact.season, today);
+  const done = FACT_DONE[fact.kind];
+  const when =
+    fact.lastOn === null ? `${done}: never logged` : `${done} ${agoLine(fact.lastOn, today)}`;
+  if (fact.kind === 'repotting') {
+    return fact.potSizeCm === null ? when : `${when}, in a ${fact.potSizeCm} cm pot`;
+  }
+  const schedule = scheduleLine(fact.schedule);
+  return `${when}. ${fact.schedule.growing === null ? 'No schedule' : `Schedule: ${schedule}`}`;
+}
+
+/** How long ago a day was: "today", "yesterday", "6 days ago", "12 months ago". */
+function agoLine(day: string, today: string): string {
+  const ago = daysBetween(day, today);
+  if (ago === 0) return 'today';
+  if (ago === 1) return 'yesterday';
+  const [count, unit] = daysOrMonths(ago);
+  return `${plural(count, unit)} ago`;
 }

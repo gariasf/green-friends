@@ -11,7 +11,7 @@ The app tracks what each plant needs and when, but not how: how to water, which 
 - **Symptoms are shared.** One list of about 15, pests included, each with its causes, how to tell them apart and what to do. A profile only reorders the causes. Beside a cause the app shows what the Care Log says (last watered, the schedule), without claiming a diagnosis.
 - **Words say how, the schedule says how often.** Profile text never states days, weeks or months. Where timing matters, the Care Guide shows the plant's real Care Schedule (Override or Species default), so it can't contradict it. A test over the bundled file enforces this.
 - **Season-aware.** Watering and fertiliser have Growing and Dormant text; the Care Guide opens on today's Season.
-- **Its own asset.** `assets/care-guides.json`, keyed by Species QID, beside `species.json` and read by core directly. Like the Identify name index (ADR-0007), it is not in the `species` table: no migration, no reseed, never in an Export (ADR-0002). The Web view bundles the same file.
+- **Its own asset.** `assets/care-guides.json`, keyed by Species QID, beside `species.json` and which core takes from its caller, as `suggestSpecies` takes the name index. Like the Identify name index (ADR-0007), it is not in the `species` table: no migration, no reseed, never in an Export (ADR-0002). The Web view bundles the same file.
 
 ## Considered options
 

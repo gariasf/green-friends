@@ -43,7 +43,7 @@ export type PlantCare = {
 
 type SeasonMonths = Pick<Settings, 'growingStartMonth' | 'growingEndMonth'>;
 
-type SeasonOn =
+export type SeasonOn =
   /** startsOn is null when the Growing season runs all year and so never started. */
   | { season: 'growing'; startsOn: string | null }
   | { season: 'dormant'; startsOn: string; resumesOn: string };
@@ -177,7 +177,7 @@ function worstOverdue(plant: PlantCare): number {
  * Effective Care Schedule per care type (ADR-0003): the Override where its Growing (or repotting)
  * interval is set, else the Species default, else none.
  */
-function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): CareSchedule {
+export function effectiveSchedule(plant: CareSchedule, species: CareSchedule | null): CareSchedule {
   const fallback = species ?? NO_SCHEDULE;
   const source = (type: CareType) => (hasOverride(plant, type) ? plant : fallback);
   const water = source('water');
@@ -242,7 +242,7 @@ function statusOn(due: DueBySeason, today: string, season: SeasonOn): CareStatus
 }
 
 /** The Season (CONTEXT.md) `day` falls in and when it started, from the growing-month range. */
-function seasonOn(day: string, months: SeasonMonths): SeasonOn {
+export function seasonOn(day: string, months: SeasonMonths): SeasonOn {
   const { growingStartMonth: start, growingEndMonth: end } = months;
   const [year, month] = day.split('-').map(Number);
   const dormantStart = (end % 12) + 1;
