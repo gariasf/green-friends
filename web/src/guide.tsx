@@ -25,7 +25,7 @@ import {
 } from '../../src/ui/words';
 import { guides } from '../../src/ui/guides';
 import type { Garden } from './garden';
-import { CareIcon, GuideIcon } from './icons';
+import { BackCaret, CareIcon, GuideIcon } from './icons';
 
 /**
  * The Care Guide as the phone's (spec #48, #51), read-only: the Plant pane's Care group, the full
@@ -74,7 +74,7 @@ export function CareRows({
               </span>
             </li>
             <li>
-              <GuideIcon name="sun" />
+              <GuideIcon name="light" />
               <span className="grow">
                 {/* The scale's label starts "Light:", so a screen reader hears it once. */}
                 <strong aria-hidden="true">Light</strong>
@@ -108,7 +108,7 @@ function SomethingWrong({ id }: { id: string }) {
   return (
     <li>
       <a href={`#/plant/${id}/symptoms`}>
-        <GuideIcon name="wrong" />
+        <GuideIcon name="symptom" />
         <span className="grow">
           <strong>Something wrong?</strong>
           <span className="quiet">{SOMETHING_WRONG}</span>
@@ -203,7 +203,7 @@ export function GuideView({
 
       <section className="guide-card">
         <h2>
-          <GuideIcon name="sun" />
+          <GuideIcon name="light" />
           Light and warmth
         </h2>
         <LightScale light={profile.light} />
@@ -300,7 +300,7 @@ export function SymptomView({
   return (
     <>
       <a className="back-plant" href={`#/plant/${id}/symptoms`}>
-        ‹ {SYMPTOMS_TITLE}
+        <BackCaret /> {SYMPTOMS_TITLE}
       </a>
       <h1 tabIndex={-1}>{symptom.name}</h1>
       <p className="quiet">{causesIntro(profile)}</p>
@@ -320,7 +320,7 @@ export function SymptomView({
             <p>{cause.fix}</p>
             {cause.petWarning && (
               <p className="pet-warning">
-                <GuideIcon name="paw" />
+                <GuideIcon name="pet" />
                 {PET_WARNING}
               </p>
             )}
@@ -335,7 +335,7 @@ export function SymptomView({
 function BackToPlant({ id, name }: { id: string; name: string }) {
   return (
     <a className="back-plant" href={`#/plant/${id}`}>
-      ‹ {name}
+      <BackCaret /> {name}
     </a>
   );
 }

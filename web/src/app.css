@@ -655,7 +655,7 @@ nav a[aria-current='page'] {
 }
 
 /* The Care Guide (spec #48): the Plant pane's Care group, the full guide and the Symptoms. */
-.guide-sun {
+.guide-light {
   --hue: var(--sun);
 }
 
@@ -667,12 +667,12 @@ nav a[aria-current='page'] {
 
 .guide-soil,
 .guide-pest,
-.guide-wrong,
+.guide-symptom,
 .guide-next {
   --hue: var(--secondary-label);
 }
 
-.guide-paw {
+.guide-pet {
   --hue: var(--caution);
 }
 
@@ -731,6 +731,10 @@ nav a[aria-current='page'] {
   margin-bottom: 1rem;
   color: var(--tint);
   font-weight: 600;
+}
+
+.back-caret {
+  vertical-align: -0.125em;
 }
 
 .switch {

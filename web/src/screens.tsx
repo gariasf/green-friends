@@ -21,7 +21,7 @@ import {
 import type { Garden } from './garden';
 import { guides } from '../../src/ui/guides';
 import { CareRows, GuideView, SymptomsView, SymptomView, type PlantView } from './guide';
-import { AppMark, CareIcon, Thumb } from './icons';
+import { AppMark, BackCaret, CareIcon, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
@@ -303,7 +303,7 @@ export function PlantDetail({
 function BackLink() {
   return (
     <a className="back" href="#/garden">
-      ‹ Garden
+      <BackCaret /> Garden
     </a>
   );
 }

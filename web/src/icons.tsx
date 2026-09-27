@@ -1,6 +1,7 @@
 import {
   BookOpenIcon,
   BugIcon,
+  CaretLeftIcon,
   CaretRightIcon,
   DropIcon,
   FlaskIcon,
@@ -96,20 +97,25 @@ export function GuideIcon({ name, size = 18 }: { name: keyof typeof GUIDE_ICONS;
     <Drawn
       className={`care-icon guide-${name}`}
       size={size}
-      weight={name === 'paw' ? 'fill' : 'regular'}
+      weight={name === 'pet' ? 'fill' : 'regular'}
       aria-hidden="true"
     />
   );
 }
 
 const GUIDE_ICONS = {
-  sun: SunIcon,
+  light: SunIcon,
   soil: StackIcon,
   guide: BookOpenIcon,
-  wrong: StethoscopeIcon,
+  symptom: StethoscopeIcon,
   leaf: LeafIcon,
   pest: BugIcon,
   fact: LightbulbIcon,
-  paw: PawPrintIcon,
+  pet: PawPrintIcon,
   next: CaretRightIcon,
 } satisfies Record<string, PhosphorIcon>;
+
+/** A back link's caret, before its words. */
+export function BackCaret() {
+  return <CaretLeftIcon className="back-caret" size={14} weight="bold" aria-hidden="true" />;
+}
