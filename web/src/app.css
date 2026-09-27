@@ -50,9 +50,19 @@
 }
 
 /*
- * The type: Nunito Sans (bundled, main.tsx) on five sizes, four weights. Titles are the heaviest,
- * plant names next, what's Due and the links after, the rest regular; secondary lines are quiet
- * rather than small, and section headings are labels, small and in capitals, beneath the content.
+ * The type: Nunito Sans (bundled, main.tsx) on five sizes and four weights, the phone's scale
+ * (ticket #54, set B: Bold titles, SemiBold for the rest that stands out). Nunito's round letters
+ * look lighter than their number, so 700 is as heavy as a title needs. Secondary lines are quiet
+ * rather than small; section headings are labels, small and in capitals, beneath the content.
+ *
+ *   step        size       weight  use
+ *   title       --text-xl  700     a screen's title, the name beside the mark
+ *   title2      --text-lg  700     the Garden list's title, a Care Guide card's heading, empty states
+ *   headline    --text-base 600    plant names, a Care Guide card's subheading
+ *   label       --text-xs  600     section headings (in capitals), counts, badges
+ *   emphasis    inherit    600     Overdue and Due today, links, the chosen tab
+ *   quiet       inherit    500     the other tabs, the Garden's count
+ *   body        --text-base 400    everything else
  */
 :root {
   --text-xs: 0.8125rem; /* counts, badges, a row's second line, days */
@@ -88,7 +98,7 @@ main.detail {
 h1 {
   margin: 0.5rem 0 0.25rem;
   font-size: var(--text-xl);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
@@ -101,7 +111,7 @@ h2 {
   margin: 1.75rem 0 0.5rem;
   color: var(--secondary-label);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -174,7 +184,7 @@ a:focus-visible {
   margin: 0;
   padding: 0 0.5rem 1.25rem;
   font-size: var(--text-base);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 nav {
@@ -212,7 +222,7 @@ nav a[aria-current='page'] {
   background: var(--tint);
   color: var(--surface);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -418,7 +428,7 @@ nav a[aria-current='page'] {
 
 .name {
   display: block;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* One line each in the list's narrow column; the plant beside it has the whole name. */
@@ -543,7 +553,7 @@ nav a[aria-current='page'] {
 .empty h2 {
   color: var(--label);
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: normal;
   text-transform: none;
 }
@@ -581,7 +591,7 @@ nav a[aria-current='page'] {
   border-radius: 12px;
   background: var(--fill);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .badge.toxic {
@@ -770,7 +780,7 @@ nav a[aria-current='page'] {
   margin: 0 0 0.5rem;
   color: var(--label);
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: normal;
   text-transform: none;
 }
@@ -778,13 +788,13 @@ nav a[aria-current='page'] {
 .guide-card h3 {
   margin: 0 0 0.5rem;
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .guide-card h4 {
   margin: 0.75rem 0 0.125rem;
   font-size: var(--text-base);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .guide-card p + p {
@@ -813,7 +823,7 @@ nav a[aria-current='page'] {
 
 .link {
   color: var(--tint);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .message {
