@@ -1,14 +1,14 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { listArchivedPlants, listPlants } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
-import { PlantRow } from '@/src/ui/PlantRow';
+import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
-import { group, space } from '@/src/ui/theme';
+import { accessibilitySize, font, pressedStyle, radius, space, text } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 const ADD_PLANT = { label: 'Add a plant', onPress: () => router.push('/plants/new') };
@@ -18,13 +18,17 @@ function readGarden() {
 }
 
 /**
- * Garden: every live plant by Display Name, with its photo, each opening its Plant screen; Archived
+ * Garden: every live plant by Display Name as a grid of photos (spec #61), two abreast, one at
+ * accessibility text sizes so names don't break mid-word, each opening its Plant screen; Archived
  * plants have a view of their own. Read again after writes: a photo is a row of its own, which a
  * live query over plants would miss.
  */
 export default function GardenScreen() {
   const [{ plants, archivedCount }, setGarden] = useState(readGarden);
   useAfterWrites(useCallback(() => setGarden(readGarden()), []));
+  const { width, fontScale } = useWindowDimensions();
+  const columns = accessibilitySize(fontScale) ? 1 : 2;
+  const cell = (width - 2 * space.l - (columns - 1) * space.m) / columns;
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.list}>
@@ -45,17 +49,33 @@ export default function GardenScreen() {
           />
         )
       ) : (
-        <View style={group.box}>
-          {plants.map((plant, index) => (
-            <PlantRow
-              key={plant.id}
-              photo={plant.photo}
-              name={plant.displayName}
-              detail={scientificBeneath(plant.displayName, plant.scientificName)}
-              first={index === 0}
-              onPress={() => router.push({ pathname: '/plants/[id]', params: { id: plant.id } })}
-            />
-          ))}
+        <View style={styles.grid}>
+          {plants.map((plant) => {
+            const scientific = scientificBeneath(plant.displayName, plant.scientificName);
+            return (
+              <Pressable
+                key={plant.id}
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: '/plants/[id]', params: { id: plant.id } })}
+                style={({ pressed }) => [{ width: cell }, pressed && pressedStyle.button]}
+              >
+                <PlantPhoto
+                  uri={photoUri(plant.photo)}
+                  size={cell}
+                  name={plant.displayName}
+                  radius={radius.surface}
+                />
+                <Text numberOfLines={2} style={[text.headline, styles.name]}>
+                  {plant.displayName}
+                </Text>
+                {scientific && (
+                  <Text numberOfLines={1} style={[text.footnote, font.italic]}>
+                    {scientific}
+                  </Text>
+                )}
+              </Pressable>
+            );
+          })}
         </View>
       )}
       {archivedCount > 0 && (
@@ -71,5 +91,13 @@ export default function GardenScreen() {
 
 const styles = StyleSheet.create({
   list: { paddingVertical: space.l },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: space.m,
+    rowGap: space.xl,
+    marginHorizontal: space.l,
+  },
+  name: { marginTop: space.s },
   footer: { alignSelf: 'center', marginTop: space.xl },
 });

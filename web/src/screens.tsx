@@ -110,9 +110,9 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
 }
 
 /**
- * The Garden as panes, like Mail or Notes (spec #41): every live plant by Display Name with what's
- * Due or Overdue, or its next care, and the chosen plant beside the list. Below 60rem, the list or
- * the plant, with a way back.
+ * The Garden as panes, like Mail or Notes (spec #41): a grid of every live plant by Display Name
+ * (spec #61), each photo over what's Due or Overdue, or its next care, and the chosen plant beside
+ * the grid. Below 60rem, the grid or the plant, with a way back.
  */
 export function GardenPanes({
   garden,
@@ -151,13 +151,11 @@ export function GardenPanes({
                     href={`#/plant/${plant.id}`}
                     aria-current={plant.id === id ? 'page' : undefined}
                   >
-                    <Thumb src={photoUrl(plant.photo)} name={plant.displayName} />
-                    <span className="grow">
-                      <span className="name">{plant.displayName}</span>
-                      <span className="quiet line">
-                        {due.length > 0 && <span className={`dot ${tone}`} />}
-                        {due.length > 0 ? dueLine(due) : nextCareLine(nextCare(plant, today))}
-                      </span>
+                    <Thumb src={photoUrl(plant.photo)} name={plant.displayName} size="cell" />
+                    <span className="name">{plant.displayName}</span>
+                    <span className="quiet line">
+                      {due.length > 0 && <span className={`dot ${tone}`} />}
+                      {due.length > 0 ? dueLine(due) : nextCareLine(nextCare(plant, today))}
                     </span>
                   </a>
                 </li>

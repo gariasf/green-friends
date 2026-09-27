@@ -36,7 +36,7 @@ const CARE_ICONS: Record<CareEventType, PhosphorIcon> = {
 /**
  * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the phone's
  * placeholder while it has none: the name's initial in Young Serif, tinted, on Ecru. `size` is its
- * class: 40, 64 or 88 px.
+ * class: 40, 64 or 88 px, or `cell`, a Garden grid cell's width.
  */
 export function Thumb({
   src,
@@ -46,7 +46,7 @@ export function Thumb({
 }: {
   src: string | undefined;
   name: string;
-  size?: 'md' | 'lg' | 'xl';
+  size?: 'md' | 'lg' | 'xl' | 'cell';
   alt?: string;
 }) {
   if (src) return <img className={`thumb ${size}`} src={src} alt={alt} />;

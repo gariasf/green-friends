@@ -122,18 +122,30 @@ function deleteIfThere(file: File): void {
   if (file.exists) file.delete();
 }
 
-/** A plant's photo as a rounded square, or its initial on Ecru while it has none. */
+/**
+ * A plant's photo as a rounded square, or its initial on Ecru while it has none; `radius` is
+ * `radius.inner` unless given (the Garden grid's are `radius.surface`).
+ */
 export function PlantPhoto({
   uri,
   size,
   name,
+  radius: borderRadius,
 }: {
   uri: string | null;
   size: number;
   name: string;
+  radius?: number;
 }) {
   return (
-    <View accessibilityElementsHidden style={[styles.photo, { width: size, height: size }]}>
+    <View
+      accessibilityElementsHidden
+      style={[
+        styles.photo,
+        { width: size, height: size },
+        borderRadius != null && { borderRadius },
+      ]}
+    >
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} />
       ) : (
@@ -161,6 +173,7 @@ export function Initial({ name, size }: { name: string; size: number }) {
 const styles = StyleSheet.create({
   photo: {
     borderRadius: radius.inner,
+    borderCurve: 'continuous',
     backgroundColor: colors.tintSoft,
     alignItems: 'center',
     justifyContent: 'center',

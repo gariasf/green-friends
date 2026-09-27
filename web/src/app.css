@@ -172,7 +172,7 @@ a:focus-visible {
 }
 
 .shell.panes {
-  grid-template-columns: 15rem 22rem minmax(0, 1fr);
+  grid-template-columns: 15rem 26rem minmax(0, 1fr);
 }
 
 .sidebar {
@@ -387,7 +387,8 @@ nav a[aria-current='page'] {
   stroke-linecap: round;
 }
 
-/* The Garden's list: a plant a row, what it waits for beneath its name; the chosen one raised. */
+/* The Garden's list, as the phone's grid (spec #61): square photos two abreast (more where the
+   folded pane is wide), the name and what it waits for beneath; the chosen one raised. */
 .list {
   position: sticky;
   top: 0;
@@ -404,6 +405,9 @@ nav a[aria-current='page'] {
 }
 
 .list ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -411,10 +415,12 @@ nav a[aria-current='page'] {
 
 .list a {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  border-radius: var(--radius-inner);
+  flex-direction: column;
+  gap: 0.25rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.5rem 0.75rem;
+  border-radius: var(--radius-surface);
 }
 
 .list a:hover {
@@ -422,8 +428,20 @@ nav a[aria-current='page'] {
 }
 
 .list a[aria-current='page'] {
-  background: var(--surface);
-  box-shadow: 0 0 0 1px var(--separator);
+  background: var(--raised);
+}
+
+/* A grid cell's photo, square at the phone's grid radius. */
+.thumb.cell {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  margin-bottom: 0.25rem;
+  border-radius: var(--radius-surface);
+}
+
+.initial.cell {
+  font-size: 4rem;
 }
 
 .grow {
@@ -436,11 +454,13 @@ nav a[aria-current='page'] {
   font-weight: 600;
 }
 
-/* One line each in the list's narrow column; the plant beside it has the whole name. */
+/* Up to two lines in a grid cell; the plant beside it has the whole name. */
 .list .name {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .line {
@@ -662,7 +682,8 @@ nav a[aria-current='page'] {
 /* Raised off the ground, as the phone's useRaised: a warm two-part shadow in light mode; in dark
    mode the lighter surface does the lifting. */
 .card,
-.care {
+.care,
+.list a[aria-current='page'] {
   box-shadow:
     0 1px 2px rgb(70 56 24 / 0.08),
     0 6px 18px rgb(70 56 24 / 0.09);
@@ -670,7 +691,8 @@ nav a[aria-current='page'] {
 
 @media (prefers-color-scheme: dark) {
   .card,
-  .care {
+  .care,
+  .list a[aria-current='page'] {
     box-shadow: none;
   }
 }
