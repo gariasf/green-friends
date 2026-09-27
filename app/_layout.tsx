@@ -8,6 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
+import { QuietIconsSwitcher } from '@/src/ui/QuietIconsPrototype';
 import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 import { useSync } from '@/src/ui/useSync';
@@ -79,6 +80,7 @@ export default function RootLayout() {
         <Stack.Screen name="care-events/[id]" options={SHEET} />
         <Stack.Screen name="archived" options={{ title: 'Archived' }} />
       </Stack>
+      <QuietIconsSwitcher />
     </ThemeProvider>
   );
 }

@@ -27,7 +27,7 @@ export function PlantRow({
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && pressedStyle.row]}
     >
-      <PlantPhoto uri={photoUri(photo)} size={44} />
+      <PlantPhoto uri={photoUri(photo)} size={44} name={name} />
       {/* The divider starts after the photo and stops short of the far edge, as in iOS 26. */}
       <View style={[styles.body, !first && group.divider]}>
         <View style={styles.grow}>

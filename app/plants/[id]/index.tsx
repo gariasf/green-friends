@@ -38,7 +38,8 @@ import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
-import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
+import { choosePhoto, photoFiles, photoUri, Placeholder } from '@/src/ui/Photo';
+import { noPaw } from '@/src/ui/QuietIconsPrototype';
 import { accessibilitySize, colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
@@ -94,7 +95,7 @@ export default function PlantScreen() {
           {uri ? (
             <Image source={{ uri }} style={StyleSheet.absoluteFill} />
           ) : (
-            <Icon name="leaf" size={96} color={colors.tint} weight="fill" />
+            <Placeholder size={210} name={plant.displayName} />
           )}
         </Pressable>
 
@@ -225,12 +226,14 @@ function readPlant(id: string) {
 function Toxicity({ toxic }: { toxic: boolean }) {
   return (
     <View style={[styles.badge, toxic && styles.badgeToxic]}>
-      <Icon
-        name="pet"
-        size={12}
-        color={toxic ? colors.caution : colors.secondaryLabel}
-        weight="fill"
-      />
+      {!noPaw && (
+        <Icon
+          name="pet"
+          size={12}
+          color={toxic ? colors.caution : colors.secondaryLabel}
+          weight="fill"
+        />
+      )}
       <Text style={[styles.badgeText, toxic && styles.caution]}>
         {toxic ? 'Toxic to pets' : 'Non-toxic to pets'}
       </Text>

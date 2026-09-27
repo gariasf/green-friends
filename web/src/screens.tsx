@@ -61,7 +61,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         {plants.map((plant) => (
           <li key={plant.id}>
             <a className="card" href={`#/plant/${plant.id}`}>
-              <Thumb src={photoUrl(plant.photo)} size="lg" />
+              <Thumb src={photoUrl(plant.photo)} size="lg" name={plant.displayName} />
               <span className="card-body">
                 <span className="name">{plant.displayName}</span>
                 <Scientific name={plant.displayName} scientificName={plant.scientificName} />
@@ -92,7 +92,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
               return (
                 <li key={plant.id}>
                   <a href={`#/plant/${plant.id}`}>
-                    <Thumb src={photoUrl(plant.photo)} />
+                    <Thumb src={photoUrl(plant.photo)} name={plant.displayName} />
                     <span className="name">{plant.displayName}</span>
                     <span className="quiet next">
                       {next && <CareIcon type={next.type} size={14} />}
@@ -151,7 +151,7 @@ export function GardenPanes({
                     href={`#/plant/${plant.id}`}
                     aria-current={plant.id === id ? 'page' : undefined}
                   >
-                    <Thumb src={photoUrl(plant.photo)} />
+                    <Thumb src={photoUrl(plant.photo)} name={plant.displayName} />
                     <span className="grow">
                       <span className="name">{plant.displayName}</span>
                       <span className="quiet line">
@@ -245,7 +245,12 @@ export function PlantDetail({
     <>
       <BackLink />
       <div className="head">
-        <Thumb src={photoUrl(plant.photo)} size="xl" alt={`Photo of ${plant.displayName}`} />
+        <Thumb
+          src={photoUrl(plant.photo)}
+          size="xl"
+          alt={`Photo of ${plant.displayName}`}
+          name={plant.displayName}
+        />
         <div>
           <h1 tabIndex={-1}>{plant.displayName}</h1>
           <Scientific name={plant.displayName} scientificName={plant.scientificName} />

@@ -855,3 +855,18 @@ nav a[aria-current='page'] {
     margin-bottom: 1rem;
   }
 }
+
+/* PROTOTYPE (prototype/quiet-icons, never merged): D's initial in place of the leaf. */
+.leaf.initial {
+  color: var(--tint);
+  font-family: var(--font-title);
+  font-size: 1.15rem;
+}
+
+.leaf.initial.lg {
+  font-size: 1.75rem;
+}
+
+.leaf.initial.xl {
+  font-size: 2.5rem;
+}

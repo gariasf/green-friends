@@ -43,12 +43,22 @@ export function Thumb({
   src,
   size = 'md',
   alt = '',
+  name = '',
 }: {
   src: string | undefined;
   size?: 'md' | 'lg' | 'xl';
   alt?: string;
+  name?: string;
 }) {
   if (src) return <img className={`thumb ${size}`} src={src} alt={alt} />;
+  // PROTOTYPE (prototype/quiet-icons): C shows the Ecru alone, D the name's initial.
+  if (QUIET === 'C') return <span className={`thumb ${size} leaf`} aria-hidden="true" />;
+  if (QUIET === 'D')
+    return (
+      <span className={`thumb ${size} leaf initial`} aria-hidden="true">
+        {name.trim().charAt(0).toUpperCase()}
+      </span>
+    );
   return (
     <span className={`thumb ${size} leaf`} aria-hidden="true">
       <svg viewBox="0 0 24 24">
@@ -58,6 +68,9 @@ export function Thumb({
     </span>
   );
 }
+
+// PROTOTYPE (prototype/quiet-icons, never merged): ?quiet=A…D.
+const QUIET = new URLSearchParams(location.search).get('quiet') ?? 'A';
 
 /**
  * The app icon's mark (`assets/icon.svg`, ticket #29): three leaves rising from behind a pot's rim,
@@ -93,11 +106,12 @@ export function AppMark({ size = 30 }: { size?: number }) {
  */
 export function GuideIcon({ name, size = 18 }: { name: keyof typeof GUIDE_ICONS; size?: number }) {
   const Drawn = GUIDE_ICONS[name];
+  if (name === 'pet' && (QUIET === 'C' || QUIET === 'D')) return null;
   return (
     <Drawn
       className={`care-icon guide-${name}`}
       size={size}
-      weight={name === 'pet' ? 'fill' : 'regular'}
+      weight={name === 'pet' && QUIET === 'A' ? 'fill' : 'regular'}
       aria-hidden="true"
     />
   );
@@ -117,5 +131,12 @@ const GUIDE_ICONS = {
 
 /** A back link's caret, before its words. */
 export function BackCaret() {
-  return <CaretLeftIcon className="back-caret" size={14} weight="bold" aria-hidden="true" />;
+  return (
+    <CaretLeftIcon
+      className="back-caret"
+      size={14}
+      weight={QUIET === 'A' ? 'bold' : 'regular'}
+      aria-hidden="true"
+    />
+  );
 }

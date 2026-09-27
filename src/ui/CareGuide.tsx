@@ -12,6 +12,7 @@ import {
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
 import { Icon, type IconName } from '@/src/ui/Icon';
+import { noPaw } from '@/src/ui/QuietIconsPrototype';
 import { colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import {
   feedLine,
@@ -322,7 +323,7 @@ export function CauseCard({
       <Text style={text.body}>{cause.fix}</Text>
       {cause.petWarning && (
         <View accessible style={styles.warning}>
-          <Icon name="pet" size={13} color={colors.caution} weight="fill" />
+          {!noPaw && <Icon name="pet" size={13} color={colors.caution} weight="fill" />}
           <Text style={[text.footnote, styles.caution, styles.grow]}>{PET_WARNING}</Text>
         </View>
       )}

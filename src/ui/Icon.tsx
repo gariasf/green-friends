@@ -26,6 +26,8 @@ import { SunIcon } from 'phosphor-react-native/src/icons/Sun';
 import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
 import { View, type ColorValue } from 'react-native';
 
+import { allRegular } from '@/src/ui/QuietIconsPrototype';
+
 /**
  * The app's icons, from Phosphor (MIT, spec #57), named by what they mean rather than what they
  * draw, so a screen says "water" and the drawing can change here. The Web view's `web/src/icons.tsx`
@@ -79,6 +81,8 @@ export function Icon({
   weight?: IconWeight;
 }) {
   const Drawn = ICONS[name];
+  // PROTOTYPE (prototype/quiet-icons): past variant A, only the care types draw filled.
+  if (allRegular && !FILLED.has(name)) weight = 'regular';
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {/* react-native-svg takes iOS's dynamic colours, which Phosphor's string type doesn't say. */}
