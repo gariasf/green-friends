@@ -1,4 +1,5 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
+import Storage from 'expo-sqlite/kv-store';
 import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native';
 
 // The palette (ticket #34): four colours from Sanzo Wada's A Dictionary of Color Combinations,
@@ -100,14 +101,57 @@ export const font = {
   extraBold: { fontFamily: FAMILY, fontWeight: '800' },
 } as const;
 
+type Weight = '400' | '600' | '700' | '800';
+
+/**
+ * PROTOTYPE (ticket #54, never merged): the weight sets to compare, picked with
+ * WeightsSwitcher. The pick is read once at startup, so every style spread from `text` follows
+ * it; switching reloads the app.
+ */
+type WeightSet = Record<'largeTitle' | 'navTitle' | 'title1' | 'title2' | 'headline', Weight> & {
+  label: string;
+};
+export const WEIGHT_SETS: Record<'A' | 'B' | 'C', WeightSet> = {
+  A: {
+    label: "Today's set",
+    largeTitle: '800',
+    navTitle: '700',
+    title1: '800',
+    title2: '800',
+    headline: '700',
+  },
+  B: {
+    label: 'Lighter titles',
+    largeTitle: '700',
+    navTitle: '600',
+    title1: '700',
+    title2: '700',
+    headline: '600',
+  },
+  C: {
+    label: 'SemiBold-led',
+    largeTitle: '800',
+    navTitle: '600',
+    title1: '800',
+    title2: '600',
+    headline: '600',
+  },
+};
+export type WeightSetKey = keyof typeof WEIGHT_SETS;
+export const WEIGHTS_KEY = 'prototype.weights';
+const stored = Storage.getItemSync(WEIGHTS_KEY);
+export const weightSet: WeightSetKey =
+  stored && stored in WEIGHT_SETS ? (stored as WeightSetKey) : 'A';
+const w = WEIGHT_SETS[weightSet];
+
 /**
  * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
  * Web view's where they can be (28, 22, 15, 13), the hierarchy carried by weight.
  */
 export const text = StyleSheet.create({
-  title1: { ...font.extraBold, fontSize: 28, color: colors.label },
-  title2: { ...font.extraBold, fontSize: 22, color: colors.label },
-  headline: { ...font.bold, fontSize: 17, color: colors.label },
+  title1: { fontFamily: FAMILY, fontWeight: w.title1, fontSize: 28, color: colors.label },
+  title2: { fontFamily: FAMILY, fontWeight: w.title2, fontSize: 22, color: colors.label },
+  headline: { fontFamily: FAMILY, fontWeight: w.headline, fontSize: 17, color: colors.label },
   body: { ...font.regular, fontSize: 17, color: colors.label },
   subheadline: { ...font.regular, fontSize: 15, color: colors.secondaryLabel },
   footnote: { ...font.regular, fontSize: 13, color: colors.secondaryLabel },
@@ -115,8 +159,8 @@ export const text = StyleSheet.create({
 
 /** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
 export const headerFonts = {
-  headerTitleStyle: { ...font.bold },
-  headerLargeTitleStyle: { ...font.extraBold },
+  headerTitleStyle: { fontFamily: FAMILY, fontWeight: w.navTitle },
+  headerLargeTitleStyle: { fontFamily: FAMILY, fontWeight: w.largeTitle },
 } as const;
 
 /**

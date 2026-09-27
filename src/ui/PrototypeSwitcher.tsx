@@ -1,9 +1,10 @@
 import { Icon } from '@/src/ui/Icon';
+import Storage from 'expo-sqlite/kv-store';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { DevSettings, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { font } from './theme';
+import { font, WEIGHT_SETS, weightSet, WEIGHTS_KEY, type WeightSetKey } from './theme';
 
 /**
  * PROTOTYPE (UI pass): flips between the design variants of one screen. Not part of any design,
@@ -48,7 +49,41 @@ export function PrototypeSwitcher({
   );
 }
 
+const WEIGHT_KEYS = Object.keys(WEIGHT_SETS) as WeightSetKey[];
+
+/**
+ * PROTOTYPE (ticket #54): flips the whole app between the weight sets, above the tab bar. The
+ * type scale is built once at startup, so a pick is stored and the app reloads.
+ */
+export function WeightsSwitcher() {
+  const insets = useSafeAreaInsets();
+  const index = WEIGHT_KEYS.indexOf(weightSet);
+  const go = (step: number) => {
+    Storage.setItemSync(
+      WEIGHTS_KEY,
+      WEIGHT_KEYS[(index + step + WEIGHT_KEYS.length) % WEIGHT_KEYS.length],
+    );
+    DevSettings.reload();
+  };
+  return (
+    <View pointerEvents="box-none" style={[styles.wrap, { bottom: insets.bottom + 56 }]}>
+      <View style={[styles.bar, styles.weights]}>
+        <Pressable accessibilityLabel="Previous weight set" hitSlop={12} onPress={() => go(-1)}>
+          <Icon name="previous" size={14} color="#fff" weight="bold" />
+        </Pressable>
+        <Text allowFontScaling={false} style={styles.label}>
+          Weights {weightSet} · {WEIGHT_SETS[weightSet].label}
+        </Text>
+        <Pressable accessibilityLabel="Next weight set" hitSlop={12} onPress={() => go(1)}>
+          <Icon name="next" size={14} color="#fff" weight="bold" />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  weights: { backgroundColor: '#0f766e' },
   wrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   bar: {
     flexDirection: 'row',

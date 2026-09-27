@@ -56,6 +56,45 @@
   --text-base: 1rem;
   --text-lg: 1.375rem; /* the Garden list's title */
   --text-xl: 1.75rem; /* a screen's title */
+
+  /* PROTOTYPE (ticket #54, never merged): the weight sets, ?weights=A|B|C (main.tsx). */
+  --weight-title1: 800;
+  --weight-title2: 800;
+  --weight-headline: 700;
+  --weight-label: 700;
+}
+
+:root[data-weights='B'] {
+  --weight-title1: 700;
+  --weight-title2: 700;
+  --weight-headline: 600;
+  --weight-label: 600;
+}
+
+:root[data-weights='C'] {
+  --weight-title1: 800;
+  --weight-title2: 600;
+  --weight-headline: 600;
+  --weight-label: 600;
+}
+
+.weights-switcher {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.weights-switcher a[aria-current='true'] {
+  text-decoration: underline;
 }
 
 body {
@@ -84,7 +123,7 @@ main.detail {
 h1 {
   margin: 0.5rem 0 0.25rem;
   font-size: var(--text-xl);
-  font-weight: 800;
+  font-weight: var(--weight-title1);
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
@@ -97,7 +136,7 @@ h2 {
   margin: 1.75rem 0 0.5rem;
   color: var(--secondary-label);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: var(--weight-headline);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -170,7 +209,7 @@ a:focus-visible {
   margin: 0;
   padding: 0 0.5rem 1.25rem;
   font-size: var(--text-base);
-  font-weight: 800;
+  font-weight: var(--weight-title1);
 }
 
 nav {
@@ -208,7 +247,7 @@ nav a[aria-current='page'] {
   background: var(--tint);
   color: var(--surface);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: var(--weight-label);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -283,7 +322,6 @@ nav a[aria-current='page'] {
   main {
     padding: 1rem 1rem 2rem;
   }
-
 }
 
 /* The care symbols in their hues, the leaf on Ecru for a plant without a photo, and the mark. */
@@ -383,6 +421,7 @@ nav a[aria-current='page'] {
 .list h1 {
   margin: 0.25rem 0.5rem 0.75rem;
   font-size: var(--text-lg);
+  font-weight: var(--weight-title2);
 }
 
 .list ul {
@@ -415,7 +454,7 @@ nav a[aria-current='page'] {
 
 .name {
   display: block;
-  font-weight: 700;
+  font-weight: var(--weight-headline);
 }
 
 /* One line each in the list's narrow column; the plant beside it has the whole name. */
@@ -540,7 +579,7 @@ nav a[aria-current='page'] {
 .empty h2 {
   color: var(--label);
   font-size: var(--text-lg);
-  font-weight: 800;
+  font-weight: var(--weight-title2);
   letter-spacing: normal;
   text-transform: none;
 }
@@ -578,7 +617,7 @@ nav a[aria-current='page'] {
   border-radius: 12px;
   background: var(--fill);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: var(--weight-label);
 }
 
 .badge.toxic {
