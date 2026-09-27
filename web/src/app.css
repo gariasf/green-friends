@@ -20,6 +20,8 @@
   --fertilize: #d1bd1a; /* Olive Ocher */
   --repot: #681916;
   --note: #8e8e93; /* systemGray */
+  --sun: var(--fertilize); /* Olive Ocher, as theme.ts's sun */
+  --segment: #ffffff; /* a segmented control's selected segment, as iOS draws it */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,6 +38,7 @@
     --caution-soft: #361a18;
     --water: #0a84ff;
     --repot: #c8594c;
+    --segment: #636366;
   }
 }
 
@@ -283,7 +286,6 @@ nav a[aria-current='page'] {
   main {
     padding: 1rem 1rem 2rem;
   }
-
 }
 
 /* The care symbols in their hues, the leaf on Ecru for a plant without a photo, and the mark. */
@@ -633,6 +635,184 @@ nav a[aria-current='page'] {
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* The Care Guide (spec #48): the Plant pane's Care group, the full guide and the Symptoms. */
+.guide-sun,
+.guide-fact {
+  --hue: var(--sun);
+}
+
+.guide-guide,
+.guide-leaf {
+  --hue: var(--tint);
+}
+
+.guide-soil,
+.guide-pest {
+  --hue: var(--secondary-label);
+}
+
+.guide-wrong {
+  fill: none;
+  stroke: var(--secondary-label);
+}
+
+.guide-paw {
+  --hue: var(--caution);
+}
+
+.guide-rows > li,
+.guide-rows a {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+}
+
+.guide-rows > li:has(> a) {
+  padding: 0;
+}
+
+.guide-rows a {
+  flex: 1;
+  align-items: center;
+}
+
+.guide-rows .care-icon {
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+.guide-rows strong,
+.guide-rows .grow > .quiet {
+  display: block;
+}
+
+.chevron {
+  color: var(--secondary-label);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.scale {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.steps {
+  display: flex;
+  gap: 0.25rem;
+  max-width: 20rem;
+  margin: 0.25rem 0;
+}
+
+.steps > span {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--fill);
+}
+
+.steps > .marked {
+  background: var(--sun);
+}
+
+.back-plant {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--tint);
+  font-weight: 600;
+}
+
+.switch {
+  display: flex;
+  max-width: 24rem;
+  margin: 0.75rem 0 1rem;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--fill);
+}
+
+.switch button {
+  flex: 1;
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--label);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch button[aria-pressed='true'] {
+  background: var(--segment);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+
+.switch button:focus-visible {
+  outline: 2px solid var(--tint);
+}
+
+.guide-card {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.guide-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  color: var(--label);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.guide-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-lg);
+  font-weight: 800;
+}
+
+.guide-card h4 {
+  margin: 0.75rem 0 0.125rem;
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.guide-card p + p {
+  margin-top: 0.5rem;
+}
+
+.guide-card .fact {
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: var(--fill);
+}
+
+.pet-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  color: var(--caution);
+  font-size: var(--text-sm);
+}
+
+.pet-warning .care-icon {
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.link {
+  color: var(--tint);
+  font-weight: 700;
 }
 
 .message {

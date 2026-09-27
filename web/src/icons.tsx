@@ -88,3 +88,71 @@ export function AppMark({ size = 30 }: { size?: number }) {
     </svg>
   );
 }
+
+/**
+ * The Care Guide's symbols, drawn after the SF Symbols the app shows: sun.max.fill (Olive Ocher, as
+ * the app's `colors.sun`), square.stack.3d.up.fill, book.fill, stethoscope, leaf.fill, ant.fill,
+ * lightbulb.fill and pawprint.fill. Always beside their words, so screen readers skip them.
+ */
+export function GuideIcon({
+  name,
+  size = 18,
+}: {
+  name: 'sun' | 'soil' | 'guide' | 'wrong' | 'leaf' | 'pest' | 'fact' | 'paw';
+  size?: number;
+}) {
+  return (
+    <svg
+      className={`care-icon guide-${name}`}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      {name === 'sun' && (
+        <>
+          <circle cx="12" cy="12" r="4.5" />
+          <path d="M11 1.5h2v4h-2zM11 18.5h2v4h-2zM1.5 11h4v2h-4zM18.5 11h4v2h-4zM4.2 5.6l1.4-1.4 2.8 2.8-1.4 1.4zM15.6 17l1.4-1.4 2.8 2.8-1.4 1.4zM4.2 18.4l2.8-2.8 1.4 1.4-2.8 2.8zM15.6 7l2.8-2.8 1.4 1.4-2.8 2.8z" />
+        </>
+      )}
+      {name === 'soil' && (
+        <>
+          <path d="M12 3l9 4.5-9 4.5-9-4.5z" />
+          <path d="M3 11.5l9 4.5 9-4.5v2.2l-9 4.5-9-4.5zM3 15.8l9 4.5 9-4.5V18l-9 4.5L3 18z" />
+        </>
+      )}
+      {name === 'guide' && (
+        <path d="M2 5c3-1.5 6.5-1.5 9 .5V20c-2.5-2-6-2-9-.5zM22 5c-3-1.5-6.5-1.5-9 .5V20c2.5-2 6-2 9-.5z" />
+      )}
+      {name === 'wrong' && (
+        <path
+          fill="none"
+          strokeWidth="2"
+          strokeLinecap="round"
+          d="M6 3v6a4 4 0 0 0 8 0V3M10 13v3a4 4 0 0 0 8 0v-2M18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"
+        />
+      )}
+      {name === 'leaf' && <path d="M4.5 19.5C4.5 10 10.5 4.5 20 4.5c0 9.5-5.5 15.5-15 15.5z" />}
+      {name === 'pest' && (
+        <>
+          <circle cx="12" cy="6" r="2.5" />
+          <ellipse cx="12" cy="11.5" rx="2.5" ry="3" />
+          <ellipse cx="12" cy="18" rx="3.5" ry="4" />
+          <path d="M4 9l4 2-.6 1.2-4-2zM20 9l-4 2 .6 1.2 4-2zM3.5 17l4-1.5.5 1.3-4 1.5zM20.5 17l-4-1.5-.5 1.3 4 1.5z" />
+        </>
+      )}
+      {name === 'fact' && (
+        <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2zM9 18.5h6V20a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z" />
+      )}
+      {name === 'paw' && (
+        <>
+          <ellipse cx="12" cy="16.5" rx="5" ry="4.5" />
+          <circle cx="5" cy="10.5" r="2.2" />
+          <circle cx="9" cy="5.5" r="2.2" />
+          <circle cx="15" cy="5.5" r="2.2" />
+          <circle cx="19" cy="10.5" r="2.2" />
+        </>
+      )}
+    </svg>
+  );
+}

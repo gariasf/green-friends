@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 
-import { dueCare, evaluateCare, needsAttention, nextCare } from '../../src/core/care';
+import { dueCare, evaluateCare, needsAttention, nextCare, seasonOn } from '../../src/core/care';
+import { readCareGuide } from '../../src/core/careGuide';
 import { listCareEvents, type CareEvent } from '../../src/core/careLog';
 import { localDay, localNoon } from '../../src/core/dates';
 import { CARE_TYPES, getPlant, listPlants } from '../../src/core/plants';
+import { getSettings } from '../../src/core/settings';
 import {
   CARE_WORDS,
   dayLabel,
@@ -17,6 +19,7 @@ import {
   whoseSchedule,
 } from '../../src/ui/words';
 import type { Garden } from './garden';
+import { CareRows, guides, GuideView, SymptomsView, SymptomView } from './guide';
 import { AppMark, CareIcon, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
@@ -113,10 +116,13 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
 export function GardenPanes({
   garden,
   id,
+  sub,
   photoUrl,
 }: {
   garden: Garden;
   id: string | null;
+  /** In the chosen plant's pane: `guide`, `symptoms` or `symptom/<id>`, else the plant. */
+  sub: string | null;
   photoUrl: PhotoUrl;
 }) {
   // The day the screen was drawn on, as Today's.
@@ -162,7 +168,7 @@ export function GardenPanes({
       </section>
       <main className="detail">
         {id ? (
-          <PlantDetail garden={garden} id={id} photoUrl={photoUrl} />
+          <PlantDetail garden={garden} id={id} sub={sub} photoUrl={photoUrl} />
         ) : (
           <div className="pick">
             <AppMark size={48} />
@@ -177,14 +183,33 @@ export function GardenPanes({
 /**
  * A plant, as the phone's Plant screen without its buttons: the photo beside its names and pet
  * toxicity, a row per care type with when it's next Due (or how long Overdue, or Paused) and when
- * it was last done, whose schedule it follows and its Current Pot, and its Care Log. The Web view
+ * it was last done, whose schedule it follows and its Current Pot, its Care group (spec #48) and
+ * its Care Log; or, at `sub`, its Care Guide, the Symptoms or one Symptom in its place. The Web view
  * lists only plants in care, so a link to any other says so.
  */
-function PlantDetail({ garden, id, photoUrl }: { garden: Garden; id: string; photoUrl: PhotoUrl }) {
+export function PlantDetail({
+  garden,
+  id,
+  sub,
+  photoUrl,
+}: {
+  garden: Garden;
+  id: string;
+  sub: string | null;
+  photoUrl: PhotoUrl;
+}) {
   const today = localDay(new Date());
   const plant = useMemo(() => {
     const care = evaluateCare(garden.db, today).find((candidate) => candidate.id === id);
-    return care && { ...care, row: getPlant(garden.db, id), events: listCareEvents(garden.db, id) };
+    return (
+      care && {
+        ...care,
+        row: getPlant(garden.db, id),
+        events: listCareEvents(garden.db, id),
+        guide: readCareGuide(garden.db, id, today, guides),
+        season: seasonOn(today, getSettings(garden.db)),
+      }
+    );
   }, [garden, id, today]);
 
   if (!plant) {
@@ -197,7 +222,23 @@ function PlantDetail({ garden, id, photoUrl }: { garden: Garden; id: string; pho
     );
   }
 
-  const { row, events } = plant;
+  const { row, events, guide } = plant;
+  const name = plant.displayName;
+  if (sub === 'guide' && guide)
+    return <GuideView id={id} name={name} guide={guide} today={today} />;
+  if (sub === 'symptoms') return <SymptomsView id={id} name={name} />;
+  if (sub?.startsWith('symptom/')) {
+    return (
+      <SymptomView
+        garden={garden}
+        id={id}
+        name={name}
+        symptomId={sub.slice('symptom/'.length)}
+        profile={guide?.profile ?? null}
+        today={today}
+      />
+    );
+  }
 
   return (
     <>
@@ -240,6 +281,8 @@ function PlantDetail({ garden, id, photoUrl }: { garden: Garden; id: string; pho
       <p className="quiet">
         {[whoseSchedule(row), potLine(row.potSizeCm, row.soil)].filter(Boolean).join(' · ')}
       </p>
+
+      <CareRows id={id} guide={guide} season={plant.season} today={today} />
 
       <h2>Care Log</h2>
       {events.length === 0 ? (
