@@ -581,6 +581,55 @@ nav a[aria-current='page'] {
   margin: 0;
 }
 
+/* The Plant pane's hero, as the phone's: the photo across the pane at 3:2, the names over its foot
+   on theme.ts's scrim, the badge over its top-left corner. */
+.hero {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.hero img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-surface);
+  object-fit: cover;
+}
+
+.hero-names {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 6rem 1.5rem 1.25rem;
+  border-radius: 0 0 var(--radius-surface) var(--radius-surface);
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0) 0%,
+    rgb(0 0 0 / 0.35) 45%,
+    rgb(0 0 0 / 0.7) 100%
+  );
+  color: #ffffff;
+}
+
+.hero-names h1 {
+  margin: 0 0 0.25rem;
+}
+
+.hero .scientific {
+  color: rgb(255 255 255 / 0.85);
+}
+
+.hero .badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  margin: 0;
+}
+
+/* The fill is translucent; over a photo it takes the surface. */
+.hero .badge:not(.toxic) {
+  background: var(--surface);
+}
+
 .pick {
   display: grid;
   place-items: center;

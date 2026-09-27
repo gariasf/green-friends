@@ -241,26 +241,35 @@ export function PlantDetail({
     );
   }
 
+  const photo = photoUrl(plant.photo);
+  const badge = plant.toxicToPets !== null && (
+    <p className={plant.toxicToPets ? 'badge toxic' : 'badge'}>
+      {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
+    </p>
+  );
   return (
     <>
       <BackLink />
-      <div className="head">
-        <Thumb
-          src={photoUrl(plant.photo)}
-          name={plant.displayName}
-          size="xl"
-          alt={`Photo of ${plant.displayName}`}
-        />
-        <div>
-          <h1 tabIndex={-1}>{plant.displayName}</h1>
-          <Scientific name={plant.displayName} scientificName={plant.scientificName} />
-          {plant.toxicToPets !== null && (
-            <p className={plant.toxicToPets ? 'badge toxic' : 'badge'}>
-              {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
-            </p>
-          )}
+      {photo ? (
+        // As the phone's hero: the photo across the pane, the names over its foot on a scrim.
+        <div className="hero">
+          <img src={photo} alt={`Photo of ${plant.displayName}`} />
+          <div className="hero-names">
+            <h1 tabIndex={-1}>{plant.displayName}</h1>
+            <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+          </div>
+          {badge}
         </div>
-      </div>
+      ) : (
+        <div className="head">
+          <Thumb src={undefined} name={plant.displayName} size="xl" />
+          <div>
+            <h1 tabIndex={-1}>{plant.displayName}</h1>
+            <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+            {badge}
+          </div>
+        </div>
+      )}
 
       <h2>Care</h2>
       <dl className="group care">

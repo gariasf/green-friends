@@ -91,6 +91,16 @@ export const colors = {
    * palette's sunny hue; never caution, which would read as a warning.
    */
   sun: OLIVE,
+  /**
+   * The Plant screen's name over its photo, on `scrim`, in either appearance: against the
+   * 90th-percentile pixel behind each line, the name reads 5.7:1 or better and the scientific name
+   * 6.6:1 on the test garden's brightest photos (Pothos, Spidey; #64).
+   */
+  onPhoto: '#ffffff',
+  onPhotoQuiet: 'rgba(255, 255, 255, 0.85)',
+  /** Beneath the name over a photo: a gradient, not a blur, so Reduce Transparency changes nothing. */
+  scrim:
+    'linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.7) 100%)',
 };
 
 /**

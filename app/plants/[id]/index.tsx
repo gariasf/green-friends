@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { evaluateCare, seasonOn, type CareStatus } from '@/src/core/care';
 import { readCareGuide } from '@/src/core/careGuide';
@@ -38,7 +39,7 @@ import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
-import { choosePhoto, Initial, photoFiles, photoUri } from '@/src/ui/Photo';
+import { choosePhoto, photoFiles, photoUri, PlantPhoto } from '@/src/ui/Photo';
 import {
   accessibilitySize,
   colors,
@@ -67,6 +68,9 @@ export default function PlantScreen() {
   const plant = usePlant(id);
   const undo = useUndoToast();
   const { width, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // Whether the photo has scrolled up under the navigation bar.
+  const [pastHero, setPastHero] = useState(false);
   if (!plant) return null;
 
   const { care, events, photo, row, today } = plant;
@@ -75,12 +79,31 @@ export default function PlantScreen() {
   const lastDone = (type: CareType) => events.find((event) => event.type === type)?.occurredOn;
   const openLog = (type?: CareEventType) =>
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
+  const pickPhoto = () => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared));
+  const heroHeight = width * 0.92;
+  const badge = plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />;
 
   return (
     <>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+      <ScrollView
+        // With a photo, the photo starts at the screen's top edge, under a clear navigation bar.
+        contentInsetAdjustmentBehavior={uri ? 'never' : 'automatic'}
+        scrollEventThrottle={32}
+        // Once the photo has scrolled up under the bar, the bar turns opaque and takes the plant's
+        // name, as Apple Music's album pages do.
+        onScroll={
+          uri
+            ? (event) =>
+                setPastHero(event.nativeEvent.contentOffset.y > heroHeight - insets.top - 44)
+            : undefined
+        }
+        contentContainerStyle={[styles.content, uri && { paddingBottom: insets.bottom }]}
+      >
         <Stack.Screen
           options={{
+            headerTransparent: !!uri,
+            headerStyle: { backgroundColor: uri && !pastHero ? 'transparent' : colors.background },
+            title: uri && pastHero ? plant.displayName : '',
             headerRight: () => (
               <TextButton
                 label="Edit"
@@ -90,31 +113,50 @@ export default function PlantScreen() {
             ),
           }}
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={photo ? 'Replace photo' : 'Add photo'}
-          onPress={() => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared))}
-          // A banner: a square photo this wide would fill the screen.
-          style={({ pressed }) => [
-            styles.hero,
-            { height: width * 0.72 },
-            pressed && pressedStyle.button,
-          ]}
-        >
-          {uri ? (
-            <Image source={{ uri }} style={StyleSheet.absoluteFill} />
-          ) : (
-            <Initial name={plant.displayName} size={210} />
-          )}
-        </Pressable>
-
-        <View style={styles.title}>
-          <Text accessibilityRole="header" style={text.title1}>
-            {plant.displayName}
-          </Text>
-          {scientific && <Text style={styles.scientific}>{scientific}</Text>}
-          {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
-        </View>
+        {uri ? (
+          <>
+            <View style={{ height: heroHeight }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Replace photo"
+                onPress={pickPhoto}
+                style={({ pressed }) => [StyleSheet.absoluteFill, pressed && pressedStyle.button]}
+              >
+                <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+              </Pressable>
+              {/* Over the photo but outside its button, so VoiceOver reads the name as the
+                  screen's header, apart from Replace photo. */}
+              <View style={styles.scrim}>
+                <Text accessibilityRole="header" style={[text.title1, styles.onPhoto]}>
+                  {plant.displayName}
+                </Text>
+                {scientific && (
+                  <Text style={[styles.scientific, styles.onPhotoQuiet]}>{scientific}</Text>
+                )}
+              </View>
+            </View>
+            {badge && <View style={styles.underHero}>{badge}</View>}
+          </>
+        ) : (
+          // A plant without a photo: its initial beside its names, which a tap turns into Add photo.
+          <View style={styles.compact}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add photo"
+              onPress={pickPhoto}
+              style={({ pressed }) => pressed && pressedStyle.button}
+            >
+              <PlantPhoto uri={null} size={64} name={plant.displayName} />
+            </Pressable>
+            <View style={styles.names}>
+              <Text accessibilityRole="header" style={text.title1}>
+                {plant.displayName}
+              </Text>
+              {scientific && <Text style={styles.scientific}>{scientific}</Text>}
+              {badge}
+            </View>
+          </View>
+        )}
 
         {plant.archivedAt !== null && (
           // In a row, the line wraps into a tall column at accessibility text sizes, so there it stacks.
@@ -336,8 +378,30 @@ function TimelineEntry({ event, today, last }: { event: CareEvent; today: string
 const styles = StyleSheet.create({
   content: { paddingBottom: space.xxl },
   grow: { flex: 1 },
-  hero: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tintSoft },
-  title: { gap: space.xs, padding: space.xl, paddingBottom: space.m },
+  // The hero's scrim, under the names at the photo's foot.
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: space.xs,
+    paddingHorizontal: space.xl,
+    paddingTop: space.xxxl * 3,
+    paddingBottom: space.l,
+    experimental_backgroundImage: colors.scrim,
+  },
+  onPhoto: { color: colors.onPhoto },
+  onPhotoQuiet: { color: colors.onPhotoQuiet },
+  underHero: { paddingHorizontal: space.xl, paddingTop: space.s, paddingBottom: space.m },
+  compact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.l,
+    paddingHorizontal: space.xl,
+    paddingTop: space.m,
+    paddingBottom: space.l,
+  },
+  names: { flex: 1, gap: space.xs },
   scientific: { ...text.subheadline, ...font.italic },
   badge: {
     flexDirection: 'row',
