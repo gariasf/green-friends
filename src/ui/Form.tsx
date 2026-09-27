@@ -8,7 +8,6 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useId } from 'react';
 import {
   Alert,
@@ -27,6 +26,7 @@ import {
 
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
+import { Icon } from '@/src/ui/Icon';
 import { accessibilitySize, colors, pressedStyle, space, target, text } from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
@@ -190,7 +190,7 @@ export function CloseButton() {
       onPress={() => router.back()}
       style={({ pressed }) => pressed && pressedStyle.button}
     >
-      <SymbolView name="xmark.circle.fill" size={30} tintColor={colors.tertiaryLabel} />
+      <Icon name="clear" size={30} color={colors.tertiaryLabel} weight="fill" />
     </Pressable>
   );
 }

@@ -2,7 +2,6 @@ import { Button, Host, Menu, RNHostView, Section } from '@expo/ui/swift-ui';
 import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -20,6 +19,7 @@ import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
+import { Icon } from '@/src/ui/Icon';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { colors, font, group, pressedStyle, space, target, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
@@ -83,11 +83,7 @@ export default function TodayScreen() {
           ))}
           {needingAttention.length === 0 && plants.length > 0 && (
             <Animated.View entering={FadeIn}>
-              <EmptyState
-                symbol="checkmark.seal"
-                title="All caught up"
-                line="Nothing needs you today."
-              />
+              <EmptyState symbol="allDone" title="All caught up" line="Nothing needs you today." />
             </Animated.View>
           )}
           {plants.length === 0 && (
@@ -134,7 +130,7 @@ function openPlant(plant: PlantCare) {
 /** What a card's ⋯ offers besides the one-tap log. */
 const MORE = [
   { id: 'log', title: 'Log earlier…', image: 'calendar' },
-  { id: 'note', title: 'Add note', image: CARE_COPY.note.symbol },
+  { id: 'note', title: 'Add note', image: 'note.text' },
   { id: 'edit', title: 'Edit plant', image: 'pencil' },
 ] as const;
 
@@ -207,12 +203,7 @@ function CareCard({
               <RNHostView matchContents>
                 <View style={target.icon}>
                   <View style={styles.more}>
-                    <SymbolView
-                      name="ellipsis"
-                      size={16}
-                      weight="bold"
-                      tintColor={colors.secondaryLabel}
-                    />
+                    <Icon name="more" size={18} color={colors.secondaryLabel} weight="bold" />
                   </View>
                 </View>
               </RNHostView>
@@ -267,10 +258,11 @@ function CareCard({
               onPress={() => tick([type])}
             >
               {({ pressed }) => (
-                <SymbolView
-                  name={done || pressed ? 'checkmark.circle.fill' : 'circle'}
+                <Icon
+                  name={done || pressed ? 'checkCircle' : 'circle'}
                   size={30}
-                  tintColor={done || pressed ? colors.tint : colors.tertiaryLabel}
+                  color={done || pressed ? colors.tint : colors.tertiaryLabel}
+                  weight={done || pressed ? 'fill' : 'regular'}
                 />
               )}
             </Pressable>

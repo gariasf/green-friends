@@ -1,6 +1,5 @@
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useCallback, useState } from 'react';
 import {
   Image,
@@ -38,6 +37,7 @@ import { CareGroup } from '@/src/ui/CareGuide';
 import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
+import { Icon } from '@/src/ui/Icon';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
 import { accessibilitySize, colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
@@ -94,7 +94,7 @@ export default function PlantScreen() {
           {uri ? (
             <Image source={{ uri }} style={StyleSheet.absoluteFill} />
           ) : (
-            <SymbolView name="leaf.fill" size={96} tintColor={colors.tint} />
+            <Icon name="leaf" size={96} color={colors.tint} weight="fill" />
           )}
         </Pressable>
 
@@ -109,12 +109,7 @@ export default function PlantScreen() {
         {plant.archivedAt !== null && (
           // In a row, the line wraps into a tall column at accessibility text sizes, so there it stacks.
           <View style={[styles.banner, accessibilitySize(fontScale) && styles.bannerStacked]}>
-            <SymbolView
-              accessibilityElementsHidden
-              name="archivebox"
-              size={18}
-              tintColor={colors.secondaryLabel}
-            />
+            <Icon name="archive" size={18} color={colors.secondaryLabel} />
             <Text style={[text.subheadline, !accessibilitySize(fontScale) && styles.grow]}>
               Archived: out of care, its Care Log kept.
             </Text>
@@ -158,7 +153,7 @@ export default function PlantScreen() {
         <View style={styles.timeline}>
           {events.length === 0 && (
             <EmptyState
-              symbol="clock.arrow.circlepath"
+              symbol="history"
               title="Nothing logged yet"
               line="What you log shows up here, newest first."
               // An Archived plant takes Notes only, which Add note above adds.
@@ -230,11 +225,11 @@ function readPlant(id: string) {
 function Toxicity({ toxic }: { toxic: boolean }) {
   return (
     <View style={[styles.badge, toxic && styles.badgeToxic]}>
-      <SymbolView
-        accessibilityElementsHidden
-        name="pawprint.fill"
+      <Icon
+        name="pet"
         size={12}
-        tintColor={toxic ? colors.caution : colors.secondaryLabel}
+        color={toxic ? colors.caution : colors.secondaryLabel}
+        weight="fill"
       />
       <Text style={[styles.badgeText, toxic && styles.caution]}>
         {toxic ? 'Toxic to pets' : 'Non-toxic to pets'}
@@ -297,7 +292,7 @@ function CareTile({
           onPress={onDone}
           style={({ pressed }) => [styles.done, pressed && pressedStyle.button]}
         >
-          <SymbolView name="checkmark" size={12} weight="bold" tintColor={colors.onTint} />
+          <Icon name="check" size={12} color={colors.onTint} weight="bold" />
           <Text style={styles.doneLabel}>Done</Text>
         </Pressable>
       )}

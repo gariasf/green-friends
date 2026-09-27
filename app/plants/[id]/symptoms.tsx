@@ -7,10 +7,10 @@ import { guides } from '@/src/ui/guides';
 import { colors, group, space } from '@/src/ui/theme';
 import { SYMPTOM_GROUPS, SYMPTOMS_TITLE } from '@/src/ui/words';
 
-/** Each group's symbol, beside every Symptom in it. */
+/** Each group's icon, beside every Symptom in it. */
 const GROUP_SYMBOL = {
-  plant: { symbol: 'leaf.fill', tint: colors.tint },
-  pest: { symbol: 'ant.fill', tint: colors.secondaryLabel },
+  plant: { symbol: 'leaf', tint: colors.tint },
+  pest: { symbol: 'pest', tint: colors.secondaryLabel },
 } as const satisfies Record<Symptom['kind'], object>;
 
 /** What can be seen going wrong, to pick from (spec #48): leaves and stems, then pests. */

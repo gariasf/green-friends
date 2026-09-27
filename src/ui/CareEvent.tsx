@@ -1,9 +1,9 @@
-import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
 import type { ColorValue } from 'react-native';
 
 import type { CareEvent, CareEventType } from '@/src/core/careLog';
 import { Field, optionalNumber } from '@/src/ui/Form';
+import { Icon, type IconName } from '@/src/ui/Icon';
 import { colors } from '@/src/ui/theme';
 import { CARE_WORDS } from '@/src/ui/words';
 
@@ -13,21 +13,21 @@ import { CARE_WORDS } from '@/src/ui/words';
  */
 export const CARE_COPY: Record<
   CareEventType,
-  { symbol: SFSymbol; hue: ColorValue; label: string; done: string }
+  { symbol: IconName; hue: ColorValue; label: string; done: string }
 > = {
-  water: { symbol: 'drop.fill', hue: colors.water, ...CARE_WORDS.water },
-  fertilize: { symbol: 'sparkles', hue: colors.fertilize, ...CARE_WORDS.fertilize },
-  repot: { symbol: 'shippingbox.fill', hue: colors.repot, ...CARE_WORDS.repot },
-  note: { symbol: 'note.text', hue: colors.note, ...CARE_WORDS.note },
+  water: { symbol: 'water', hue: colors.water, ...CARE_WORDS.water },
+  fertilize: { symbol: 'fertilize', hue: colors.fertilize, ...CARE_WORDS.fertilize },
+  repot: { symbol: 'repot', hue: colors.repot, ...CARE_WORDS.repot },
+  note: { symbol: 'note', hue: colors.note, ...CARE_WORDS.note },
 };
 
 /**
  * A Care Event type's symbol, in its hue. Always beside its words, so VoiceOver skips it rather
- * than read the symbol's name ("sparkle").
+ * than read the icon's name.
  */
 export function CareSymbol({ type, size }: { type: CareEventType; size: number }) {
   const { symbol, hue } = CARE_COPY[type];
-  return <SymbolView accessibilityElementsHidden name={symbol} size={size} tintColor={hue} />;
+  return <Icon name={symbol} size={size} color={hue} />;
 }
 
 /**

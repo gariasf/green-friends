@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
@@ -12,6 +11,7 @@ import {
 } from '@/src/core/careGuide';
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
+import { Icon, type IconName } from '@/src/ui/Icon';
 import { colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import {
   feedLine,
@@ -40,7 +40,7 @@ function openSymptoms(id: string) {
   router.push({ pathname: '/plants/[id]/symptoms', params: { id } });
 }
 
-/** A row of a group: a symbol, a title and what follows it; a chevron when it opens something. */
+/** A row of a group: an icon, a title and what follows it; a chevron when it opens something. */
 export function Row({
   symbol,
   tint,
@@ -51,7 +51,7 @@ export function Row({
   onPress,
   first,
 }: {
-  symbol: SFSymbol;
+  symbol: IconName;
   tint: ColorValue;
   title: string;
   body?: string;
@@ -63,21 +63,13 @@ export function Row({
 }) {
   const content = (
     <>
-      <SymbolView accessibilityElementsHidden name={symbol} size={20} tintColor={tint} />
+      <Icon name={symbol} size={20} color={tint} />
       <View style={styles.rowText}>
         <Text style={text.headline}>{title}</Text>
         {body ? <Text style={text.subheadline}>{body}</Text> : null}
         {children}
       </View>
-      {onPress && (
-        <SymbolView
-          accessibilityElementsHidden
-          name="chevron.right"
-          size={13}
-          weight="semibold"
-          tintColor={colors.tertiaryLabel}
-        />
-      )}
+      {onPress && <Icon name="next" size={13} color={colors.tertiaryLabel} weight="bold" />}
     </>
   );
   if (!onPress) {
@@ -104,7 +96,7 @@ function SomethingWrong({ id, first }: { id: string; first?: boolean }) {
   return (
     <Row
       first={first}
-      symbol="stethoscope"
+      symbol="symptom"
       tint={colors.secondaryLabel}
       title="Something wrong?"
       body={SOMETHING_WRONG}
@@ -168,16 +160,11 @@ export function CareGroup({
               body={profile.watering[now]}
             />
             <Row symbol={FEED.symbol} tint={FEED.hue} title="Feed" body={feedLine(profile, now)} />
-            <Row
-              symbol="sun.max.fill"
-              tint={colors.sun}
-              title="Light"
-              label={lightLabel(profile.light)}
-            >
+            <Row symbol="light" tint={colors.sun} title="Light" label={lightLabel(profile.light)}>
               <LightScale light={profile.light} />
             </Row>
             <Row
-              symbol="book.fill"
+              symbol="guide"
               tint={colors.tint}
               title="Full Care Guide"
               onPress={() => router.push({ pathname: '/plants/[id]/guide', params: { id } })}
@@ -196,7 +183,7 @@ function NoCareGuide() {
   return (
     <Row
       first
-      symbol="leaf.fill"
+      symbol="leaf"
       tint={colors.tint}
       title={NO_CARE_GUIDE.title}
       body={NO_CARE_GUIDE.line}
@@ -239,19 +226,19 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
         <YourSchedule line={yourSchedule(schedule.fertilize)} />
       </Card>
 
-      <Card symbol="sun.max.fill" tint={colors.sun} title="Light and warmth">
+      <Card symbol="light" tint={colors.sun} title="Light and warmth">
         <View accessible accessibilityLabel={lightLabel(profile.light)}>
           <LightScale light={profile.light} />
         </View>
         <Text style={text.body}>{profile.light.text}</Text>
       </Card>
 
-      <Card symbol="square.stack.3d.up.fill" tint={colors.secondaryLabel} title="Soil">
+      <Card symbol="soil" tint={colors.secondaryLabel} title="Soil">
         <Text style={text.body}>{profile.soil}</Text>
       </Card>
 
       {guide.careNotes && (
-        <Card symbol="leaf.fill" tint={colors.tint} title="This plant">
+        <Card symbol="leaf" tint={colors.tint} title="This plant">
           <Text style={text.body}>{guide.careNotes}</Text>
         </Card>
       )}
@@ -260,7 +247,7 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
         <SomethingWrong id={id} first />
       </View>
 
-      <Card symbol="lightbulb.fill" tint={colors.tint} title="Fun fact">
+      <Card symbol="fact" tint={colors.tint} title="Fun fact">
         <Text style={text.body}>{guide.funFact.text}</Text>
         <Pressable
           accessibilityRole="link"
@@ -276,14 +263,14 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
   );
 }
 
-/** A card on the background: a symbol and a heading, then what it holds. */
+/** A card on the background: an icon and a heading, then what it holds. */
 function Card({
   symbol,
   tint,
   title,
   children,
 }: {
-  symbol: SFSymbol;
+  symbol: IconName;
   tint: ColorValue;
   title: string;
   children: ReactNode;
@@ -291,7 +278,7 @@ function Card({
   return (
     <View style={styles.card}>
       <View style={styles.line}>
-        <SymbolView accessibilityElementsHidden name={symbol} size={18} tintColor={tint} />
+        <Icon name={symbol} size={18} color={tint} />
         <Text accessibilityRole="header" style={[text.title2, styles.grow]}>
           {title}
         </Text>
@@ -321,12 +308,7 @@ export function CauseCard({
       </Text>
       {fact && (
         <View accessible style={styles.fact}>
-          <SymbolView
-            accessibilityElementsHidden
-            name="clock.arrow.circlepath"
-            size={14}
-            tintColor={colors.secondaryLabel}
-          />
+          <Icon name="history" size={14} color={colors.secondaryLabel} />
           <Text style={[text.footnote, styles.grow]}>{fact}</Text>
         </View>
       )}
@@ -340,12 +322,7 @@ export function CauseCard({
       <Text style={text.body}>{cause.fix}</Text>
       {cause.petWarning && (
         <View accessible style={styles.warning}>
-          <SymbolView
-            accessibilityElementsHidden
-            name="pawprint.fill"
-            size={13}
-            tintColor={colors.caution}
-          />
+          <Icon name="pet" size={13} color={colors.caution} weight="fill" />
           <Text style={[text.footnote, styles.caution, styles.grow]}>{PET_WARNING}</Text>
         </View>
       )}
@@ -357,12 +334,7 @@ export function CauseCard({
         onPress={onLog}
         style={({ pressed }) => [styles.linkButton, styles.line, pressed && pressedStyle.button]}
       >
-        <SymbolView
-          accessibilityElementsHidden
-          name="note.text"
-          size={14}
-          tintColor={colors.tint}
-        />
+        <Icon name="note" size={14} color={colors.tint} weight="regular" />
         <Text style={styles.link}>Log it as a Note</Text>
       </Pressable>
     </View>
@@ -372,12 +344,7 @@ export function CauseCard({
 function YourSchedule({ line }: { line: string }) {
   return (
     <View style={styles.line}>
-      <SymbolView
-        accessibilityElementsHidden
-        name="calendar"
-        size={14}
-        tintColor={colors.secondaryLabel}
-      />
+      <Icon name="schedule" size={14} color={colors.secondaryLabel} />
       <Text style={[text.footnote, styles.grow]}>{line}</Text>
     </View>
   );

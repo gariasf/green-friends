@@ -54,7 +54,7 @@ export function SpeciesSearch({
       })}
       {query.trim() !== '' && matches.length === 0 ? (
         <EmptyState
-          symbol="magnifyingglass"
+          symbol="search"
           title="Not in the catalog"
           line={fallback.line}
           action={{ label: fallback.label, onPress: fallback.onPress }}
