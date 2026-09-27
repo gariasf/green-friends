@@ -15,10 +15,14 @@ import { space, text } from '@/src/ui/theme';
 /**
  * The log sheet (spec #22): logs any care type or a Note on any day up to today, a repot with its
  * new pot and soil. Opens preset to the care type in its `type` param, else the first one Due. An
- * Archived plant is out of care, so for one it only adds a Note.
+ * Archived plant is out of care, so for one it only adds a Note. A `note` param fills the Note.
  */
 export default function LogCareSheet() {
-  const { id, type: preset } = useLocalSearchParams<'/plants/[id]/log', { type?: string }>();
+  const {
+    id,
+    type: preset,
+    note,
+  } = useLocalSearchParams<'/plants/[id]/log', { type?: string; note?: string }>();
   const [displayName] = useState(() => getDisplayName(db, id));
   // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants, a core read
   // of one plant by id at hundreds.
@@ -31,7 +35,8 @@ export default function LogCareSheet() {
       : 'note',
   );
   const [day, setDay] = useState(() => localDay(new Date()));
-  const details = useCareEventDetails(type);
+  // A Symptom's Log it as a Note fills the Note.
+  const details = useCareEventDetails(type, { note });
 
   const log = () => {
     try {

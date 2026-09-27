@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native';
 
-import { evaluateCare, type CareStatus } from '@/src/core/care';
+import { evaluateCare, seasonOn, type CareStatus } from '@/src/core/care';
+import { readCareGuide } from '@/src/core/careGuide';
 import {
   listCareEvents,
   logCareEvent,
@@ -29,9 +30,11 @@ import {
   unarchivePlant,
   type CareType,
 } from '@/src/core/plants';
+import { getSettings } from '@/src/core/settings';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
+import { CareGroup, guides } from '@/src/ui/CareGuide';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
@@ -44,8 +47,9 @@ import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from 
  * A plant's screen, where tapping a plant anywhere leads (spec #22, the prototype's variant B): its
  * photo, which a tap replaces, its names and pet toxicity; a tile per care type with when it's next
  * Due, when it was last done and, once Due, Done; its Care Log as a timeline; its Current Pot and
- * whose schedule it follows. An Archived plant is out of care, so it has no tiles and offers
- * Unarchive instead.
+ * whose schedule it follows. Under the tiles, its Care group (spec #48): how to water, feed and place it
+ * in today's Season, its Care Guide and the Symptoms. An Archived plant is out of care, so it has no
+ * tiles or Care group and offers Unarchive instead.
  */
 export default function PlantScreen() {
   const { id } = useLocalSearchParams<'/plants/[id]'>();
@@ -140,6 +144,8 @@ export default function PlantScreen() {
           </View>
         )}
 
+        {care && <CareGroup id={id} guide={plant.guide} season={plant.season} today={today} />}
+
         <View style={styles.logHead}>
           <Text accessibilityRole="header" style={group.header}>
             Care Log
@@ -215,6 +221,8 @@ function readPlant(id: string) {
     // Archived plants are out of care, so evaluateCare leaves them out.
     care: evaluateCare(db, today).find((candidate) => candidate.id === id)?.care ?? null,
     events: listCareEvents(db, id),
+    guide: readCareGuide(db, id, today, guides),
+    season: seasonOn(today, getSettings(db)),
   };
 }
 

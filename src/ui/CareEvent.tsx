@@ -36,7 +36,10 @@ export function CareSymbol({ type, size }: { type: CareEventType; size: number }
  * for logCareEvent or editCareEvent (undefined where the type records nothing), and whether they
  * are complete: a Note needs text.
  */
-export function useCareEventDetails(type: CareEventType, event?: CareEvent) {
+export function useCareEventDetails(
+  type: CareEventType,
+  event?: Partial<Pick<CareEvent, 'note' | 'potSizeCm' | 'soil'>>,
+) {
   const [note, setNote] = useState(event?.note ?? '');
   const [potSizeCm, setPotSizeCm] = useState(event?.potSizeCm?.toString() ?? '');
   const [soil, setSoil] = useState(event?.soil ?? '');

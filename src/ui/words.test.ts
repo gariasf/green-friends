@@ -1,4 +1,4 @@
-import { causeFactLine, dueLine, scheduleLine, seasonLine } from './words';
+import { causeFactLine, dueLine, LIGHT_WORDS, lightLabel, scheduleLine, seasonLine } from './words';
 
 describe('dueLine', () => {
   it('says what is Overdue, then what is Due today', () => {
@@ -63,5 +63,16 @@ describe('Care Guide lines', () => {
         '2026-09-22',
       ),
     ).toBe('Growing season');
+  });
+
+  it('says a light step and its direct sun, and both in one line for VoiceOver', () => {
+    expect(LIGHT_WORDS.level['bright-indirect']).toBe('Bright indirect');
+    expect(LIGHT_WORDS.directSun.some).toBe('A few hours of sun');
+    expect(lightLabel({ level: 'bright-indirect', directSun: 'morning' })).toBe(
+      'Light: bright indirect, morning sun',
+    );
+    expect(lightLabel({ level: 'direct', directSun: 'all-day' })).toBe(
+      'Light: direct sun, full sun',
+    );
   });
 });

@@ -1,7 +1,7 @@
 // The app's words for care, with nothing from React Native, so the Web view (web/) says the same.
 // Relative imports, as in src/core: the Web view's build has no `@/`.
 import type { CareStatus, DueCare, NextCare, SeasonOn } from '../core/care';
-import type { CauseFact, SeasonalSchedule } from '../core/careGuide';
+import type { CareProfile, CauseFact, SeasonalSchedule, Symptom } from '../core/careGuide';
 import type { CareEventType } from '../core/careLog';
 import { daysBetween, localNoon } from '../core/dates';
 import { CARE_TYPES, hasOverride, type Plant } from '../core/plants';
@@ -169,4 +169,52 @@ function agoLine(day: string, today: string): string {
   if (ago === 1) return 'yesterday';
   const [count, unit] = daysOrMonths(ago);
   return `${plural(count, unit)} ago`;
+}
+
+/**
+ * The light scale's steps and the direct-sun words, as the Care group's Light row and the Care
+ * Guide show them (spec #48).
+ */
+export const LIGHT_WORDS = {
+  level: {
+    low: 'Low',
+    medium: 'Medium',
+    'bright-indirect': 'Bright indirect',
+    direct: 'Direct sun',
+  },
+  directSun: {
+    none: 'No direct sun',
+    morning: 'Morning sun',
+    some: 'A few hours of sun',
+    'all-day': 'Full sun',
+  },
+} as const;
+
+/** A profile's light in one line, for VoiceOver: "Light: bright indirect, morning sun". */
+export function lightLabel({
+  level,
+  directSun,
+}: Pick<CareProfile['light'], 'level' | 'directSun'>) {
+  const words = [LIGHT_WORDS.level[level], LIGHT_WORDS.directSun[directSun]];
+  return `Light: ${words.map((word) => word.toLowerCase()).join(', ')}`;
+}
+
+/** The Symptom list's two groups, in order. */
+export const SYMPTOM_GROUPS: { kind: Symptom['kind']; title: string }[] = [
+  { kind: 'plant', title: 'Leaves and stems' },
+  { kind: 'pest', title: 'Pests' },
+];
+
+/** Beneath Something wrong?, what the Symptoms cover. */
+export const SOMETHING_WRONG = 'Brown tips, yellow leaves, pests';
+
+/** Beside a cause whose treatment can harm pets. */
+export const PET_WARNING =
+  'Rubbing alcohol, neem oil and insecticidal soap can harm pets: keep them away until the leaves are dry.';
+
+/** The first line above a Symptom's causes. */
+export function causesIntro(profile: CareProfile | null): string {
+  return profile
+    ? `The causes most likely for a ${profile.name.toLowerCase()} come first.`
+    : 'The most common causes come first.';
 }

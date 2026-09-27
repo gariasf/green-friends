@@ -7,6 +7,8 @@ import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native'
 const MEDICI = { light: '#417777', dark: '#7fb8b8' };
 /** Ecru. `assets/icon.svg` and app.json's splash repeat it and Medici's light shade. */
 const ECRU = { light: '#c0b490', dark: '#3a3526' };
+/** Olive Ocher, one shade for both modes. */
+const OLIVE = '#d1bd1a';
 
 /**
  * The app's colours, the only ones it uses: iOS semantic colours, which follow light and dark
@@ -59,9 +61,14 @@ export const colors = {
   // stays systemBlue, apart from the tint; fertilize is Olive Ocher, 1.91:1 on white like
   // systemYellow before it; repot is Hay's Russet, 4.04:1 on the dark card.
   water: Color.ios.systemBlue,
-  fertilize: '#d1bd1a',
+  fertilize: OLIVE,
   repot: DynamicColorIOS({ light: '#681916', dark: '#c8594c' }),
   note: Color.ios.systemGray,
+  /**
+   * Light's sun in the Care Guide and its marked step on the light scale: Olive Ocher, the
+   * palette's sunny hue, shared with fertilize; never caution, which would read as a warning.
+   */
+  sun: OLIVE,
 };
 
 /**
