@@ -212,6 +212,7 @@ function NoCareGuide() {
 export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; today: string }) {
   const [season, setSeason] = useState<Season>(guide.season.season);
   const { profile, schedule } = guide;
+  const npk = npkNote(profile.fertilizer.type);
   return (
     <View style={styles.body}>
       <View style={styles.inset}>
@@ -233,9 +234,7 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
 
       <Card symbol={FEED.symbol} tint={FEED.hue} title="Fertiliser">
         <Text style={text.headline}>{profile.fertilizer.type}</Text>
-        {npkNote(profile.fertilizer.type) && (
-          <Text style={text.footnote}>{npkNote(profile.fertilizer.type)}</Text>
-        )}
+        {npk && <Text style={text.footnote}>{npk}</Text>}
         <Text style={text.body}>{profile.fertilizer[season]}</Text>
         <YourSchedule line={yourSchedule(schedule.fertilize)} />
       </Card>

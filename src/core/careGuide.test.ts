@@ -77,6 +77,13 @@ describe('the bundled care-guides.json (ADR-0008)', () => {
     }
   });
 
+  test('direct sun always comes with some sun or sun all day, never "Direct sun · No direct sun"', () => {
+    const direct = guides.profiles.filter(({ light }) => light.level === 'direct');
+    expect(direct.filter(({ light }) => !['some', 'all-day'].includes(light.directSun))).toEqual(
+      [],
+    );
+  });
+
   test('every catalog Species has a profile', () => {
     const missing = catalogFile.species.filter((species) => !(species.id in guides.species));
     expect(missing.map((species) => species.id)).toEqual([]);

@@ -161,6 +161,7 @@ export function GuideView({
 }) {
   const [season, setSeason] = useState<Season>(guide.season.season);
   const { profile, schedule } = guide;
+  const npk = npkNote(profile.fertilizer.type);
   return (
     <>
       <BackToPlant id={id} name={name} />
@@ -199,9 +200,7 @@ export function GuideView({
         <p>
           <strong>{profile.fertilizer.type}</strong>
         </p>
-        {npkNote(profile.fertilizer.type) && (
-          <p className="quiet">{npkNote(profile.fertilizer.type)}</p>
-        )}
+        {npk && <p className="quiet">{npk}</p>}
         <p>{profile.fertilizer[season]}</p>
         <p className="quiet">{yourSchedule(schedule.fertilize)}</p>
       </section>

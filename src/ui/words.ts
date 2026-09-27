@@ -244,9 +244,13 @@ export const NO_CARE_GUIDE = {
 /** The Symptom list's title. */
 export const SYMPTOMS_TITLE = 'What do you see?';
 
-/** The Care group's Feed row: the fertiliser while Growing, the Dormant advice (usually stop) while Dormant. */
+/**
+ * The Care group's Feed row: the fertiliser while Growing, without its ratio, which the Fertiliser
+ * card explains; the Dormant advice (usually stop) while Dormant.
+ */
 export function feedLine(profile: CareProfile, season: SeasonOn['season']): string {
-  return season === 'dormant' ? profile.fertilizer.dormant : profile.fertilizer.type;
+  if (season === 'dormant') return profile.fertilizer.dormant;
+  return profile.fertilizer.type.replace(/ \(N-P-K [^)]*\)/, '');
 }
 
 /** Under Watering and Fertiliser: "Your schedule: every 7 days, every 14 days in the Dormant season". */
