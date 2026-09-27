@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { evaluateCare, seasonOn, type CareStatus } from '@/src/core/care';
+import { evaluateCare, plantSeasonOn, type CareStatus } from '@/src/core/care';
 import { readCareGuide } from '@/src/core/careGuide';
 import {
   listCareEvents,
@@ -30,7 +30,6 @@ import {
   unarchivePlant,
   type CareType,
 } from '@/src/core/plants';
-import { getSettings } from '@/src/core/settings';
 import { getSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
@@ -271,7 +270,7 @@ function readPlant(id: string) {
     care: evaluateCare(db, today).find((candidate) => candidate.id === id)?.care ?? null,
     events: listCareEvents(db, id),
     guide: readCareGuide(db, id, today, guides),
-    season: seasonOn(today, getSettings(db)),
+    season: plantSeasonOn(db, row.speciesId, today),
   };
 }
 

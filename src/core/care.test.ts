@@ -1,6 +1,6 @@
 import type { Db } from '../db/types';
 import { MONSTERA, POTHOS, catalog, gardenDb, noon } from '../test/garden';
-import { dueCare, evaluateCare, listNeedsAttention, nextCare } from './care';
+import { dueCare, evaluateCare, listNeedsAttention, nextCare, seasonOn } from './care';
 import { logCareEvent } from './careLog';
 import { NO_SCHEDULE, archivePlant, createPlant, updatePlant, type CareSchedule } from './plants';
 import { updateSettings } from './settings';
@@ -440,5 +440,81 @@ describe('next care', () => {
     seedSpecies(db, { version: 2, species: [catalog.pothos] });
 
     expect(nextCareOn(db, '2026-09-29')).toBeNull();
+  });
+});
+
+describe('a Species that rests in summer', () => {
+  const MARCH_TO_OCTOBER = { growingStartMonth: 3, growingEndMonth: 10 };
+
+  test("takes the garden's Season the other way round", () => {
+    expect(seasonOn('2026-07-15', MARCH_TO_OCTOBER, true)).toEqual({
+      season: 'dormant',
+      startsOn: '2026-03-01',
+      resumesOn: '2026-11-01',
+    });
+    expect(seasonOn('2026-10-31', MARCH_TO_OCTOBER, true)).toMatchObject({ season: 'dormant' });
+    expect(seasonOn('2026-11-01', MARCH_TO_OCTOBER, true)).toEqual({
+      season: 'growing',
+      startsOn: '2026-11-01',
+    });
+    expect(seasonOn('2027-02-28', MARCH_TO_OCTOBER, true)).toEqual({
+      season: 'growing',
+      startsOn: '2026-11-01',
+    });
+  });
+
+  test('in a southern garden, growing October to March, it grows over the local winter', () => {
+    const southern = { growingStartMonth: 10, growingEndMonth: 3 };
+    expect(seasonOn('2026-06-15', southern, true)).toEqual({
+      season: 'growing',
+      startsOn: '2026-04-01',
+    });
+    expect(seasonOn('2027-01-15', southern, true)).toEqual({
+      season: 'dormant',
+      startsOn: '2026-10-01',
+      resumesOn: '2027-04-01',
+    });
+  });
+
+  test('stays Growing all year in a garden Growing all year', () => {
+    for (const months of [
+      { growingStartMonth: 1, growingEndMonth: 1 },
+      { growingStartMonth: 1, growingEndMonth: 12 },
+    ]) {
+      expect(seasonOn('2026-07-15', months, true)).toEqual({ season: 'growing', startsOn: null });
+    }
+  });
+
+  test("comes Due on its Dormant interval in the garden's growing months, its Growing one after", () => {
+    const db = gardenDb();
+    const cyclamen = {
+      ...catalog.monstera,
+      id: 'Q150055',
+      scientificName: 'Cyclamen persicum',
+      colloquialName: "Florist's cyclamen",
+      wateringGrowingDays: 5,
+      wateringDormantDays: 14,
+      fertilizingGrowingDays: 21,
+      fertilizingDormantDays: null,
+      restsInSummer: true,
+    };
+    seedSpecies(db, { version: 2, species: [...Object.values(catalog), cyclamen] });
+    const plant = createPlant(db, { speciesId: cyclamen.id }, noon(2026, 9, 22));
+    logCareEvent(
+      db,
+      { plantId: plant.id, type: 'water', occurredOn: '2026-10-25' },
+      noon(2026, 10, 25),
+    );
+
+    // October is the garden's Growing season, so the cyclamen's Dormant one: 14 days.
+    expect(careOn(db, '2026-10-31')).toMatchObject({
+      water: { state: 'upcoming', dueOn: '2026-11-08' },
+      fertilize: { state: 'paused', until: '2026-11-01' },
+    });
+    // From November it grows: 5 days, so both are Due on the Season's first day.
+    expect(careOn(db, '2026-11-01')).toMatchObject({
+      water: { state: 'due', dueOn: '2026-11-01', daysOverdue: 0 },
+      fertilize: { state: 'due', dueOn: '2026-11-01', daysOverdue: 0 },
+    });
   });
 });

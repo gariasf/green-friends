@@ -11,6 +11,7 @@ import {
 import { logCareEvent } from './careLog';
 import { createPlant, updatePlant } from './plants';
 import { updateSettings } from './settings';
+import { seedSpecies } from './species';
 
 // The rules below check what the cast takes on trust.
 const guides = bundled as unknown as CareGuides;
@@ -156,6 +157,19 @@ describe('readCareGuide', () => {
       season: 'dormant',
       startsOn: '2026-09-01',
       resumesOn: '2027-03-01',
+    });
+  });
+
+  test('a Species that rests in summer is in its Dormant season in July, and so is its Season fact', () => {
+    const db = gardenDb();
+    seedSpecies(db, catalogFile);
+    const plant = createPlant(db, { speciesId: 'Q150055' }, noon(2026, 7, 1));
+    const dormant = { season: 'dormant', startsOn: '2026-03-01', resumesOn: '2026-11-01' };
+
+    expect(readCareGuide(db, plant.id, '2026-07-15', guides)?.season).toEqual(dormant);
+    expect(causeFact(db, plant.id, 'season', '2026-07-15')).toEqual({
+      kind: 'season',
+      season: dormant,
     });
   });
 });

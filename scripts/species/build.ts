@@ -29,9 +29,9 @@
  *
  * Invariants: QIDs unique and append-only (every ID ever committed in assets/species.json stays,
  * none is reused for another taxon), intervals are positive integers, a Dormant interval needs a
- * Growing one, every species states its pet toxicity (true, false, or null for unknown), and the
- * dataset version goes up whenever the species content changes (the app reseeds on a higher
- * version).
+ * Growing one, every species states its pet toxicity (true, false, or null for unknown) and whether
+ * it rests in summer (ADR-0009), and the dataset version goes up whenever the species content
+ * changes (the app reseeds on a higher version).
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -59,7 +59,8 @@ const FIELD_KINDS = {
   fertilizingDormantDays: 'interval',
   repottingMonths: 'interval',
   toxicToPets: 'flag',
-} satisfies Record<keyof Species, 'name' | 'interval' | 'flag'>;
+  restsInSummer: 'switch',
+} satisfies Record<keyof Species, 'name' | 'interval' | 'flag' | 'switch'>;
 
 const SOURCES = [
   {
@@ -267,6 +268,8 @@ function validate({ version, species }: SpeciesDataset): string[] {
         if (value !== null && typeof value !== 'boolean') {
           problems.push(`${where}: ${key} must be true, false or null (unknown)`);
         }
+      } else if (kind === 'switch') {
+        if (typeof value !== 'boolean') problems.push(`${where}: ${key} must be true or false`);
       } else if (
         value !== null &&
         !(typeof value === 'number' && Number.isInteger(value) && value > 0)

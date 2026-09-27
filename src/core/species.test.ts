@@ -21,6 +21,7 @@ const monstera = (wateringGrowingDays: number): Species => ({
   fertilizingDormantDays: null,
   repottingMonths: 24,
   toxicToPets: true,
+  restsInSummer: false,
 });
 
 const pothos: Species = {
@@ -33,6 +34,7 @@ const pothos: Species = {
   fertilizingDormantDays: null,
   repottingMonths: 24,
   toxicToPets: true,
+  restsInSummer: false,
 };
 
 describe('species catalog', () => {

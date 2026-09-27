@@ -65,7 +65,7 @@ One sourced line about a Species, at the end of its Care Guide.
 _Avoid_: trivia
 
 **Season**:
-Growing or Dormant, determined by an app-level growing-month range (default Mar–Oct); a range that starts and ends in the same month means Growing all year. Watering and fertilizing schedules carry one interval per season; a missing Dormant interval means that care type is Paused for the season.
+Growing or Dormant, determined by an app-level growing-month range (default Mar–Oct); a range that starts and ends in the same month means Growing all year. A Species that rests in summer takes the range the other way round: its Growing season is the garden's Dormant months, and a garden Growing all year stays Growing all year for it too. Watering and fertilizing schedules carry one interval per season; a missing Dormant interval means that care type is Paused for the season.
 _Avoid_: winter mode
 
 **Paused**:

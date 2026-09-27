@@ -18,6 +18,7 @@ export const catalog = {
     fertilizingDormantDays: null,
     repottingMonths: 24,
     toxicToPets: true,
+    restsInSummer: false,
   },
   pothos: {
     id: 'Q161809',
@@ -29,6 +30,7 @@ export const catalog = {
     fertilizingDormantDays: null,
     repottingMonths: 24,
     toxicToPets: true,
+    restsInSummer: false,
   },
 } satisfies Record<string, Species>;
 

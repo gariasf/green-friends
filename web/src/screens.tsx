@@ -1,11 +1,16 @@
 import { useMemo } from 'react';
 
-import { dueCare, evaluateCare, needsAttention, nextCare, seasonOn } from '../../src/core/care';
+import {
+  dueCare,
+  evaluateCare,
+  needsAttention,
+  nextCare,
+  plantSeasonOn,
+} from '../../src/core/care';
 import { readCareGuide } from '../../src/core/careGuide';
 import { listCareEvents, type CareEvent } from '../../src/core/careLog';
 import { localDay, localNoon } from '../../src/core/dates';
 import { CARE_TYPES, getPlant, listPlants } from '../../src/core/plants';
-import { getSettings } from '../../src/core/settings';
 import {
   CARE_WORDS,
   dayLabel,
@@ -199,15 +204,15 @@ export function PlantDetail({
   const today = localDay(new Date());
   const plant = useMemo(() => {
     const care = evaluateCare(garden.db, today).find((candidate) => candidate.id === id);
-    return (
-      care && {
-        ...care,
-        row: getPlant(garden.db, id),
-        events: listCareEvents(garden.db, id),
-        guide: readCareGuide(garden.db, id, today, guides),
-        season: seasonOn(today, getSettings(garden.db)),
-      }
-    );
+    if (!care) return undefined;
+    const row = getPlant(garden.db, id);
+    return {
+      ...care,
+      row,
+      events: listCareEvents(garden.db, id),
+      guide: readCareGuide(garden.db, id, today, guides),
+      season: plantSeasonOn(garden.db, row.speciesId, today),
+    };
   }, [garden, id, today]);
 
   if (!plant) {

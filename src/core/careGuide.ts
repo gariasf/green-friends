@@ -1,8 +1,7 @@
 import type { Db } from '../db/types';
-import { effectiveSchedule, seasonOn, type SeasonOn } from './care';
+import { effectiveSchedule, plantSeasonOn, type SeasonOn } from './care';
 import { listCareEvents } from './careLog';
 import { getPlant, type CareType, type Plant } from './plants';
-import { getSettings } from './settings';
 import { getSpecies } from './species';
 
 /**
@@ -85,7 +84,7 @@ export function readCareGuide(
     profile,
     careNotes: entry.careNotes ?? null,
     funFact: { text: entry.funFact, source: entry.funFactSource },
-    season: seasonOn(today, getSettings(db)),
+    season: plantSeasonOn(db, plant.speciesId, today),
     schedule: scheduleOf(db, plant),
   };
 }
@@ -106,12 +105,12 @@ const FACT_TYPE = { watering: 'water', fertilizing: 'fertilize', repotting: 'rep
 
 /** The Care Log's fact of `kind` for a plant on `today`, with or without a Species. */
 export function causeFact(db: Db, plantId: string, kind: FactKind, today: string): CauseFact {
-  if (kind === 'season') return { kind, season: seasonOn(today, getSettings(db)) };
+  const plant = getPlant(db, plantId);
+  if (kind === 'season') return { kind, season: plantSeasonOn(db, plant.speciesId, today) };
   const type: CareType = FACT_TYPE[kind];
   // Newest first.
   const lastOn =
     listCareEvents(db, plantId).find((event) => event.type === type)?.occurredOn ?? null;
-  const plant = getPlant(db, plantId);
   if (kind === 'repotting') return { kind, lastOn, potSizeCm: plant.potSizeCm };
   const schedule = scheduleOf(db, plant);
   return { kind, lastOn, schedule: kind === 'watering' ? schedule.water : schedule.fertilize };

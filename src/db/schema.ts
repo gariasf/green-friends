@@ -45,6 +45,11 @@ export const species = sqliteTable('species', {
    * not say, as in a catalog seeded before the column existed, until its reseed.
    */
   toxicToPets: integer('toxic_to_pets', { mode: 'boolean' }),
+  /**
+   * Grows in the cool months and rests in summer: takes the garden's Season the other way round
+   * (CONTEXT.md, Season; ADR-0009).
+   */
+  restsInSummer: integer('rests_in_summer', { mode: 'boolean' }).notNull().default(false),
 });
 
 /** Single row (id 1): the version of the bundled dataset the species table was last seeded from. */

@@ -7,6 +7,7 @@ import m0002 from './0002_plants_care_events.sql';
 import m0003 from './0003_plants_archived_at.sql';
 import m0004 from './0004_photos.sql';
 import m0005 from './0005_species_toxic_to_pets.sql';
+import m0006 from './0006_species_rests_in_summer.sql';
 
   export default {
     journal,
@@ -16,7 +17,8 @@ m0001,
 m0002,
 m0003,
 m0004,
-m0005
+m0005,
+m0006
     }
   }
   

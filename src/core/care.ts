@@ -14,6 +14,7 @@ import {
 } from './plants';
 import { livePhotoJoin } from './photos';
 import { getSettings, type Settings } from './settings';
+import { getSpecies } from './species';
 
 /**
  * The care engine (spec #8): what is Due, Overdue, Paused and which plants Need Attention, derived
@@ -96,6 +97,7 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
           photo,
         },
         dueDays,
+        restsInSummer: species?.restsInSummer ?? false,
       };
     })
     // By Display Name once, so that each day only ranks by Overdue.
@@ -103,12 +105,15 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
 
   return (day) => {
     if (!isCalendarDay(day)) throw new Error(`Not a calendar day: ${day}`);
-    const season = seasonOn(day, settings);
+    const season = seasonOn(day, settings, false);
+    const summerRest = seasonOn(day, settings, true);
     // Most Overdue first; the sort is stable, so equals keep their Display Name order.
     return inCare
-      .map(({ plant, dueDays }) => {
+      .map(({ plant, dueDays, restsInSummer }) => {
         const care = {} as Record<CareType, CareStatus>;
-        for (const type of CARE_TYPES) care[type] = statusOn(dueDays[type], day, season);
+        for (const type of CARE_TYPES) {
+          care[type] = statusOn(dueDays[type], day, restsInSummer ? summerRest : season);
+        }
         const evaluated: PlantCare = { ...plant, care };
         return { evaluated, worst: worstOverdue(evaluated) };
       })
@@ -241,11 +246,29 @@ function statusOn(due: DueBySeason, today: string, season: SeasonOn): CareStatus
   return { state: 'due', dueOn, daysOverdue: daysBetween(dueOn, today) };
 }
 
-/** The Season (CONTEXT.md) `day` falls in and when it started, from the growing-month range. */
-export function seasonOn(day: string, months: SeasonMonths): SeasonOn {
+/** The Season a plant is in on `day`, by the garden's Settings and its Species (seasonOn). */
+export function plantSeasonOn(db: Db, speciesId: string | null, day: string): SeasonOn {
+  const restsInSummer = speciesId ? (getSpecies(db, speciesId)?.restsInSummer ?? false) : false;
+  return seasonOn(day, getSettings(db), restsInSummer);
+}
+
+/**
+ * The Season (CONTEXT.md) `day` falls in and when it started, from the growing-month range; for a
+ * Species that rests in summer, from the range the other way round (ADR-0009), unless it is all
+ * year.
+ */
+export function seasonOn(day: string, garden: SeasonMonths, restsInSummer: boolean): SeasonOn {
+  const allYear = isGrowingMonth(monthAfter(garden.growingEndMonth), garden);
+  const months =
+    restsInSummer && !allYear
+      ? {
+          growingStartMonth: monthAfter(garden.growingEndMonth),
+          growingEndMonth: monthBefore(garden.growingStartMonth),
+        }
+      : garden;
   const { growingStartMonth: start, growingEndMonth: end } = months;
   const [year, month] = day.split('-').map(Number);
-  const dormantStart = (end % 12) + 1;
+  const dormantStart = monthAfter(end);
   if (isGrowingMonth(dormantStart, months)) return { season: 'growing', startsOn: null };
   if (isGrowingMonth(month, months)) {
     return { season: 'growing', startsOn: firstOf(month >= start ? year : year - 1, start) };
@@ -265,6 +288,9 @@ function isGrowingMonth(
   if (start === end) return true;
   return start < end ? month >= start && month <= end : month >= start || month <= end;
 }
+
+const monthAfter = (month: number) => (month % 12) + 1;
+const monthBefore = (month: number) => ((month + 10) % 12) + 1;
 
 function firstOf(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, '0')}-01`;
