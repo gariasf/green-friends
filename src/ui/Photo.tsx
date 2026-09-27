@@ -1,12 +1,11 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSheetIOS, Image, StyleSheet, View } from 'react-native';
+import { ActionSheetIOS, Image, StyleSheet, Text, View } from 'react-native';
 
 import type { PhotoFiles } from '@/src/core/photos';
 import { alertError, TextButton } from '@/src/ui/Form';
-import { Icon } from '@/src/ui/Icon';
-import { colors } from '@/src/ui/theme';
+import { colors, font } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -123,16 +122,39 @@ function deleteIfThere(file: File): void {
   if (file.exists) file.delete();
 }
 
-/** A plant's photo as a rounded square, or a leaf while it has none. */
-export function PlantPhoto({ uri, size }: { uri: string | null; size: number }) {
+/** A plant's photo as a rounded square, or its initial on Ecru while it has none. */
+export function PlantPhoto({
+  uri,
+  size,
+  name,
+}: {
+  uri: string | null;
+  size: number;
+  name: string;
+}) {
   return (
     <View accessibilityElementsHidden style={[styles.photo, { width: size, height: size }]}>
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} />
       ) : (
-        <Icon name="leaf" size={size * 0.45} color={colors.tint} weight="fill" />
+        <Initial name={name} size={size} />
       )}
     </View>
+  );
+}
+
+/**
+ * What stands in for a missing photo (#55, variant D on prototype/quiet-icons): the first letter
+ * of the plant's name in Young Serif, in the tint; nothing while it has no name yet.
+ */
+export function Initial({ name, size }: { name: string; size: number }) {
+  return (
+    <Text
+      allowFontScaling={false}
+      style={[font.title, { fontSize: size * 0.46, color: colors.tint }]}
+    >
+      {name.trim().charAt(0).toUpperCase()}
+    </Text>
   );
 }
 

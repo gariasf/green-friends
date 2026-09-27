@@ -137,7 +137,7 @@ export default function NewPlantScreen() {
         About this plant
       </Text>
       <View style={styles.photoRow}>
-        <PlantPhoto uri={prepared} size={64} />
+        <PlantPhoto uri={prepared} size={64} name={nickname || species?.colloquialName || ''} />
         <PhotoButton hasPhoto={prepared !== null} onPick={pickPhoto} />
       </View>
       {IDENTIFY_SHOWN && prepared && (

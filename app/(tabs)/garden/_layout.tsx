@@ -24,7 +24,7 @@ export default function GardenStack() {
               onPress={() => router.push('/plants/new')}
               style={({ pressed }) => [target.icon, pressed && pressedStyle.button]}
             >
-              <Icon name="add" size={22} color={colors.tint} weight="bold" />
+              <Icon name="add" size={22} color={colors.tint} />
             </Pressable>
           ),
         }}

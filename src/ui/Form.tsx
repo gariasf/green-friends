@@ -190,7 +190,7 @@ export function CloseButton() {
       onPress={() => router.back()}
       style={({ pressed }) => pressed && pressedStyle.button}
     >
-      <Icon name="clear" size={30} color={colors.tertiaryLabel} weight="fill" />
+      <Icon name="clear" size={30} color={colors.tertiaryLabel} />
     </Pressable>
   );
 }

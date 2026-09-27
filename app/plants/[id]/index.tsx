@@ -38,7 +38,7 @@ import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
-import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
+import { choosePhoto, Initial, photoFiles, photoUri } from '@/src/ui/Photo';
 import { accessibilitySize, colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
@@ -94,7 +94,7 @@ export default function PlantScreen() {
           {uri ? (
             <Image source={{ uri }} style={StyleSheet.absoluteFill} />
           ) : (
-            <Icon name="leaf" size={96} color={colors.tint} weight="fill" />
+            <Initial name={plant.displayName} size={210} />
           )}
         </Pressable>
 
@@ -225,12 +225,6 @@ function readPlant(id: string) {
 function Toxicity({ toxic }: { toxic: boolean }) {
   return (
     <View style={[styles.badge, toxic && styles.badgeToxic]}>
-      <Icon
-        name="pet"
-        size={12}
-        color={toxic ? colors.caution : colors.secondaryLabel}
-        weight="fill"
-      />
       <Text style={[styles.badgeText, toxic && styles.caution]}>
         {toxic ? 'Toxic to pets' : 'Non-toxic to pets'}
       </Text>
@@ -292,7 +286,7 @@ function CareTile({
           onPress={onDone}
           style={({ pressed }) => [styles.done, pressed && pressedStyle.button]}
         >
-          <Icon name="check" size={12} color={colors.onTint} weight="bold" />
+          <Icon name="check" size={12} color={colors.onTint} />
           <Text style={styles.doneLabel}>Done</Text>
         </Pressable>
       )}

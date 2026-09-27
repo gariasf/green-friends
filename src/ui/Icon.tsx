@@ -16,7 +16,6 @@ import { LeafIcon } from 'phosphor-react-native/src/icons/Leaf';
 import { LightbulbIcon } from 'phosphor-react-native/src/icons/Lightbulb';
 import { MagnifyingGlassIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
 import { NotePencilIcon } from 'phosphor-react-native/src/icons/NotePencil';
-import { PawPrintIcon } from 'phosphor-react-native/src/icons/PawPrint';
 import { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 import { SealCheckIcon } from 'phosphor-react-native/src/icons/SealCheck';
 import { ShovelIcon } from 'phosphor-react-native/src/icons/Shovel';
@@ -37,7 +36,6 @@ const ICONS = {
   repot: ShovelIcon,
   note: NotePencilIcon,
   leaf: LeafIcon,
-  pet: PawPrintIcon,
   archive: ArchiveIcon,
   check: CheckIcon,
   checkCircle: CheckCircleIcon,

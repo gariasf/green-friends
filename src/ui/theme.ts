@@ -37,8 +37,8 @@ export const colors = {
   onTint: DynamicColorIOS({ light: '#ffffff', dark: '#0e2626' }),
   /**
    * A warm ground behind a photo placeholder. Label reads 10.2:1 on it and secondaryLabel about
-   * 5.3:1, but tint only 2.46:1 in light mode, so never tinted text. The placeholder's tinted leaf
-   * is decorative and hidden from VoiceOver, the same pair as the app icon.
+   * 5.3:1, but tint only 2.46:1 in light mode, so never tinted text. The placeholder's tinted initial
+   * is decorative, beside the plant's name and hidden from VoiceOver, the same pair as the app icon.
    */
   tintSoft: DynamicColorIOS(ECRU),
   /**

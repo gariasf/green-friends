@@ -318,12 +318,7 @@ export function SymptomView({
             <p>{cause.tell}</p>
             <h4>What to do</h4>
             <p>{cause.fix}</p>
-            {cause.petWarning && (
-              <p className="pet-warning">
-                <GuideIcon name="pet" />
-                {PET_WARNING}
-              </p>
-            )}
+            {cause.petWarning && <p className="pet-warning">{PET_WARNING}</p>}
           </section>
         );
       })}

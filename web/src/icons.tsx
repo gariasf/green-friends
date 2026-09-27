@@ -8,7 +8,6 @@ import {
   LeafIcon,
   LightbulbIcon,
   NotePencilIcon,
-  PawPrintIcon,
   ShovelIcon,
   StackIcon,
   StethoscopeIcon,
@@ -35,26 +34,25 @@ const CARE_ICONS: Record<CareEventType, PhosphorIcon> = {
 };
 
 /**
- * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the app's
- * placeholder while it has none: a tinted leaf (leaf.fill) on Ecru. `size` is its class: 40, 64
- * or 88 px.
+ * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the phone's
+ * placeholder while it has none: the name's initial in Young Serif, tinted, on Ecru. `size` is its
+ * class: 40, 64 or 88 px.
  */
 export function Thumb({
   src,
+  name,
   size = 'md',
   alt = '',
 }: {
   src: string | undefined;
+  name: string;
   size?: 'md' | 'lg' | 'xl';
   alt?: string;
 }) {
   if (src) return <img className={`thumb ${size}`} src={src} alt={alt} />;
   return (
-    <span className={`thumb ${size} leaf`} aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <path d="M4.5 19.5C4.5 10 10.5 4.5 20 4.5c0 9.5-5.5 15.5-15 15.5z" />
-        <path className="vein" d="M4.5 19.5L14 10" />
-      </svg>
+    <span className={`thumb ${size} initial`} aria-hidden="true">
+      {name.trim().charAt(0).toUpperCase()}
     </span>
   );
 }
@@ -88,18 +86,12 @@ export function AppMark({ size = 30 }: { size?: number }) {
 
 /**
  * The Care Guide's icons, as the phone's: Regular, in Olive Ocher for the sun (the app's
- * `colors.sun`), the tint or grey, and the paw filled in caution. Always beside their words, so
- * screen readers skip them.
+ * `colors.sun`), the tint or grey. Always beside their words, so screen readers skip them.
  */
 export function GuideIcon({ name, size = 18 }: { name: keyof typeof GUIDE_ICONS; size?: number }) {
   const Drawn = GUIDE_ICONS[name];
   return (
-    <Drawn
-      className={`care-icon guide-${name}`}
-      size={size}
-      weight={name === 'pet' ? 'fill' : 'regular'}
-      aria-hidden="true"
-    />
+    <Drawn className={`care-icon guide-${name}`} size={size} weight="regular" aria-hidden="true" />
   );
 }
 
@@ -111,11 +103,10 @@ const GUIDE_ICONS = {
   leaf: LeafIcon,
   pest: BugIcon,
   fact: LightbulbIcon,
-  pet: PawPrintIcon,
   next: CaretRightIcon,
 } satisfies Record<string, PhosphorIcon>;
 
 /** A back link's caret, before its words. */
 export function BackCaret() {
-  return <CaretLeftIcon className="back-caret" size={14} weight="bold" aria-hidden="true" />;
+  return <CaretLeftIcon className="back-caret" size={14} aria-hidden="true" />;
 }

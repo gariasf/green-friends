@@ -69,7 +69,7 @@ export function Row({
         {body ? <Text style={text.subheadline}>{body}</Text> : null}
         {children}
       </View>
-      {onPress && <Icon name="next" size={13} color={colors.tertiaryLabel} weight="bold" />}
+      {onPress && <Icon name="next" size={13} color={colors.tertiaryLabel} />}
     </>
   );
   if (!onPress) {
@@ -322,7 +322,6 @@ export function CauseCard({
       <Text style={text.body}>{cause.fix}</Text>
       {cause.petWarning && (
         <View accessible style={styles.warning}>
-          <Icon name="pet" size={13} color={colors.caution} weight="fill" />
           <Text style={[text.footnote, styles.caution, styles.grow]}>{PET_WARNING}</Text>
         </View>
       )}

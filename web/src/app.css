@@ -305,7 +305,7 @@ nav a[aria-current='page'] {
   }
 }
 
-/* The care icons in their hues, the leaf on Ecru for a plant without a photo, and the mark. */
+/* The care icons in their hues, the initial on Ecru for a plant without a photo, and the mark. */
 .care-icon {
   flex: none;
   color: var(--hue);
@@ -347,26 +347,23 @@ nav a[aria-current='page'] {
   border-radius: 18px;
 }
 
-.leaf {
+/* Decorative and hidden from screen readers, so tint on Ecru's 2.46:1 is allowed, as on the phone. */
+.initial {
   display: grid;
   place-items: center;
   background: var(--tint-soft);
+  color: var(--tint);
+  font-family: var(--font-title);
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
-.leaf svg {
-  width: 55%;
-  height: 55%;
+.initial.lg {
+  font-size: 1.75rem;
 }
 
-.leaf path {
-  fill: var(--tint);
-}
-
-.leaf .vein {
-  fill: none;
-  stroke: var(--tint-soft);
-  stroke-width: 1.4;
-  stroke-linecap: round;
+.initial.xl {
+  font-size: 2.5rem;
 }
 
 .app-mark {
@@ -673,10 +670,6 @@ nav a[aria-current='page'] {
   --hue: var(--secondary-label);
 }
 
-.guide-pet {
-  --hue: var(--caution);
-}
-
 .guide-rows > li,
 .guide-rows a {
   display: flex;
@@ -818,11 +811,6 @@ nav a[aria-current='page'] {
   margin-top: 0.75rem;
   color: var(--caution);
   font-size: var(--text-sm);
-}
-
-.pet-warning .care-icon {
-  flex: none;
-  margin-top: 0.1rem;
 }
 
 .link {
