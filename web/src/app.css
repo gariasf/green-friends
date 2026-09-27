@@ -16,11 +16,11 @@
   --caution: #681916; /* Hay's Russet */
   --caution-soft: #fdecea;
   --due-today: var(--tint);
-  --water: #007aff; /* systemBlue */
-  --fertilize: #d1bd1a; /* Olive Ocher */
-  --repot: #681916;
+  --water: #4f7090; /* the care hues, muted as theme.ts's */
+  --fertilize: #8f8338;
+  --repot: #8a4a3e;
   --note: #8e8e93; /* systemGray */
-  --sun: var(--fertilize); /* Olive Ocher, as theme.ts's sun */
+  --sun: #d1bd1a; /* Olive Ocher, as theme.ts's sun */
   /* A segmented control's selected segment, as iOS draws it; the app draws SwiftUI's own, so theme.ts has none. */
   --segment: #ffffff;
 }
@@ -37,8 +37,9 @@
     --tint-soft: #3a3526;
     --caution: #d86f62;
     --caution-soft: #361a18;
-    --water: #0a84ff;
-    --repot: #c8594c;
+    --water: #8aa9c6;
+    --fertilize: #bdb070;
+    --repot: #c07b6e;
     --segment: #636366;
   }
 }

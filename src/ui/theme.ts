@@ -57,16 +57,17 @@ export const colors = {
   cautionSoft: DynamicColorIOS({ light: '#fdecea', dark: '#361a18' }),
   /** Care Due today: the tint, something to do rather than a warning. */
   dueToday: DynamicColorIOS(MEDICI),
-  // Each kind of Care Event's hue, beside its symbol (CARE_COPY), always beside its words. Water
-  // stays systemBlue, apart from the tint; fertilize is Olive Ocher, 1.91:1 on white like
-  // systemYellow before it; repot is Hay's Russet, 4.04:1 on the dark card.
-  water: Color.ios.systemBlue,
-  fertilize: OLIVE,
-  repot: DynamicColorIOS({ light: '#681916', dark: '#c8594c' }),
+  // Each kind of Care Event's hue, beside its icon (CARE_COPY) and its Care Log dot, always beside
+  // its words. Muted so the filled icons don't read as emoji (prototype/care-icons, variant D): a
+  // slate blue, apart from the tint; a khaki from Olive Ocher; a softer Hay's Russet, apart from
+  // caution.
+  water: DynamicColorIOS({ light: '#4f7090', dark: '#8aa9c6' }),
+  fertilize: DynamicColorIOS({ light: '#8f8338', dark: '#bdb070' }),
+  repot: DynamicColorIOS({ light: '#8a4a3e', dark: '#c07b6e' }),
   note: Color.ios.systemGray,
   /**
    * Light's sun in the Care Guide and its marked step on the light scale: Olive Ocher, the
-   * palette's sunny hue, shared with fertilize; never caution, which would read as a warning.
+   * palette's sunny hue; never caution, which would read as a warning.
    */
   sun: OLIVE,
 };
