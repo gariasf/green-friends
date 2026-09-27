@@ -7,6 +7,7 @@ import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
+import { CareIconSwitcher } from '@/src/ui/CareIconPrototype';
 import { TextButton } from '@/src/ui/Form';
 import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
@@ -79,6 +80,7 @@ export default function RootLayout() {
         <Stack.Screen name="care-events/[id]" options={SHEET} />
         <Stack.Screen name="archived" options={{ title: 'Archived' }} />
       </Stack>
+      <CareIconSwitcher />
     </ThemeProvider>
   );
 }

@@ -854,3 +854,46 @@ nav a[aria-current='page'] {
     margin-bottom: 1rem;
   }
 }
+
+/* PROTOTYPE (prototype/care-icons, never merged): the care icons' variants, ?care=A…F. */
+:root[data-care='D'] {
+  --water: #4f7090;
+  --fertilize: #8f8338;
+  --repot: #8a4a3e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-care='D'] {
+    --water: #8aa9c6;
+    --fertilize: #bdb070;
+    --repot: #c07b6e;
+  }
+}
+
+:root[data-care='E'] .care-icon:is(.water, .fertilize, .repot, .note) {
+  --hue: var(--secondary-label);
+}
+
+.care-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin: -0.28em;
+  padding: 0.28em;
+  border-radius: 0.42em;
+  background: color-mix(in srgb, var(--hue) 16%, transparent);
+}
+
+.care-chip.water {
+  --hue: var(--water);
+}
+.care-chip.fertilize {
+  --hue: var(--fertilize);
+}
+.care-chip.repot {
+  --hue: var(--repot);
+}
+.care-chip.note {
+  --hue: var(--note);
+}

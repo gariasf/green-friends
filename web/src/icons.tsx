@@ -24,8 +24,17 @@ import type { CareEventType } from '../../src/core/careLog';
  */
 export function CareIcon({ type, size = 18 }: { type: CareEventType; size?: number }) {
   const Drawn = CARE_ICONS[type];
-  return <Drawn className={`care-icon ${type}`} size={size} weight="fill" aria-hidden="true" />;
+  const weight =
+    CARE_VARIANT === 'C' ? 'duotone' : 'AD'.includes(CARE_VARIANT) ? 'fill' : 'regular';
+  const icon = (
+    <Drawn className={`care-icon ${type}`} size={size} weight={weight} aria-hidden="true" />
+  );
+  return CARE_VARIANT === 'F' ? <span className={`care-chip ${type}`}>{icon}</span> : icon;
 }
+
+// PROTOTYPE (prototype/care-icons, never merged): ?care=A…F picks how the care types draw.
+const CARE_VARIANT = new URLSearchParams(location.search).get('care') ?? 'A';
+document.documentElement.dataset.care = CARE_VARIANT;
 
 const CARE_ICONS: Record<CareEventType, PhosphorIcon> = {
   water: DropIcon,

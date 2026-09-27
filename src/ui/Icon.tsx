@@ -26,6 +26,8 @@ import { SunIcon } from 'phosphor-react-native/src/icons/Sun';
 import { XCircleIcon } from 'phosphor-react-native/src/icons/XCircle';
 import { View, type ColorValue } from 'react-native';
 
+import { careLook } from '@/src/ui/CareIconPrototype';
+
 /**
  * The app's icons, from Phosphor (MIT, spec #57), named by what they mean rather than what they
  * draw, so a screen says "water" and the drawing can change here. The Web view's `web/src/icons.tsx`
@@ -79,14 +81,43 @@ export function Icon({
   weight?: IconWeight;
 }) {
   const Drawn = ICONS[name];
+  // PROTOTYPE (prototype/care-icons): a care type without its own weight draws as the chosen variant.
+  if (FILLED.has(name) && !weight) {
+    const look = careLook(name, color);
+    const drawn = <Drawn size={size} color={look.color as string} weight={look.weight} />;
+    return (
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        {look.chip ? (
+          <View
+            style={{
+              width: size * 1.55,
+              height: size * 1.55,
+              margin: -size * 0.275,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <View
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: size * 0.42,
+                backgroundColor: look.color as string,
+                opacity: 0.16,
+              }}
+            />
+            {drawn}
+          </View>
+        ) : (
+          drawn
+        )}
+      </View>
+    );
+  }
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {/* react-native-svg takes iOS's dynamic colours, which Phosphor's string type doesn't say. */}
-      <Drawn
-        size={size}
-        color={color as string}
-        weight={weight ?? (FILLED.has(name) ? 'fill' : 'regular')}
-      />
+      <Drawn size={size} color={color as string} weight={weight ?? 'regular'} />
     </View>
   );
 }
