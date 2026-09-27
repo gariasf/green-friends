@@ -1,41 +1,37 @@
+import {
+  BookOpenIcon,
+  BugIcon,
+  CaretRightIcon,
+  DropIcon,
+  FlaskIcon,
+  LeafIcon,
+  LightbulbIcon,
+  NotePencilIcon,
+  PawPrintIcon,
+  ShovelIcon,
+  StackIcon,
+  StethoscopeIcon,
+  SunIcon,
+  type Icon as PhosphorIcon,
+} from '@phosphor-icons/react';
+
 import type { CareEventType } from '../../src/core/careLog';
 
 /**
- * A care type's symbol in its hue, drawn after the SF Symbol the app shows (CARE_COPY: drop.fill,
- * sparkles, shippingbox.fill, note.text). Always beside its words, so screen readers skip it.
+ * A care type's icon, filled in its hue, as the phone's `Icon` draws it (src/ui/Icon.tsx, spec #57).
+ * Always beside its words, so screen readers skip it.
  */
 export function CareIcon({ type, size = 18 }: { type: CareEventType; size?: number }) {
-  return (
-    <svg
-      className={`care-icon ${type}`}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      {type === 'water' && <path d="M12 2.5S5 10.4 5 14.8a7 7 0 0 0 14 0C19 10.4 12 2.5 12 2.5z" />}
-      {type === 'fertilize' && (
-        <>
-          <path d="M10 3l1.9 5.6 5.6 1.9-5.6 1.9L10 18l-1.9-5.6-5.6-1.9 5.6-1.9z" />
-          <path d="M18 13l.9 2.6 2.6.9-2.6.9L18 20l-.9-2.6-2.6-.9 2.6-.9z" />
-          <path d="M18.5 2l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6z" />
-        </>
-      )}
-      {type === 'repot' && (
-        <>
-          <path d="M12 2.8l8.5 3.8L12 10.4 3.5 6.6z" />
-          <path d="M3 8.2l8.2 3.7V21L3 17.3zM21 8.2l-8.2 3.7V21l8.2-3.7z" />
-        </>
-      )}
-      {type === 'note' && (
-        <path
-          fillRule="evenodd"
-          d="M6 2.5h12A2.5 2.5 0 0 1 20.5 5v14a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 19V5A2.5 2.5 0 0 1 6 2.5zM7 7v1.6h10V7zm0 4.2v1.6h10v-1.6zm0 4.2V17h6.5v-1.6z"
-        />
-      )}
-    </svg>
-  );
+  const Drawn = CARE_ICONS[type];
+  return <Drawn className={`care-icon ${type}`} size={size} weight="fill" aria-hidden="true" />;
 }
+
+const CARE_ICONS: Record<CareEventType, PhosphorIcon> = {
+  water: DropIcon,
+  fertilize: FlaskIcon,
+  repot: ShovelIcon,
+  note: NotePencilIcon,
+};
 
 /**
  * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the app's
@@ -90,69 +86,30 @@ export function AppMark({ size = 30 }: { size?: number }) {
 }
 
 /**
- * The Care Guide's symbols, drawn after the SF Symbols the app shows: sun.max.fill (Olive Ocher, as
- * the app's `colors.sun`), square.stack.3d.up.fill, book.fill, stethoscope, leaf.fill, ant.fill,
- * lightbulb.fill and pawprint.fill. Always beside their words, so screen readers skip them.
+ * The Care Guide's icons, as the phone's: Regular, in Olive Ocher for the sun (the app's
+ * `colors.sun`), the tint or grey, and the paw filled in caution. Always beside their words, so
+ * screen readers skip them.
  */
-export function GuideIcon({
-  name,
-  size = 18,
-}: {
-  name: 'sun' | 'soil' | 'guide' | 'wrong' | 'leaf' | 'pest' | 'fact' | 'paw';
-  size?: number;
-}) {
+export function GuideIcon({ name, size = 18 }: { name: keyof typeof GUIDE_ICONS; size?: number }) {
+  const Drawn = GUIDE_ICONS[name];
   return (
-    <svg
+    <Drawn
       className={`care-icon guide-${name}`}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
+      size={size}
+      weight={name === 'paw' ? 'fill' : 'regular'}
       aria-hidden="true"
-    >
-      {name === 'sun' && (
-        <>
-          <circle cx="12" cy="12" r="4.5" />
-          <path d="M11 1.5h2v4h-2zM11 18.5h2v4h-2zM1.5 11h4v2h-4zM18.5 11h4v2h-4zM4.2 5.6l1.4-1.4 2.8 2.8-1.4 1.4zM15.6 17l1.4-1.4 2.8 2.8-1.4 1.4zM4.2 18.4l2.8-2.8 1.4 1.4-2.8 2.8zM15.6 7l2.8-2.8 1.4 1.4-2.8 2.8z" />
-        </>
-      )}
-      {name === 'soil' && (
-        <>
-          <path d="M12 3l9 4.5-9 4.5-9-4.5z" />
-          <path d="M3 11.5l9 4.5 9-4.5v2.2l-9 4.5-9-4.5zM3 15.8l9 4.5 9-4.5V18l-9 4.5L3 18z" />
-        </>
-      )}
-      {name === 'guide' && (
-        <path d="M2 5c3-1.5 6.5-1.5 9 .5V20c-2.5-2-6-2-9-.5zM22 5c-3-1.5-6.5-1.5-9 .5V20c2.5-2 6-2 9-.5z" />
-      )}
-      {name === 'wrong' && (
-        <path
-          fill="none"
-          strokeWidth="2"
-          strokeLinecap="round"
-          d="M6 3v6a4 4 0 0 0 8 0V3M10 13v3a4 4 0 0 0 8 0v-2M18 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"
-        />
-      )}
-      {name === 'leaf' && <path d="M4.5 19.5C4.5 10 10.5 4.5 20 4.5c0 9.5-5.5 15.5-15 15.5z" />}
-      {name === 'pest' && (
-        <>
-          <circle cx="12" cy="6" r="2.5" />
-          <ellipse cx="12" cy="11.5" rx="2.5" ry="3" />
-          <ellipse cx="12" cy="18" rx="3.5" ry="4" />
-          <path d="M4 9l4 2-.6 1.2-4-2zM20 9l-4 2 .6 1.2 4-2zM3.5 17l4-1.5.5 1.3-4 1.5zM20.5 17l-4-1.5-.5 1.3 4 1.5z" />
-        </>
-      )}
-      {name === 'fact' && (
-        <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2zM9 18.5h6V20a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z" />
-      )}
-      {name === 'paw' && (
-        <>
-          <ellipse cx="12" cy="16.5" rx="5" ry="4.5" />
-          <circle cx="5" cy="10.5" r="2.2" />
-          <circle cx="9" cy="5.5" r="2.2" />
-          <circle cx="15" cy="5.5" r="2.2" />
-          <circle cx="19" cy="10.5" r="2.2" />
-        </>
-      )}
-    </svg>
+    />
   );
 }
+
+const GUIDE_ICONS = {
+  sun: SunIcon,
+  soil: StackIcon,
+  guide: BookOpenIcon,
+  wrong: StethoscopeIcon,
+  leaf: LeafIcon,
+  pest: BugIcon,
+  fact: LightbulbIcon,
+  paw: PawPrintIcon,
+  next: CaretRightIcon,
+} satisfies Record<string, PhosphorIcon>;

@@ -50,19 +50,21 @@
 }
 
 /*
- * The type: Nunito Sans (bundled, main.tsx) on five sizes and four weights, the phone's scale
- * (ticket #54, set B: Bold titles, SemiBold for the rest that stands out). Nunito's round letters
- * look lighter than their number, so 700 is as heavy as a title needs. Secondary lines are quiet
- * rather than small; section headings are labels, small and in capitals, beneath the content.
+ * The type: Nunito Sans with Young Serif titles (both bundled, main.tsx) on five sizes, the phone's
+ * scale (spec #57; ticket #54, set B: SemiBold for what stands out). Young Serif has one weight,
+ * 400, which reads as heavy as a Bold title; Nunito's round letters look lighter than their number,
+ * so 600 is as heavy as the rest needs. Secondary lines are quiet rather than small; section
+ * headings are labels, small and in capitals, beneath the content.
  *
- *   step        size       weight  use
- *   title       --text-xl  700     a screen's title, the name beside the mark
- *   title2      --text-lg  700     the Garden list's title, a Care Guide card's heading, empty states
- *   headline    --text-base 600    plant names, a Care Guide card's subheading
- *   label       --text-xs  600     section headings (in capitals), counts, badges
- *   emphasis    inherit    600     Overdue and Due today, links, the chosen tab
- *   quiet       inherit    500     the other tabs, the Garden's count
- *   body        --text-base 400    everything else
+ *   step        size        face          weight  use
+ *   title       --text-xl   Young Serif   400     a screen's title
+ *   title2      --text-lg   Young Serif   400     the Garden list's title, a Care Guide card's heading, a cause's name, empty states
+ *   brand       --text-base Young Serif   400     the name beside the mark
+ *   headline    --text-base Nunito Sans   600     plant names, a Care Guide card's subheading
+ *   label       --text-xs   Nunito Sans   600     section headings (in capitals), counts, badges
+ *   emphasis    inherit     Nunito Sans   600     Overdue and Due today, links, the chosen tab
+ *   quiet       inherit     Nunito Sans   500     the other tabs, the Garden's count
+ *   body        --text-base Nunito Sans   400     everything else
  */
 :root {
   --text-xs: 0.8125rem; /* counts, badges, a row's second line, days */
@@ -70,6 +72,7 @@
   --text-base: 1rem;
   --text-lg: 1.375rem; /* the Garden list's title */
   --text-xl: 1.75rem; /* a screen's title */
+  --font-title: 'Young Serif', Georgia, serif;
 }
 
 body {
@@ -97,8 +100,9 @@ main.detail {
 
 h1 {
   margin: 0.5rem 0 0.25rem;
+  font-family: var(--font-title);
   font-size: var(--text-xl);
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
@@ -183,8 +187,9 @@ a:focus-visible {
   gap: 0.625rem;
   margin: 0;
   padding: 0 0.5rem 1.25rem;
+  font-family: var(--font-title);
   font-size: var(--text-base);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 nav {
@@ -299,10 +304,10 @@ nav a[aria-current='page'] {
   }
 }
 
-/* The care symbols in their hues, the leaf on Ecru for a plant without a photo, and the mark. */
+/* The care icons in their hues, the leaf on Ecru for a plant without a photo, and the mark. */
 .care-icon {
   flex: none;
-  fill: var(--hue);
+  color: var(--hue);
 }
 
 .care-icon.water {
@@ -552,8 +557,9 @@ nav a[aria-current='page'] {
 
 .empty h2 {
   color: var(--label);
+  font-family: var(--font-title);
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: normal;
   text-transform: none;
 }
@@ -660,13 +666,10 @@ nav a[aria-current='page'] {
 }
 
 .guide-soil,
-.guide-pest {
+.guide-pest,
+.guide-wrong,
+.guide-next {
   --hue: var(--secondary-label);
-}
-
-.guide-wrong {
-  fill: none;
-  stroke: var(--secondary-label);
 }
 
 .guide-paw {
@@ -698,12 +701,6 @@ nav a[aria-current='page'] {
 .guide-rows strong,
 .guide-rows .grow > .quiet {
   display: block;
-}
-
-.chevron {
-  color: var(--secondary-label);
-  font-size: 1.25rem;
-  line-height: 1;
 }
 
 .scale {
@@ -779,16 +776,18 @@ nav a[aria-current='page'] {
   gap: 0.5rem;
   margin: 0 0 0.5rem;
   color: var(--label);
+  font-family: var(--font-title);
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: normal;
   text-transform: none;
 }
 
 .guide-card h3 {
   margin: 0 0 0.5rem;
+  font-family: var(--font-title);
   font-size: var(--text-lg);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .guide-card h4 {

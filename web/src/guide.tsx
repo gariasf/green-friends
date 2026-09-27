@@ -120,11 +120,7 @@ function SomethingWrong({ id }: { id: string }) {
 }
 
 function Chevron() {
-  return (
-    <span className="chevron" aria-hidden="true">
-      ›
-    </span>
-  );
+  return <GuideIcon name="next" size={14} />;
 }
 
 /** The shared light scale with this profile's step filled in, and its step and direct sun in words. */
