@@ -23,6 +23,11 @@ import { guides } from '../../src/ui/guides';
 import { CareRows, GuideView, SymptomsView, SymptomView, type PlantView } from './guide';
 import { AppMark, BackCaret, CareIcon, Thumb } from './icons';
 
+/** PROTOTYPE (prototype/surfaces): a switch main.tsx set on <html>; A where there's no page. */
+function proto(name: 'hero' | 'garden'): string {
+  return (typeof document !== 'undefined' && document.documentElement.dataset[name]) || 'A';
+}
+
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
 
@@ -141,7 +146,7 @@ export function GardenPanes({
         {plants.length === 0 ? (
           <Empty title="No plants yet" line="Add one in Green Friends on your phone." />
         ) : (
-          <ul>
+          <ul className={proto('garden') === 'B' ? 'grid' : undefined}>
             {plants.map((plant) => {
               const due = dueCare(plant);
               const tone = due.some((care) => care.daysOverdue > 0) ? 'overdue' : 'due-today';
@@ -244,23 +249,40 @@ export function PlantDetail({
   return (
     <>
       <BackLink />
-      <div className="head">
-        <Thumb
-          src={photoUrl(plant.photo)}
-          name={plant.displayName}
-          size="xl"
-          alt={`Photo of ${plant.displayName}`}
-        />
-        <div>
-          <h1 tabIndex={-1}>{plant.displayName}</h1>
-          <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+      {/* PROTOTYPE (prototype/surfaces): hero B, the photo across the pane with the name below;
+          C, the name over it on a scrim. A plant without a photo keeps the compact head. */}
+      {proto('hero') !== 'A' && photoUrl(plant.photo) ? (
+        <div className={`hero ${proto('hero') === 'C' ? 'scrim' : ''}`}>
+          <img src={photoUrl(plant.photo)} alt={`Photo of ${plant.displayName}`} />
+          <div className="hero-names">
+            <h1 tabIndex={-1}>{plant.displayName}</h1>
+            <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+          </div>
           {plant.toxicToPets !== null && (
             <p className={plant.toxicToPets ? 'badge toxic' : 'badge'}>
               {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
             </p>
           )}
         </div>
-      </div>
+      ) : (
+        <div className="head">
+          <Thumb
+            src={photoUrl(plant.photo)}
+            name={plant.displayName}
+            size="xl"
+            alt={`Photo of ${plant.displayName}`}
+          />
+          <div>
+            <h1 tabIndex={-1}>{plant.displayName}</h1>
+            <Scientific name={plant.displayName} scientificName={plant.scientificName} />
+            {plant.toxicToPets !== null && (
+              <p className={plant.toxicToPets ? 'badge toxic' : 'badge'}>
+                {plant.toxicToPets ? 'Toxic to pets' : 'Non-toxic to pets'}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <h2>Care</h2>
       <dl className="group care">

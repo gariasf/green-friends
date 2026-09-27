@@ -15,10 +15,13 @@ import {
 } from '@expo/ui/swift-ui';
 import {
   accessibilityValue,
+  background,
   datePickerStyle,
   disabled,
   environment,
+  listRowBackground,
   pickerStyle,
+  scrollContentBackground,
   tag,
 } from '@expo/ui/swift-ui/modifiers';
 import Constants from 'expo-constants';
@@ -40,6 +43,7 @@ import { getSpeciesDatasetVersion } from '@/src/core/species';
 import { db, withScratchDb } from '@/src/db/client';
 import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
+import { surfaces } from '@/src/ui/SurfacesPrototype';
 import { colors } from '@/src/ui/theme';
 import {
   pairingLink,
@@ -49,6 +53,11 @@ import {
   sync,
   useSyncStatus,
 } from '@/src/ui/useSync';
+
+// PROTOTYPE (prototype/surfaces): B and C put the Form on the warm ground, its rows on the surface.
+const WARM = surfaces.ground !== 'A';
+const WARM_FORM = WARM ? [scrollContentBackground('hidden'), background(colors.background)] : [];
+const WARM_ROWS = WARM ? [listRowBackground(colors.surface)] : [];
 
 /**
  * The months as the phone names them, for the season pickers. Each is named from its 15th: Hermes
@@ -241,8 +250,9 @@ export default function SettingsScreen() {
 
   return (
     <Host style={styles.form} seedColor={colors.tint}>
-      <Form>
+      <Form modifiers={WARM_FORM}>
         <Section
+          modifiers={WARM_ROWS}
           title="Growing season"
           footer={
             <Text>
@@ -264,6 +274,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={WARM_ROWS}
           title="Daily Digest"
           footer={<Text>One notification at this time, and only on days a plant needs you.</Text>}
         >
@@ -280,6 +291,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={WARM_ROWS}
           title="Sync"
           footer={
             <Text>
@@ -320,6 +332,7 @@ export default function SettingsScreen() {
 
         {link !== null && (
           <Section
+            modifiers={WARM_ROWS}
             title="Pairing link"
             footer={
               <Text>
@@ -335,6 +348,7 @@ export default function SettingsScreen() {
         )}
 
         <Section
+          modifiers={WARM_ROWS}
           title="Backup"
           footer={
             <Text>
@@ -359,6 +373,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={WARM_ROWS}
           footer={
             <Text>
               Erases every plant, Archived ones too, with its Care Log and photo, and these
@@ -370,6 +385,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section
+          modifiers={WARM_ROWS}
           title="About"
           footer={<Text>Species IDs and scientific names come from Wikidata, under CC0.</Text>}
         >

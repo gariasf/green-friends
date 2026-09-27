@@ -843,3 +843,139 @@ nav a[aria-current='page'] {
     margin-bottom: 1rem;
   }
 }
+
+/*
+ * PROTOTYPE (prototype/surfaces, #55 step 2, never merged): the phone's three switches, from
+ * <html data-ground data-hero data-garden> (main.tsx). B and C: theme.ts's warm ground and
+ * surfaces, its warm secondary label (5.1:1 on the ground) and its three radii (24 for a surface,
+ * 12 inside one or for a thumbnail, a pill for badges); C raises Today's cards and the Care group.
+ */
+[data-ground='B'],
+[data-ground='C'] {
+  --background: #f5f2e9;
+  --surface: #fffdf8;
+  --raised: #fffdf8;
+  --secondary-label: #6b665c;
+  --segment: #fffdf8;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-ground='B'],
+  [data-ground='C'] {
+    --background: #15130f;
+    --surface: #211e19;
+    --raised: #211e19;
+    --secondary-label: rgb(235 235 245 / 0.6);
+    --segment: #4a453c;
+  }
+
+  [data-ground='C'] {
+    --raised: #29251f;
+  }
+}
+
+:is([data-ground='B'], [data-ground='C']) :is(.group, .card, .guide-card) {
+  border-radius: 24px;
+}
+
+:is([data-ground='B'], [data-ground='C']) :is(.thumb, .thumb.lg, .thumb.xl, .list a) {
+  border-radius: 12px;
+}
+
+:is([data-ground='B'], [data-ground='C']) .badge {
+  border-radius: 999px;
+}
+
+[data-ground='C'] :is(.card, .care) {
+  background: var(--raised);
+  box-shadow:
+    0 1px 2px rgb(70 56 24 / 0.08),
+    0 6px 18px rgb(70 56 24 / 0.09);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-ground='C'] :is(.card, .care) {
+    box-shadow: none;
+  }
+}
+
+/* The Plant pane's hero: the photo across the pane at one ratio, the name below or over a scrim. */
+.hero {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.hero img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 24px;
+  object-fit: cover;
+}
+
+.hero-names {
+  margin-top: 1rem;
+}
+
+.hero.scrim .hero-names {
+  position: absolute;
+  inset: auto 0 0;
+  aspect-ratio: auto;
+  margin: 0;
+  padding: 6rem 1.5rem 1.25rem;
+  border-radius: 0 0 24px 24px;
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0) 0%,
+    rgb(0 0 0 / 0.35) 45%,
+    rgb(0 0 0 / 0.7) 100%
+  );
+  color: #ffffff;
+}
+
+.hero.scrim .scientific {
+  color: rgb(255 255 255 / 0.85);
+}
+
+.hero.scrim .badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  margin: 0;
+}
+
+.hero.scrim .badge:not(.toxic) {
+  background: var(--surface);
+}
+
+/* The Garden as a grid of square photos, two abreast in a wider list pane, names below. */
+[data-garden='B'] .shell.panes {
+  grid-template-columns: 15rem 26rem minmax(0, 1fr);
+}
+
+.list ul.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 0.75rem;
+}
+
+.list ul.grid a {
+  display: block;
+  padding: 0.375rem;
+}
+
+.list ul.grid .thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  margin-bottom: 0.5rem;
+  border-radius: 18px;
+}
+
+.list ul.grid .initial {
+  font-size: 4rem;
+}
+
+.list ul.grid .name {
+  white-space: normal;
+}

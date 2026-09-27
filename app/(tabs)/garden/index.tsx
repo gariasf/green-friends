@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { listArchivedPlants, listPlants } from '@/src/core/plants';
+import { listArchivedPlants, listPlants, type PlantListItem } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
+import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { PlantRow } from '@/src/ui/PlantRow';
+import { surfaces } from '@/src/ui/SurfacesPrototype';
 import { scientificBeneath } from '@/src/ui/words';
-import { group, space } from '@/src/ui/theme';
+import { font, group, pressedStyle, radius, space, text } from '@/src/ui/theme';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 
 const ADD_PLANT = { label: 'Add a plant', onPress: () => router.push('/plants/new') };
@@ -44,6 +46,8 @@ export default function GardenScreen() {
             action={ADD_PLANT}
           />
         )
+      ) : surfaces.garden === 'B' ? (
+        <GardenGrid plants={plants} />
       ) : (
         <View style={group.box}>
           {plants.map((plant, index) => (
@@ -69,7 +73,60 @@ export default function GardenScreen() {
   );
 }
 
+function openPlant(id: string) {
+  router.push({ pathname: '/plants/[id]', params: { id } });
+}
+
+/**
+ * PROTOTYPE (prototype/surfaces, garden B): the plants as a grid of photos, two abreast, each square
+ * and at one radius so mixed photos look tidy, the names below; a plant without a photo shows its
+ * initial on Ecru.
+ */
+function GardenGrid({ plants }: { plants: PlantListItem[] }) {
+  const size = (useWindowDimensions().width - space.l * 2 - space.m) / 2;
+  return (
+    <View style={styles.grid}>
+      {plants.map((plant) => {
+        const scientific = scientificBeneath(plant.displayName, plant.scientificName);
+        return (
+          <Pressable
+            key={plant.id}
+            accessibilityRole="button"
+            accessibilityLabel={[plant.displayName, scientific].filter(Boolean).join(', ')}
+            onPress={() => openPlant(plant.id)}
+            style={({ pressed }) => [{ width: size }, styles.cell, pressed && pressedStyle.button]}
+          >
+            <PlantPhoto
+              uri={photoUri(plant.photo)}
+              size={size}
+              name={plant.displayName}
+              corner={radius.card}
+            />
+            <Text style={text.headline} numberOfLines={2}>
+              {plant.displayName}
+            </Text>
+            {scientific && (
+              <Text style={styles.scientific} numberOfLines={1}>
+                {scientific}
+              </Text>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   list: { paddingVertical: space.l },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: space.m,
+    rowGap: space.xl,
+    paddingHorizontal: space.l,
+  },
+  cell: { gap: space.xs },
+  scientific: { ...text.footnote, ...font.italic },
   footer: { alignSelf: 'center', marginTop: space.xl },
 });

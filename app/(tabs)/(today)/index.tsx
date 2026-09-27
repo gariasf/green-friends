@@ -21,7 +21,18 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { colors, font, group, pressedStyle, space, target, text } from '@/src/ui/theme';
+import { surfaces } from '@/src/ui/SurfacesPrototype';
+import {
+  colors,
+  font,
+  group,
+  pressedStyle,
+  radius,
+  raised,
+  space,
+  target,
+  text,
+} from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
@@ -180,7 +191,7 @@ function CareCard({
       layout={LinearTransition}
       entering={FadeIn}
       exiting={FADE_AWAY}
-      style={styles.card}
+      style={[styles.card, raised.surface, surfaces.ground === 'C' && styles.cardRaised]}
     >
       <View style={styles.cardHead}>
         <Pressable
@@ -330,10 +341,12 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: space.l,
     marginTop: space.m,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    borderCurve: 'continuous',
     overflow: 'hidden',
   },
+  // PROTOTYPE: iOS clips a view's shadow with its content, and nothing in a card needs clipping.
+  cardRaised: { overflow: 'visible' },
   cardHead: { flexDirection: 'row', alignItems: 'center', paddingRight: space.s },
   identity: {
     flex: 1,

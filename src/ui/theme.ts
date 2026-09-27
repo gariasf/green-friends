@@ -1,6 +1,8 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native';
 
+import { surfaces } from '@/src/ui/SurfacesPrototype';
+
 // The palette (ticket #34): four colours from Sanzo Wada's A Dictionary of Color Combinations,
 // their hex the naive conversion of the owner's CMYK, each but Olive Ocher with a dark shade.
 /** Dark Medici Blue, the tint: 5.08:1 on white, 7.66:1 on the dark card. */
@@ -11,6 +13,16 @@ const ECRU = { light: '#c0b490', dark: '#3a3526' };
 const OLIVE = '#d1bd1a';
 
 /**
+ * PROTOTYPE (prototype/surfaces): B and C's warm ground, from Ecru's hue, and their surfaces. The
+ * light ground is as pale as the tint's 4.5:1 on it allows (4.54:1); dark mode's is a warm
+ * near-black, C's raised surface a step lighter, still 4.62:1 for caution.
+ */
+const WARM = surfaces.ground !== 'A';
+const GROUND = { light: '#f5f2e9', dark: '#15130f' };
+const SURFACE = { light: '#fffdf8', dark: '#211e19' };
+const RAISED = { light: '#fffdf8', dark: '#29251f' };
+
+/**
  * The app's colours, the only ones it uses: iOS semantic colours, which follow light and dark
  * mode and Increase Contrast by themselves, the palette above, and two status colours in iOS's
  * shades. React Native draws text black unless told otherwise, so every Text takes its colour
@@ -18,15 +30,26 @@ const OLIVE = '#d1bd1a';
  */
 export const colors = {
   /** Behind a screen's content. */
-  background: Color.ios.systemGroupedBackground,
+  background: WARM ? DynamicColorIOS(GROUND) : Color.ios.systemGroupedBackground,
   /** A card or a group of rows on the background. */
-  surface: Color.ios.secondarySystemGroupedBackground,
+  surface: WARM ? DynamicColorIOS(SURFACE) : Color.ios.secondarySystemGroupedBackground,
+  /** PROTOTYPE: what C raises (Today's cards, the tiles); the surface otherwise. */
+  raised:
+    surfaces.ground === 'C'
+      ? DynamicColorIOS(RAISED)
+      : WARM
+        ? DynamicColorIOS(SURFACE)
+        : Color.ios.secondarySystemGroupedBackground,
   /** Behind a sheet's content: opaque, and lifted in dark mode. */
   sheet: Color.ios.systemBackground,
   /** Something floating above the screen, such as the undo toast. */
   floating: Color.ios.tertiarySystemBackground,
   label: Color.ios.label,
-  secondaryLabel: Color.ios.secondaryLabel,
+  // PROTOTYPE: iOS's secondaryLabel reads 3.3:1 on a light ground, grey or warm; B and C take a
+  // warm grey at 5.1:1 on the ground and 5.6:1 on a surface, and keep iOS's in dark mode (5.5:1+).
+  secondaryLabel: WARM
+    ? DynamicColorIOS({ light: '#6b665c', dark: 'rgba(235, 235, 245, 0.6)' })
+    : Color.ios.secondaryLabel,
   tertiaryLabel: Color.ios.tertiaryLabel,
   placeholder: Color.ios.placeholderText,
   separator: Color.ios.separator,
@@ -85,10 +108,33 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
       ...base.colors,
       primary: dark ? MEDICI.dark : MEDICI.light,
       // systemGroupedBackground, as `colors.background` resolves it.
-      background: dark ? '#000000' : '#f2f2f7',
+      background: WARM ? (dark ? GROUND.dark : GROUND.light) : dark ? '#000000' : '#f2f2f7',
     },
   };
 }
+
+/**
+ * PROTOTYPE (prototype/surfaces): B and C's three radii. 24 for a surface on the ground (a group, a
+ * card, a tile, a photo in the grid), 12 for a photo or a control inside one (24 less its 12
+ * padding), and a pill for chips and badges. A keeps today's six.
+ */
+export const radius = WARM
+  ? { group: 24, card: 24, photo: 12, button: 12, badge: 999, banner: 24 }
+  : { group: 26, card: 16, photo: 14, button: 10, badge: 12, banner: 12 };
+
+/**
+ * PROTOTYPE: C lifts what you act on (Today's cards, the tiles) off the ground: a soft two-part
+ * shadow, warm rather than black, over the raised surface, which dark mode makes lighter instead.
+ */
+export const raised = StyleSheet.create({
+  surface:
+    surfaces.ground === 'C'
+      ? {
+          backgroundColor: colors.raised,
+          boxShadow: '0 1px 2px rgba(70, 56, 24, 0.08), 0 6px 18px rgba(70, 56, 24, 0.09)',
+        }
+      : { backgroundColor: colors.surface },
+});
 
 /** Spacing steps, for margins, paddings and gaps. */
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 20, xxl: 24, xxxl: 32 } as const;
@@ -175,7 +221,7 @@ export const group = StyleSheet.create({
   /** A rounded group of rows, inset from the screen's edges. */
   box: {
     marginHorizontal: space.l,
-    borderRadius: 26,
+    borderRadius: radius.group,
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
     overflow: 'hidden',

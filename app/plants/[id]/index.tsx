@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Image,
   Pressable,
@@ -38,8 +39,19 @@ import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
-import { choosePhoto, Initial, photoFiles, photoUri } from '@/src/ui/Photo';
-import { accessibilitySize, colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { choosePhoto, Initial, photoFiles, photoUri, PlantPhoto } from '@/src/ui/Photo';
+import { surfaces } from '@/src/ui/SurfacesPrototype';
+import {
+  accessibilitySize,
+  colors,
+  font,
+  group,
+  pressedStyle,
+  radius,
+  raised,
+  space,
+  text,
+} from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from '@/src/ui/words';
@@ -57,6 +69,9 @@ export default function PlantScreen() {
   const plant = usePlant(id);
   const undo = useUndoToast();
   const { width, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // PROTOTYPE: whether the photo hero has scrolled up under the navigation bar.
+  const [pastHero, setPastHero] = useState(false);
   if (!plant) return null;
 
   const { care, events, photo, row, today } = plant;
@@ -65,12 +80,45 @@ export default function PlantScreen() {
   const lastDone = (type: CareType) => events.find((event) => event.type === type)?.occurredOn;
   const openLog = (type?: CareEventType) =>
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
+  const pickPhoto = () => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared));
+  // PROTOTYPE (prototype/surfaces): B and C take the photo to the top edge, under a transparent
+  // navigation bar, the name below it or over it on a scrim; a plant without one gets a compact
+  // header, its initial beside its name.
+  const photoHero = surfaces.hero !== 'A' && uri !== null;
+  const compact = surfaces.hero !== 'A' && uri === null;
+  const heroHeight = width * 0.92;
+  const names = (
+    <>
+      <Text accessibilityRole="header" style={text.title1}>
+        {plant.displayName}
+      </Text>
+      {scientific && <Text style={styles.scientific}>{scientific}</Text>}
+      {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
+    </>
+  );
 
   return (
     <>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+      <ScrollView
+        contentInsetAdjustmentBehavior={photoHero ? 'never' : 'automatic'}
+        scrollEventThrottle={32}
+        // PROTOTYPE: over the photo the bar is clear; once the photo has scrolled up under it, the
+        // bar turns opaque and takes the plant's name, as Apple Music's album pages do.
+        onScroll={
+          photoHero
+            ? (event) =>
+                setPastHero(event.nativeEvent.contentOffset.y > heroHeight - insets.top - 44)
+            : undefined
+        }
+        contentContainerStyle={[styles.content, photoHero && { paddingBottom: insets.bottom }]}
+      >
         <Stack.Screen
           options={{
+            headerTransparent: photoHero,
+            headerStyle: {
+              backgroundColor: photoHero && !pastHero ? 'transparent' : colors.background,
+            },
+            title: photoHero && pastHero ? plant.displayName : '',
             headerRight: () => (
               <TextButton
                 label="Edit"
@@ -80,31 +128,76 @@ export default function PlantScreen() {
             ),
           }}
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={photo ? 'Replace photo' : 'Add photo'}
-          onPress={() => choosePhoto((prepared) => setPlantPhoto(db, photoFiles, id, prepared))}
-          // A banner: a square photo this wide would fill the screen.
-          style={({ pressed }) => [
-            styles.hero,
-            { height: width * 0.72 },
-            pressed && pressedStyle.button,
-          ]}
-        >
-          {uri ? (
-            <Image source={{ uri }} style={StyleSheet.absoluteFill} />
-          ) : (
-            <Initial name={plant.displayName} size={210} />
-          )}
-        </Pressable>
+        {surfaces.hero === 'A' && (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={photo ? 'Replace photo' : 'Add photo'}
+              onPress={pickPhoto}
+              // A banner: a square photo this wide would fill the screen.
+              style={({ pressed }) => [
+                styles.hero,
+                { height: width * 0.72 },
+                pressed && pressedStyle.button,
+              ]}
+            >
+              {uri ? (
+                <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+              ) : (
+                <Initial name={plant.displayName} size={210} />
+              )}
+            </Pressable>
+            <View style={styles.title}>{names}</View>
+          </>
+        )}
 
-        <View style={styles.title}>
-          <Text accessibilityRole="header" style={text.title1}>
-            {plant.displayName}
-          </Text>
-          {scientific && <Text style={styles.scientific}>{scientific}</Text>}
-          {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
-        </View>
+        {photoHero && uri && (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Replace photo"
+              onPress={pickPhoto}
+              style={({ pressed }) => [
+                styles.hero,
+                { height: heroHeight },
+                pressed && pressedStyle.button,
+              ]}
+            >
+              <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+              {surfaces.hero === 'C' && (
+                <View style={styles.scrim}>
+                  <Text accessibilityRole="header" style={[text.title1, styles.onPhoto]}>
+                    {plant.displayName}
+                  </Text>
+                  {scientific && (
+                    <Text style={[styles.scientific, styles.onPhotoQuiet]}>{scientific}</Text>
+                  )}
+                </View>
+              )}
+            </Pressable>
+            {surfaces.hero === 'B' ? (
+              <View style={styles.title}>{names}</View>
+            ) : (
+              <View style={styles.underScrim}>
+                {plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />}
+              </View>
+            )}
+          </>
+        )}
+
+        {compact && (
+          <View style={styles.compact}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add photo"
+              onPress={pickPhoto}
+              style={({ pressed }) => pressed && pressedStyle.button}
+            >
+              <PlantPhoto uri={null} size={64} name={plant.displayName} />
+            </Pressable>
+            <View style={styles.grow}>{names}</View>
+          </View>
+        )}
 
         {plant.archivedAt !== null && (
           // In a row, the line wraps into a tall column at accessibility text sizes, so there it stacks.
@@ -336,7 +429,7 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
     paddingHorizontal: space.s,
     paddingVertical: space.xs,
-    borderRadius: 12,
+    borderRadius: radius.badge,
     backgroundColor: colors.fill,
   },
   badgeToxic: { backgroundColor: colors.cautionSoft },
@@ -352,7 +445,7 @@ const styles = StyleSheet.create({
     marginBottom: space.m,
     // At least the Unarchive button's hitSlop, above and below it.
     padding: space.m,
-    borderRadius: 12,
+    borderRadius: radius.banner,
     backgroundColor: colors.surface,
   },
   bannerStacked: { flexDirection: 'column', alignItems: 'flex-start' },
@@ -360,8 +453,9 @@ const styles = StyleSheet.create({
   tilesStacked: { flexDirection: 'column' },
   tile: {
     flex: 1,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    borderCurve: 'continuous',
+    ...raised.surface,
   },
   // Grows, so the whole of a tile shorter than its row's tallest is one target.
   tileBody: { flexGrow: 1, gap: space.xs, padding: space.m },
@@ -375,7 +469,7 @@ const styles = StyleSheet.create({
     marginHorizontal: space.m,
     marginBottom: space.m,
     paddingVertical: space.xs,
-    borderRadius: 10,
+    borderRadius: radius.button,
     backgroundColor: colors.tint,
   },
   doneLabel: { ...text.subheadline, ...font.semibold, color: colors.onTint },
@@ -399,7 +493,32 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: space.m,
     paddingVertical: space.xs,
-    borderRadius: 14,
+    borderRadius: radius.badge,
     backgroundColor: colors.fill,
+  },
+  // PROTOTYPE (prototype/surfaces): the hero's scrim, dark enough at the bottom for white text on
+  // a bright photo; the compact header of a plant without one.
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: space.xs,
+    paddingHorizontal: space.xl,
+    paddingTop: space.xxxl * 3,
+    paddingBottom: space.l,
+    experimental_backgroundImage:
+      'linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.7) 100%)',
+  },
+  onPhoto: { color: '#ffffff' },
+  onPhotoQuiet: { color: 'rgba(255, 255, 255, 0.85)' },
+  underScrim: { paddingHorizontal: space.xl, paddingTop: space.s, paddingBottom: space.m },
+  compact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.l,
+    paddingHorizontal: space.xl,
+    paddingTop: space.m,
+    paddingBottom: space.l,
   },
 });

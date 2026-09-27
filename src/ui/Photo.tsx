@@ -5,7 +5,7 @@ import { ActionSheetIOS, Image, StyleSheet, Text, View } from 'react-native';
 
 import type { PhotoFiles } from '@/src/core/photos';
 import { alertError, TextButton } from '@/src/ui/Form';
-import { colors, font } from '@/src/ui/theme';
+import { colors, font, radius } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -127,13 +127,23 @@ export function PlantPhoto({
   uri,
   size,
   name,
+  corner,
 }: {
   uri: string | null;
   size: number;
   name: string;
+  /** PROTOTYPE: the grid's photos stand on the ground, so they take a surface's radius. */
+  corner?: number;
 }) {
   return (
-    <View accessibilityElementsHidden style={[styles.photo, { width: size, height: size }]}>
+    <View
+      accessibilityElementsHidden
+      style={[
+        styles.photo,
+        { width: size, height: size },
+        corner !== undefined && { borderRadius: corner },
+      ]}
+    >
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} />
       ) : (
@@ -160,7 +170,7 @@ export function Initial({ name, size }: { name: string; size: number }) {
 
 const styles = StyleSheet.create({
   photo: {
-    borderRadius: 14,
+    borderRadius: radius.photo,
     backgroundColor: colors.tintSoft,
     alignItems: 'center',
     justifyContent: 'center',
