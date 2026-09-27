@@ -9,6 +9,7 @@ import { listPlants } from '../../src/core/plants';
 import { plantsNeedYou, plural } from '../../src/ui/words';
 import { openGarden, type Garden } from './garden';
 import { AppMark } from './icons';
+import type { PlantView } from './guide';
 import { GardenPanes, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
@@ -75,16 +76,21 @@ async function load(): Promise<State> {
   }
 }
 
-type Route =
-  { tab: 'today' } | { tab: 'garden' } | { tab: 'plant'; id: string; sub: string | null };
+type Route = { tab: 'today' } | { tab: 'garden' } | { tab: 'plant'; id: string; view: PlantView };
 
 /**
  * Where the fragment leads once a Pairing link's key has left it: `#/garden`, `#/plant/<id>`, its
  * Care Guide (`/guide`), Symptoms (`/symptoms`) or one Symptom (`/symptom/<id>`), else Today.
  */
 function route(fragment: string): Route {
-  const plant = /^#\/plant\/([\w-]+)(?:\/(guide|symptoms|symptom\/[\w-]+))?$/.exec(fragment);
-  if (plant) return { tab: 'plant', id: plant[1], sub: plant[2] ?? null };
+  const plant = /^#\/plant\/([\w-]+)(?:\/(guide|symptoms)|\/symptom\/([\w-]+))?$/.exec(fragment);
+  if (plant) {
+    const [, id, page, symptomId] = plant;
+    const view: PlantView = symptomId
+      ? { page: 'symptom', symptomId }
+      : { page: (page as 'guide' | 'symptoms' | undefined) ?? 'plant' };
+    return { tab: 'plant', id, view };
+  }
   return fragment === '#/garden' ? { tab: 'garden' } : { tab: 'today' };
 }
 
@@ -198,7 +204,7 @@ function GardenView({
         <GardenPanes
           garden={garden}
           id={screen.tab === 'plant' ? screen.id : null}
-          sub={screen.tab === 'plant' ? screen.sub : null}
+          view={screen.tab === 'plant' ? screen.view : { page: 'plant' }}
           photoUrl={photoUrl}
         />
       )}

@@ -3,13 +3,12 @@ import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View, type ColorValue } from 'react-native';
 
-import bundled from '@/assets/care-guides.json';
 import type { SeasonOn } from '@/src/core/care';
 import {
   CARE_GUIDES_LIGHT,
   type CareGuide,
-  type CareGuides,
   type CareProfile,
+  type Cause,
 } from '@/src/core/careGuide';
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
@@ -19,6 +18,7 @@ import {
   LIGHT_WORDS,
   lightLabel,
   NO_CARE_GUIDE,
+  PET_WARNING,
   seasonLine,
   SOMETHING_WRONG,
   yourSchedule,
@@ -26,10 +26,9 @@ import {
 
 /**
  * The phone's Care Guide (spec #48, the prototype's variant A): the Care group on the Plant screen,
- * the full Care Guide, and the rows the Symptom screens share. The text is the bundled
- * `assets/care-guides.json` (ADR-0008), whose rules `src/core/careGuide.test.ts` checks.
+ * the full Care Guide, and the rows and cards the Symptom screens show. The text is the bundled
+ * `assets/care-guides.json` (ADR-0008, `src/ui/guides.ts`).
  */
-export const guides = bundled as unknown as CareGuides;
 
 type Season = SeasonOn['season'];
 
@@ -301,6 +300,74 @@ function Card({
   );
 }
 
+/**
+ * One of a Symptom's causes: what the Care Log says beside it (`fact`, when it has one) in a quiet
+ * box, how to tell, what to do, the pet warning where it has one, and Log it as a Note.
+ */
+export function CauseCard({
+  cause,
+  fact,
+  onLog,
+}: {
+  cause: Cause;
+  fact: string | null;
+  onLog: () => void;
+}) {
+  return (
+    <View style={styles.card}>
+      <Text accessibilityRole="header" style={text.title3}>
+        {cause.name}
+      </Text>
+      {fact && (
+        <View accessible style={styles.fact}>
+          <SymbolView
+            accessibilityElementsHidden
+            name="clock.arrow.circlepath"
+            size={14}
+            tintColor={colors.secondaryLabel}
+          />
+          <Text style={[text.footnote, styles.grow]}>{fact}</Text>
+        </View>
+      )}
+      <Text accessibilityRole="header" style={text.headline}>
+        How to tell
+      </Text>
+      <Text style={text.body}>{cause.tell}</Text>
+      <Text accessibilityRole="header" style={text.headline}>
+        What to do
+      </Text>
+      <Text style={text.body}>{cause.fix}</Text>
+      {cause.petWarning && (
+        <View accessible style={styles.warning}>
+          <SymbolView
+            accessibilityElementsHidden
+            name="pawprint.fill"
+            size={13}
+            tintColor={colors.caution}
+          />
+          <Text style={[text.footnote, styles.caution, styles.grow]}>{PET_WARNING}</Text>
+        </View>
+      )}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityHint="Opens a Note with this cause filled in"
+        // The button's line is 20 pt; this makes it a 44 pt target inside the card's padding.
+        hitSlop={12}
+        onPress={onLog}
+        style={({ pressed }) => [styles.linkButton, styles.line, pressed && pressedStyle.button]}
+      >
+        <SymbolView
+          accessibilityElementsHidden
+          name="note.text"
+          size={14}
+          tintColor={colors.tint}
+        />
+        <Text style={styles.link}>Log it as a Note</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function YourSchedule({ line }: { line: string }) {
   return (
     <View style={styles.line}>
@@ -351,5 +418,15 @@ const styles = StyleSheet.create({
   body: { gap: space.l, paddingTop: space.l, paddingBottom: space.xxl },
   inset: { gap: space.s, marginHorizontal: space.xl },
   linkButton: { alignSelf: 'flex-start' },
+  fact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.s,
+    padding: space.s,
+    borderRadius: 10,
+    backgroundColor: colors.fill,
+  },
+  warning: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },
+  caution: { color: colors.caution },
   link: { ...text.subheadline, fontWeight: '600', color: colors.tint },
 });

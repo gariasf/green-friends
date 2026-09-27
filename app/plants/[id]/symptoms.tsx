@@ -1,9 +1,17 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { guides, Row } from '@/src/ui/CareGuide';
+import type { Symptom } from '@/src/core/careGuide';
+import { Row } from '@/src/ui/CareGuide';
+import { guides } from '@/src/ui/guides';
 import { colors, group, space } from '@/src/ui/theme';
 import { SYMPTOM_GROUPS, SYMPTOMS_TITLE } from '@/src/ui/words';
+
+/** Each group's symbol, beside every Symptom in it. */
+const GROUP_SYMBOL = {
+  plant: { symbol: 'leaf.fill', tint: colors.tint },
+  pest: { symbol: 'ant.fill', tint: colors.secondaryLabel },
+} as const satisfies Record<Symptom['kind'], object>;
 
 /** What can be seen going wrong, to pick from (spec #48): leaves and stems, then pests. */
 export default function SymptomsScreen() {
@@ -23,8 +31,7 @@ export default function SymptomsScreen() {
                 <Row
                   key={symptom.id}
                   first={index === 0}
-                  symbol={kind === 'pest' ? 'ant.fill' : 'leaf.fill'}
-                  tint={kind === 'pest' ? colors.secondaryLabel : colors.tint}
+                  {...GROUP_SYMBOL[kind]}
                   title={symptom.name}
                   onPress={() =>
                     router.push({

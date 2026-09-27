@@ -19,7 +19,8 @@ import {
   whoseSchedule,
 } from '../../src/ui/words';
 import type { Garden } from './garden';
-import { CareRows, guides, GuideView, SymptomsView, SymptomView } from './guide';
+import { guides } from '../../src/ui/guides';
+import { CareRows, GuideView, SymptomsView, SymptomView, type PlantView } from './guide';
 import { AppMark, CareIcon, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
@@ -116,13 +117,12 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
 export function GardenPanes({
   garden,
   id,
-  sub,
+  view,
   photoUrl,
 }: {
   garden: Garden;
   id: string | null;
-  /** In the chosen plant's pane: `guide`, `symptoms` or `symptom/<id>`, else the plant. */
-  sub: string | null;
+  view: PlantView;
   photoUrl: PhotoUrl;
 }) {
   // The day the screen was drawn on, as Today's.
@@ -168,7 +168,7 @@ export function GardenPanes({
       </section>
       <main className="detail">
         {id ? (
-          <PlantDetail garden={garden} id={id} sub={sub} photoUrl={photoUrl} />
+          <PlantDetail garden={garden} id={id} view={view} photoUrl={photoUrl} />
         ) : (
           <div className="pick">
             <AppMark size={48} />
@@ -184,18 +184,18 @@ export function GardenPanes({
  * A plant, as the phone's Plant screen without its buttons: the photo beside its names and pet
  * toxicity, a row per care type with when it's next Due (or how long Overdue, or Paused) and when
  * it was last done, whose schedule it follows and its Current Pot, its Care group (spec #48) and
- * its Care Log; or, at `sub`, its Care Guide, the Symptoms or one Symptom in its place. The Web view
+ * its Care Log; or, by `view`, its Care Guide, the Symptoms or one Symptom in its place. The Web view
  * lists only plants in care, so a link to any other says so.
  */
 export function PlantDetail({
   garden,
   id,
-  sub,
+  view,
   photoUrl,
 }: {
   garden: Garden;
   id: string;
-  sub: string | null;
+  view: PlantView;
   photoUrl: PhotoUrl;
 }) {
   const today = localDay(new Date());
@@ -224,16 +224,17 @@ export function PlantDetail({
 
   const { row, events, guide } = plant;
   const name = plant.displayName;
-  if (sub === 'guide' && guide)
+  if (view.page === 'guide' && guide) {
     return <GuideView id={id} name={name} guide={guide} today={today} />;
-  if (sub === 'symptoms') return <SymptomsView id={id} name={name} />;
-  if (sub?.startsWith('symptom/')) {
+  }
+  if (view.page === 'symptoms') return <SymptomsView id={id} name={name} />;
+  if (view.page === 'symptom') {
     return (
       <SymptomView
         garden={garden}
         id={id}
         name={name}
-        symptomId={sub.slice('symptom/'.length)}
+        symptomId={view.symptomId}
         profile={guide?.profile ?? null}
         today={today}
       />

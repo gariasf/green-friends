@@ -1,13 +1,11 @@
 import { useState } from 'react';
 
-import bundled from '../../assets/care-guides.json';
 import type { SeasonOn } from '../../src/core/care';
 import {
   CARE_GUIDES_LIGHT,
   causeFact,
   symptomCauses,
   type CareGuide,
-  type CareGuides,
   type CareProfile,
 } from '../../src/core/careGuide';
 import {
@@ -24,6 +22,7 @@ import {
   SYMPTOMS_TITLE,
   yourSchedule,
 } from '../../src/ui/words';
+import { guides } from '../../src/ui/guides';
 import type { Garden } from './garden';
 import { CareIcon, GuideIcon } from './icons';
 
@@ -32,7 +31,10 @@ import { CareIcon, GuideIcon } from './icons';
  * Care Guide, the Symptoms and one Symptom, each in the detail pane at the plant's address plus
  * `/guide`, `/symptoms` or `/symptom/<id>`. The text is the bundled `assets/care-guides.json`.
  */
-export const guides = bundled as unknown as CareGuides;
+
+/** What the chosen plant's pane shows: the plant, or one of its Care Guide's pages. */
+export type PlantView =
+  { page: 'plant' | 'guide' | 'symptoms' } | { page: 'symptom'; symptomId: string };
 
 type Season = SeasonOn['season'];
 
