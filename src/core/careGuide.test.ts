@@ -70,8 +70,7 @@ describe('the bundled care-guides.json (ADR-0008)', () => {
     }
   });
 
-  // Until the content ticket (#52) writes a profile for the whole catalog.
-  test.skip('every catalog Species has a profile', () => {
+  test('every catalog Species has a profile', () => {
     const missing = catalogFile.species.filter((species) => !(species.id in guides.species));
     expect(missing.map((species) => species.id)).toEqual([]);
   });
