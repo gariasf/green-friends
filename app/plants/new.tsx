@@ -140,7 +140,7 @@ export default function NewPlantScreen() {
         <PlantPhoto uri={prepared} size={64} />
         <PhotoButton hasPhoto={prepared !== null} onPick={pickPhoto} />
       </View>
-      {prepared && (
+      {IDENTIFY_SHOWN && prepared && (
         <IdentifyFromPhoto
           state={identify.state}
           onIdentify={() => identify.run(prepared)}
@@ -197,6 +197,12 @@ export default function NewPlantScreen() {
     </ScrollView>
   );
 }
+
+/**
+ * Whether New plant offers Identify from photo. Hidden for now at the owner's call (2026-09-27);
+ * the relay route and the name index stay, so turning this back on is the whole change.
+ */
+const IDENTIFY_SHOWN = false;
 
 /**
  * Identify from photo (ADR-0007): the row that sends the photo, only on its tap, and beneath it the
