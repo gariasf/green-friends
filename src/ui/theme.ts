@@ -1,4 +1,5 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
+import Storage from 'expo-sqlite/kv-store';
 import { DynamicColorIOS, StyleSheet, type ColorSchemeName } from 'react-native';
 
 // The palette (ticket #34): four colours from Sanzo Wada's A Dictionary of Color Combinations,
@@ -100,6 +101,27 @@ export const font = {
 } as const;
 
 /**
+ * PROTOTYPE (prototype/title-fonts, never merged): a display face for the titles only, the large
+ * navigation title, title1 and title2, picked with TitleFontSwitcher. Read once at startup, so every
+ * style spread from `text` follows it; switching reloads the app.
+ */
+export const TITLE_FONTS = {
+  A: { label: 'Nunito Sans', face: { fontFamily: FAMILY, fontWeight: '700' } },
+  B: { label: 'Fraunces', face: { fontFamily: 'Fraunces', fontWeight: '600' } },
+  C: { label: 'Young Serif', face: { fontFamily: 'Young Serif', fontWeight: '400' } },
+  D: {
+    label: 'Bricolage Grotesque',
+    face: { fontFamily: 'Bricolage Grotesque', fontWeight: '700' },
+  },
+} as const;
+export type TitleFontKey = keyof typeof TITLE_FONTS;
+export const TITLE_FONT_KEY = 'prototype.titleFont';
+const storedTitle = Storage.getItemSync(TITLE_FONT_KEY);
+export const titleFont: TitleFontKey =
+  storedTitle && storedTitle in TITLE_FONTS ? (storedTitle as TitleFontKey) : 'A';
+const title = TITLE_FONTS[titleFont].face;
+
+/**
  * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
  * Web view's where they can be (28, 22, 15, 13), the hierarchy carried by weight. The weights are
  * set B from ticket #54: Nunito's round letters look lighter than their number, so Bold 700 is as
@@ -116,8 +138,8 @@ export const font = {
  *   footnote     13    400     statuses and badges, 600 where they need to stand out
  */
 export const text = StyleSheet.create({
-  title1: { ...font.bold, fontSize: 28, color: colors.label },
-  title2: { ...font.bold, fontSize: 22, color: colors.label },
+  title1: { ...title, fontSize: 28, color: colors.label },
+  title2: { ...title, fontSize: 22, color: colors.label },
   headline: { ...font.semibold, fontSize: 17, color: colors.label },
   body: { ...font.regular, fontSize: 17, color: colors.label },
   subheadline: { ...font.regular, fontSize: 15, color: colors.secondaryLabel },
@@ -127,7 +149,7 @@ export const text = StyleSheet.create({
 /** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
 export const headerFonts = {
   headerTitleStyle: { ...font.semibold },
-  headerLargeTitleStyle: { ...font.bold },
+  headerLargeTitleStyle: { ...title },
 } as const;
 
 /**

@@ -283,7 +283,6 @@ nav a[aria-current='page'] {
   main {
     padding: 1rem 1rem 2rem;
   }
-
 }
 
 /* The care symbols in their hues, the leaf on Ecru for a plant without a photo, and the mark. */
@@ -659,4 +658,52 @@ nav a[aria-current='page'] {
     display: inline-block;
     margin-bottom: 1rem;
   }
+}
+
+/* PROTOTYPE (prototype/title-fonts, never merged): the titles' face, ?title=A|B|C|D (main.tsx). */
+:root {
+  --font-title: inherit;
+  --weight-title: 700;
+}
+
+:root[data-title='B'] {
+  --font-title: 'Fraunces Variable', serif;
+  --weight-title: 600;
+}
+
+:root[data-title='C'] {
+  --font-title: 'Young Serif', serif;
+  --weight-title: 400;
+}
+
+:root[data-title='D'] {
+  --font-title: 'Bricolage Grotesque Variable', sans-serif;
+  --weight-title: 700;
+}
+
+h1,
+.list h1,
+.empty h2,
+.brand {
+  font-family: var(--font-title);
+  font-weight: var(--weight-title);
+}
+
+.title-switcher {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.title-switcher a[aria-current='true'] {
+  text-decoration: underline;
 }

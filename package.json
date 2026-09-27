@@ -29,7 +29,10 @@
     ]
   },
   "dependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/fraunces": "^0.4.1",
     "@expo-google-fonts/nunito-sans": "^0.4.2",
+    "@expo-google-fonts/young-serif": "^0.4.0",
     "@expo/ui": "~57.0.20",
     "drizzle-orm": "^0.45.3",
     "expo": "~57.0.24",

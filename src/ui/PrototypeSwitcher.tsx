@@ -1,9 +1,10 @@
 import { Icon } from '@/src/ui/Icon';
+import Storage from 'expo-sqlite/kv-store';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { DevSettings, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { font } from './theme';
+import { font, TITLE_FONT_KEY, TITLE_FONTS, titleFont, type TitleFontKey } from './theme';
 
 /**
  * PROTOTYPE (UI pass): flips between the design variants of one screen. Not part of any design,
@@ -48,7 +49,39 @@ export function PrototypeSwitcher({
   );
 }
 
+const TITLE_KEYS = Object.keys(TITLE_FONTS) as TitleFontKey[];
+
+/**
+ * PROTOTYPE (prototype/title-fonts): flips the whole app between the title faces, above the tab
+ * bar. The type scale is built once at startup, so a pick is stored and the app reloads.
+ */
+export function TitleFontSwitcher() {
+  const insets = useSafeAreaInsets();
+  const index = TITLE_KEYS.indexOf(titleFont);
+  const go = (step: number) => {
+    const next = TITLE_KEYS[(index + step + TITLE_KEYS.length) % TITLE_KEYS.length];
+    Storage.setItemSync(TITLE_FONT_KEY, next);
+    DevSettings.reload();
+  };
+  return (
+    <View pointerEvents="box-none" style={[styles.wrap, { bottom: insets.bottom + 56 }]}>
+      <View style={[styles.bar, styles.titles]}>
+        <Pressable accessibilityLabel="Previous title font" hitSlop={12} onPress={() => go(-1)}>
+          <Icon name="previous" size={14} color="#fff" weight="bold" />
+        </Pressable>
+        <Text allowFontScaling={false} style={styles.label}>
+          Titles {titleFont} · {TITLE_FONTS[titleFont].label}
+        </Text>
+        <Pressable accessibilityLabel="Next title font" hitSlop={12} onPress={() => go(1)}>
+          <Icon name="next" size={14} color="#fff" weight="bold" />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  titles: { backgroundColor: '#0f766e' },
   wrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   bar: {
     flexDirection: 'row',
