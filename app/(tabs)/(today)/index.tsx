@@ -21,7 +21,7 @@ import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
-import { colors, group, pressedStyle, space, target, text } from '@/src/ui/theme';
+import { colors, font, group, pressedStyle, space, target, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
@@ -323,7 +323,7 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
               <Text style={styles.restName} numberOfLines={2}>
                 {plant.displayName}
               </Text>
-              <Text style={text.caption}>{next}</Text>
+              <Text style={text.footnote}>{next}</Text>
             </Pressable>
           );
         })}
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     padding: space.m,
     paddingLeft: space.l,
   },
-  scientific: { ...text.caption, fontStyle: 'italic' },
+  scientific: { ...text.footnote, ...font.italic },
   more: {
     width: 32,
     height: 32,
@@ -376,8 +376,8 @@ const styles = StyleSheet.create({
     gap: space.m,
     paddingVertical: space.m,
   },
-  rowLabel: { ...text.subheadline, fontWeight: '600', color: colors.label },
-  status: { ...text.footnote, fontWeight: '600' },
+  rowLabel: { ...text.subheadline, ...font.semibold, color: colors.label },
+  status: { ...text.footnote, ...font.semibold },
   overdue: { color: colors.caution },
   dueToday: { color: colors.dueToday },
   cardFoot: {
@@ -390,5 +390,5 @@ const styles = StyleSheet.create({
   restHeading: { marginTop: space.xxl, marginBottom: space.s, marginHorizontal: space.l },
   restStrip: { gap: space.m, paddingHorizontal: space.l, paddingVertical: space.s },
   restPlant: { gap: space.xs },
-  restName: { ...text.caption, fontWeight: '600', color: colors.label },
+  restName: { ...text.footnote, ...font.semibold, color: colors.label },
 });

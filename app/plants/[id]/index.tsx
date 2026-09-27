@@ -39,7 +39,7 @@ import { guides } from '@/src/ui/guides';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { choosePhoto, photoFiles, photoUri } from '@/src/ui/Photo';
-import { accessibilitySize, colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { accessibilitySize, colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from '@/src/ui/words';
@@ -284,7 +284,7 @@ function CareTile({
           {value}
           {overdue && <Text style={styles.overdueWord}> overdue</Text>}
         </Text>
-        <Text style={text.caption}>{last}</Text>
+        <Text style={text.footnote}>{last}</Text>
       </Pressable>
       {due && (
         <Pressable
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   grow: { flex: 1 },
   hero: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tintSoft },
   title: { gap: space.xs, padding: space.xl, paddingBottom: space.m },
-  scientific: { ...text.subheadline, fontStyle: 'italic' },
+  scientific: { ...text.subheadline, ...font.italic },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -351,9 +351,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
   },
   badgeToxic: { backgroundColor: colors.cautionSoft },
-  badgeText: { ...text.footnote, fontWeight: '600' },
+  badgeText: { ...text.footnote, ...font.semibold },
   caution: { color: colors.caution },
-  overdueWord: { ...text.footnote, fontWeight: '600', color: colors.caution },
+  overdueWord: { ...text.footnote, ...font.semibold, color: colors.caution },
   dueToday: { color: colors.dueToday },
   banner: {
     flexDirection: 'row',
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: colors.tint,
   },
-  doneLabel: { ...text.subheadline, fontWeight: '600', color: colors.onTint },
+  doneLabel: { ...text.subheadline, ...font.semibold, color: colors.onTint },
   logHead: {
     flexDirection: 'row',
     alignItems: 'center',

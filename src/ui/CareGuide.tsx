@@ -12,7 +12,7 @@ import {
 } from '@/src/core/careGuide';
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
-import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
+import { colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import {
   feedLine,
   lightLabel,
@@ -292,7 +292,7 @@ function Card({
     <View style={styles.card}>
       <View style={styles.line}>
         <SymbolView accessibilityElementsHidden name={symbol} size={18} tintColor={tint} />
-        <Text accessibilityRole="header" style={[text.title3, styles.grow]}>
+        <Text accessibilityRole="header" style={[text.title2, styles.grow]}>
           {title}
         </Text>
       </View>
@@ -316,7 +316,7 @@ export function CauseCard({
 }) {
   return (
     <View style={styles.card}>
-      <Text accessibilityRole="header" style={text.title3}>
+      <Text accessibilityRole="header" style={text.title2}>
         {cause.name}
       </Text>
       {fact && (
@@ -429,5 +429,5 @@ const styles = StyleSheet.create({
   },
   warning: { flexDirection: 'row', alignItems: 'flex-start', gap: space.s },
   caution: { color: colors.caution },
-  link: { ...text.subheadline, fontWeight: '600', color: colors.tint },
+  link: { ...text.subheadline, ...font.semibold, color: colors.tint },
 });

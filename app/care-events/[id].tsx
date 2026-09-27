@@ -44,7 +44,7 @@ export default function CareEventSheet() {
     <View style={styles.sheet}>
       <View style={styles.header}>
         <CareSymbol type={event.type} size={22} />
-        <Text accessibilityRole="header" style={[text.title3, styles.grow]}>
+        <Text accessibilityRole="header" style={[text.title2, styles.grow]}>
           {CARE_COPY[event.type].done}
         </Text>
         <CloseButton />

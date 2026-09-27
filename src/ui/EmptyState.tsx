@@ -33,7 +33,7 @@ export function EmptyState({
 
 const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: space.s, padding: space.xxxl },
-  title: { ...text.title3, textAlign: 'center' },
+  title: { ...text.title2, textAlign: 'center' },
   line: { ...text.subheadline, textAlign: 'center' },
   action: { marginTop: space.s },
 });

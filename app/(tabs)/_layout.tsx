@@ -1,11 +1,11 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { colors } from '@/src/ui/theme';
+import { colors, font } from '@/src/ui/theme';
 
 /** The app's three places as iOS's tab bar (spec #22), each tab a stack of its own. */
 export default function TabsLayout() {
   return (
-    <NativeTabs tintColor={colors.tint}>
+    <NativeTabs tintColor={colors.tint} labelStyle={font.semibold}>
       <NativeTabs.Trigger name="(today)">
         <NativeTabs.Trigger.Icon sf={{ default: 'sun.max', selected: 'sun.max.fill' }} />
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>

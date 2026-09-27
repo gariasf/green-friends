@@ -92,17 +92,53 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
 /** Spacing steps, for margins, paddings and gaps. */
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 20, xxl: 24, xxxl: 32 } as const;
 
-/** iOS text styles at the default Dynamic Type size, each with its colour. */
+/**
+ * The app's faces, embedded by expo-font's config plugin (app.json), one static face per weight:
+ * SDK 57 draws no variable font. Nunito Sans (SIL OFL) for the text, as the Web view (spec #41),
+ * and Young Serif (SIL OFL), which has one weight, for the titles (spec #57). React Native finds a
+ * face by family, weight and style; a PostScript name as the family falls back to the regular face
+ * and drops the italic. SwiftUI and UIKit controls keep the system font.
+ */
+const NUNITO = 'Nunito Sans';
+export const font = {
+  regular: { fontFamily: NUNITO, fontWeight: '400' },
+  italic: { fontFamily: NUNITO, fontWeight: '400', fontStyle: 'italic' },
+  semibold: { fontFamily: NUNITO, fontWeight: '600' },
+  bold: { fontFamily: NUNITO, fontWeight: '700' },
+  title: { fontFamily: 'Young Serif', fontWeight: '400' },
+} as const;
+
+/**
+ * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
+ * Web view's where they can be (28, 22, 15, 13), in set B's weights (ticket #54): Bold 700 for
+ * titles, SemiBold 600 for what stands out, Regular 400 for the rest. The titles are Young Serif
+ * (spec #57), the tiles' values with them.
+ *
+ *   step         size  face         use
+ *   large title  34    Young Serif  a tab's navigation bar (Today, Garden, Settings)
+ *   nav title    17    Nunito 600   a pushed screen's or a sheet's navigation bar
+ *   title1       28    Young Serif  a plant's name on its screen
+ *   title2       22    Young Serif  a tile's value, a sheet's title, a Care Guide card's heading,
+ *                                   a cause's name, an empty state
+ *   headline     17    Nunito 600   plant names in a card, section headings, a button's label
+ *   body         17    Nunito 400   everything else
+ *   subheadline  15    Nunito 400   second lines; 600 (font.semibold) for a care row's label
+ *   footnote     13    Nunito 400   statuses, badges and "Last …" lines; 600 where they stand out
+ */
 export const text = StyleSheet.create({
-  title1: { fontSize: 28, fontWeight: '700', color: colors.label },
-  title2: { fontSize: 22, fontWeight: '700', color: colors.label },
-  title3: { fontSize: 20, fontWeight: '600', color: colors.label },
-  headline: { fontSize: 17, fontWeight: '600', color: colors.label },
-  body: { fontSize: 17, color: colors.label },
-  subheadline: { fontSize: 15, color: colors.secondaryLabel },
-  footnote: { fontSize: 13, color: colors.secondaryLabel },
-  caption: { fontSize: 12, color: colors.secondaryLabel },
+  title1: { ...font.title, fontSize: 28, color: colors.label },
+  title2: { ...font.title, fontSize: 22, color: colors.label },
+  headline: { ...font.semibold, fontSize: 17, color: colors.label },
+  body: { ...font.regular, fontSize: 17, color: colors.label },
+  subheadline: { ...font.regular, fontSize: 15, color: colors.secondaryLabel },
+  footnote: { ...font.regular, fontSize: 13, color: colors.secondaryLabel },
 });
+
+/** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
+export const headerFonts = {
+  headerTitleStyle: font.semibold,
+  headerLargeTitleStyle: font.title,
+} as const;
 
 /**
  * A 44 pt target by its own size, for a control that UIKit or SwiftUI hit-tests rather than React

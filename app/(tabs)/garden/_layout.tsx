@@ -2,12 +2,13 @@ import { router, Stack } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable } from 'react-native';
 
-import { colors, pressedStyle, target } from '@/src/ui/theme';
+import { colors, headerFonts, pressedStyle, target } from '@/src/ui/theme';
 
 export default function GardenStack() {
   return (
     <Stack
       screenOptions={{
+        ...headerFonts,
         headerLargeTitleEnabled: true,
         contentStyle: { backgroundColor: colors.background },
       }}
