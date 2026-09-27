@@ -135,7 +135,8 @@ export default function PlantScreen() {
                 )}
               </View>
             </View>
-            {badge && <View style={styles.underHero}>{badge}</View>}
+            {/* Kept without a badge too, or the tiles meet the photo's edge. */}
+            <View style={styles.underHero}>{badge}</View>
           </>
         ) : (
           // A plant without a photo: its initial beside its names, which a tap turns into Add photo.
