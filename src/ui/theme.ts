@@ -142,16 +142,16 @@ export const WEIGHTS_KEY = 'prototype.weights';
 const stored = Storage.getItemSync(WEIGHTS_KEY);
 export const weightSet: WeightSetKey =
   stored && stored in WEIGHT_SETS ? (stored as WeightSetKey) : 'A';
-const w = WEIGHT_SETS[weightSet];
+const weights = WEIGHT_SETS[weightSet];
 
 /**
  * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
  * Web view's where they can be (28, 22, 15, 13), the hierarchy carried by weight.
  */
 export const text = StyleSheet.create({
-  title1: { fontFamily: FAMILY, fontWeight: w.title1, fontSize: 28, color: colors.label },
-  title2: { fontFamily: FAMILY, fontWeight: w.title2, fontSize: 22, color: colors.label },
-  headline: { fontFamily: FAMILY, fontWeight: w.headline, fontSize: 17, color: colors.label },
+  title1: { fontFamily: FAMILY, fontWeight: weights.title1, fontSize: 28, color: colors.label },
+  title2: { fontFamily: FAMILY, fontWeight: weights.title2, fontSize: 22, color: colors.label },
+  headline: { fontFamily: FAMILY, fontWeight: weights.headline, fontSize: 17, color: colors.label },
   body: { ...font.regular, fontSize: 17, color: colors.label },
   subheadline: { ...font.regular, fontSize: 15, color: colors.secondaryLabel },
   footnote: { ...font.regular, fontSize: 13, color: colors.secondaryLabel },
@@ -159,8 +159,8 @@ export const text = StyleSheet.create({
 
 /** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
 export const headerFonts = {
-  headerTitleStyle: { fontFamily: FAMILY, fontWeight: w.navTitle },
-  headerLargeTitleStyle: { fontFamily: FAMILY, fontWeight: w.largeTitle },
+  headerTitleStyle: { fontFamily: FAMILY, fontWeight: weights.navTitle },
+  headerLargeTitleStyle: { fontFamily: FAMILY, fontWeight: weights.largeTitle },
 } as const;
 
 /**
