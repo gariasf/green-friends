@@ -92,5 +92,5 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
-  toastText: { ...text.subheadline, flex: 1, ...font.semibold, color: colors.label },
+  toastText: { ...text.subheadline, ...font.semibold, flex: 1, color: colors.label },
 });

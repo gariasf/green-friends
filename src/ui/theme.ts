@@ -100,19 +100,20 @@ export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 20, xxl: 24, xxxl: 32 } as
  * and drops the italic. SwiftUI and UIKit controls keep the system font.
  */
 const NUNITO = 'Nunito Sans';
+const YOUNG_SERIF = 'Young Serif';
 export const font = {
   regular: { fontFamily: NUNITO, fontWeight: '400' },
   italic: { fontFamily: NUNITO, fontWeight: '400', fontStyle: 'italic' },
   semibold: { fontFamily: NUNITO, fontWeight: '600' },
   bold: { fontFamily: NUNITO, fontWeight: '700' },
-  title: { fontFamily: 'Young Serif', fontWeight: '400' },
+  title: { fontFamily: YOUNG_SERIF, fontWeight: '400' },
 } as const;
 
 /**
  * The type scale at the default Dynamic Type size, each with its colour: six steps, sized as the
- * Web view's where they can be (28, 22, 15, 13), in set B's weights (ticket #54): Bold 700 for
- * titles, SemiBold 600 for what stands out, Regular 400 for the rest. The titles are Young Serif
- * (spec #57), the tiles' values with them.
+ * Web view's where they can be (28, 22, 15, 13), in set B's weights (ticket #54): SemiBold 600 for
+ * what stands out, Regular 400 for the rest. The titles are Young Serif in its one weight (spec
+ * #57), the tiles' values with them; no step uses Nunito's 700 yet.
  *
  *   step         size  face         use
  *   large title  34    Young Serif  a tab's navigation bar (Today, Garden, Settings)
