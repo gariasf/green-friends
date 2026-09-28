@@ -83,10 +83,66 @@
     margin-top: 3.25rem;
   }
 
+  /* A section's note right after its heading, on its baseline: "Care Guide  Tropical aroid". */
   .section-head {
+    justify-content: flex-start;
+    gap: 0.75rem;
     margin-bottom: 0.875rem;
     padding-bottom: 0;
     border-bottom: 0;
+  }
+
+  /* Today's date, a size up and in ink now it stands alone under the title. */
+  .page-head > p.quiet {
+    color: var(--label);
+    font-size: var(--text-md);
+  }
+
+  /* A card's care Due as one line of text that breaks after its dot, never inside its parts:
+     "Fertilize · 5 days overdue". */
+  .due li {
+    align-items: baseline;
+  }
+
+  .due li .care-icon {
+    align-self: flex-start;
+    margin-top: 0.2rem;
+  }
+
+  .due li > .due-words {
+    margin-left: 0;
+  }
+
+  .due-words > :not([aria-hidden]) {
+    white-space: nowrap;
+  }
+
+  .due-words [aria-hidden] {
+    color: var(--secondary-label);
+  }
+
+  /* A narrow calendar: names over two lines rather than cut, without the photos. */
+  @container (max-width: 64rem) {
+    .items .thumb {
+      display: none;
+    }
+
+    .item-name {
+      display: -webkit-box;
+      white-space: normal;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+
+    .items a {
+      align-items: flex-start;
+    }
+
+    .items .care-icon,
+    .items .check {
+      margin-top: 0.15rem;
+    }
   }
 
   .section-head h2,
@@ -97,17 +153,9 @@
     line-height: 1.25;
   }
 
+  /* Crumbs: the links in the tint, where you are quiet. */
   .crumbs a {
-    color: var(--secondary-label);
     font-weight: 500;
-  }
-
-  .crumbs a:hover {
-    color: var(--tint);
-  }
-
-  .crumbs [aria-current] {
-    color: var(--label);
   }
 
   /* Grounded shadows: a tight contact shadow and a short soft one, with a warm hairline. */

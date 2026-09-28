@@ -74,6 +74,8 @@ export type PhotoUrl = (filename: string | null) => string | undefined;
  * this week's Monday as a calendar. Read-only, so a plant opens its page rather than logging care.
  */
 export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl }) {
+  // PROTOTYPE (web polish): the count once, as Needs you's heading; the range alone on Coming up.
+  const polished = useVariant() !== 'now';
   const today = localDay(new Date());
   const inCare = useMemo(() => evaluateCare(garden.db, today), [garden, today]);
   const plants = inCare.filter(needsAttention);
@@ -97,7 +99,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
       <header className="page-head">
         <h1 tabIndex={-1}>Today</h1>
         <p className="quiet">
-          {plants.length > 0 ? `${date} · ${plantsNeedYou(plants.length)}` : date}
+          {plants.length > 0 && !polished ? `${date} · ${plantsNeedYou(plants.length)}` : date}
         </p>
       </header>
       {inCare.length === 0 && (
@@ -107,7 +109,11 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         <Empty title="All caught up" line="Nothing needs you today." />
       )}
       {plants.length > 0 && (
-        <Section id="needs-you" title={NEEDS_YOU} note={plural(plants.length, 'plant')}>
+        <Section
+          id="needs-you"
+          title={polished ? plantsNeedYou(plants.length) : NEEDS_YOU}
+          note={polished ? undefined : plural(plants.length, 'plant')}
+        >
           <ul className="cards">
             {plants.map((plant) => (
               <li key={plant.id}>
@@ -124,11 +130,30 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
                       {dueCare(plant).map(({ type, daysOverdue }) => (
                         <li key={type}>
                           <CareIcon type={type} size={16} />
-                          <span>{CARE_WORDS[type].label}</span>
-                          {daysOverdue > 0 ? (
-                            <span className="overdue">{plural(daysOverdue, 'day')} overdue</span>
+                          {polished ? (
+                            // PROTOTYPE (web polish): one line of text, broken after the dot.
+                            <span className="due-words">
+                              <span>{CARE_WORDS[type].label}</span>
+                              <span aria-hidden="true"> · </span>
+                              {daysOverdue > 0 ? (
+                                <span className="overdue">
+                                  {plural(daysOverdue, 'day')} overdue
+                                </span>
+                              ) : (
+                                <span className="due-today">Due today</span>
+                              )}
+                            </span>
                           ) : (
-                            <span className="due-today">Due today</span>
+                            <>
+                              <span>{CARE_WORDS[type].label}</span>
+                              {daysOverdue > 0 ? (
+                                <span className="overdue">
+                                  {plural(daysOverdue, 'day')} overdue
+                                </span>
+                              ) : (
+                                <span className="due-today">Due today</span>
+                              )}
+                            </>
                           )}
                         </li>
                       ))}
@@ -141,7 +166,10 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         </Section>
       )}
       {inCare.length > 0 && (
-        <Section title={COMING_UP} note={`${range} · ${dueThisWeek(dueThisWeekCount)}`}>
+        <Section
+          title={COMING_UP}
+          note={polished ? range : `${range} · ${dueThisWeek(dueThisWeekCount)}`}
+        >
           <Calendar plan={plan} today={today} photoUrl={photoUrl} />
         </Section>
       )}
