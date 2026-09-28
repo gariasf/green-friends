@@ -39,11 +39,16 @@ describe('Care Guide lines', () => {
       'every 30\u00a0days, paused in the Dormant season',
     );
     expect(scheduleLine({ growing: null, dormant: null })).toBe('no schedule');
+    // A garden Growing all year has no Dormant season to mention.
+    expect(scheduleLine({ growing: 7, dormant: 14 }, true)).toBe('every 7\u00a0days');
   });
 
   it('says the Season, and until when it is Dormant', () => {
     expect(seasonLine({ season: 'growing', startsOn: '2026-03-01' }, '2026-09-22')).toBe(
       'Growing season',
+    );
+    expect(seasonLine({ season: 'growing', startsOn: null }, '2026-09-22')).toBe(
+      'Growing all year',
     );
     expect(
       seasonLine(
@@ -66,7 +71,7 @@ describe('Care Guide lines', () => {
         { kind: 'fertilizing', lastOn: null, schedule: { growing: null, dormant: null } },
         '2026-09-22',
       ),
-    ).toBe('Last fed: never logged. No schedule');
+    ).toBe('Last fertilized: never logged. No schedule');
     expect(
       causeFactLine({ kind: 'repotting', lastOn: '2025-09-22', potSizeCm: 17 }, '2026-09-22'),
     ).toBe('Last repotted 12\u00a0months ago, in a 17 cm pot');
@@ -78,7 +83,7 @@ describe('Care Guide lines', () => {
         { kind: 'season', season: { season: 'growing', startsOn: null } },
         '2026-09-22',
       ),
-    ).toBe('Growing season');
+    ).toBe('Growing all year');
   });
 
   it('says how bright, then how much direct sun', () => {

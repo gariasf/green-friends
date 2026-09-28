@@ -15,6 +15,7 @@ import { Icon, type IconName } from '@/src/ui/Icon';
 import { colors, font, group, pressedStyle, radius, space, text } from '@/src/ui/theme';
 import {
   feedLine,
+  isAllYear,
   lightLabel,
   lightWords,
   NO_CARE_GUIDE,
@@ -159,7 +160,12 @@ export function CareGroup({
               title="Water"
               body={profile.watering[now]}
             />
-            <Row symbol={FEED.symbol} tint={FEED.hue} title="Feed" body={feedLine(profile, now)} />
+            <Row
+              symbol={FEED.symbol}
+              tint={FEED.hue}
+              title="Fertilize"
+              body={feedLine(profile, now)}
+            />
             <Row symbol="light" tint={colors.sun} title="Light" label={lightLabel(profile.light)}>
               <LightScale light={profile.light} />
             </Row>
@@ -200,30 +206,34 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
   const [season, setSeason] = useState<Season>(guide.season.season);
   const { profile, schedule } = guide;
   const npk = npkNote(profile.fertilizer.type);
+  // A garden Growing all year has no Dormant season to switch to or schedule for (web #76).
+  const allYear = isAllYear(guide.season);
   return (
     <View style={styles.body}>
       <View style={styles.inset}>
         <Text style={text.footnote}>
           {profile.name} · {seasonLine(guide.season, today)}
         </Text>
-        <Segmented
-          options={['Growing', 'Dormant']}
-          selected={season === 'growing' ? 0 : 1}
-          onChange={(index) => setSeason(index === 0 ? 'growing' : 'dormant')}
-        />
+        {!allYear && (
+          <Segmented
+            options={['Growing', 'Dormant']}
+            selected={season === 'growing' ? 0 : 1}
+            onChange={(index) => setSeason(index === 0 ? 'growing' : 'dormant')}
+          />
+        )}
       </View>
 
       <Card symbol={WATER.symbol} tint={WATER.hue} title="Watering">
         <Text style={text.body}>{profile.watering[season]}</Text>
         <Text style={text.body}>{profile.watering.how}</Text>
-        <YourSchedule line={yourSchedule(schedule.water)} />
+        <YourSchedule line={yourSchedule(schedule.water, allYear)} />
       </Card>
 
       <Card symbol={FEED.symbol} tint={FEED.hue} title="Fertiliser">
         <Text style={text.headline}>{profile.fertilizer.type}</Text>
-        {npk && <Text style={text.footnote}>{npk}</Text>}
         <Text style={text.body}>{profile.fertilizer[season]}</Text>
-        <YourSchedule line={yourSchedule(schedule.fertilize)} />
+        {npk && <Text style={text.footnote}>{npk}</Text>}
+        <YourSchedule line={yourSchedule(schedule.fertilize, allYear)} />
       </Card>
 
       <Card symbol="light" tint={colors.sun} title="Light and warmth">

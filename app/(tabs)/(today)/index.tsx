@@ -262,6 +262,7 @@ function CareCard({
               accessibilityRole="button"
               accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
               accessibilityHint="Logs it as done today"
+              accessibilityState={{ checked: done, disabled: done }}
               disabled={done}
               // 30 pt across; this makes it a 46 pt target.
               hitSlop={8}

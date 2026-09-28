@@ -151,9 +151,13 @@ export function whoseSchedule(plant: Plant): string {
   return `Own schedule for ${own.map((type) => CARE_WORDS[type].label).join(' and ')}`;
 }
 
-/** A seasonal schedule as the Care Guide shows it: "every 7 days, every 14 days in the Dormant season". */
-export function scheduleLine({ growing, dormant }: SeasonalSchedule): string {
+/**
+ * A seasonal schedule as the Care Guide shows it: "every 7 days, every 14 days in the Dormant
+ * season"; in a garden Growing all year, just "every 7 days".
+ */
+export function scheduleLine({ growing, dormant }: SeasonalSchedule, allYear = false): string {
   if (growing === null) return 'no schedule';
+  if (allYear) return `every ${plural(growing, 'day')}`;
   const inDormant =
     dormant === null
       ? 'paused in the Dormant season'
@@ -161,18 +165,30 @@ export function scheduleLine({ growing, dormant }: SeasonalSchedule): string {
   return `every ${plural(growing, 'day')}, ${inDormant}`;
 }
 
-/** Today's Season, as the Plant screen heads its Care rows: "Growing season", "Dormant season, until Mar 1". */
+/**
+ * Today's Season, as the Plant screen heads its Care rows: "Growing season", "Dormant season, until
+ * Mar 1", "Growing all year".
+ */
 export function seasonLine(season: SeasonOn, today: string): string {
-  return season.season === 'dormant'
-    ? `Dormant season, until ${dateLabel(season.resumesOn, today)}`
-    : 'Growing season';
+  if (season.season === 'dormant')
+    return `Dormant season, until ${dateLabel(season.resumesOn, today)}`;
+  return isAllYear(season) ? `Growing ${ALL_YEAR}` : 'Growing season';
 }
 
-const FACT_DONE = { watering: 'Last watered', fertilizing: 'Last fed', repotting: 'Last repotted' };
+/** A garden Growing all year never started its Growing season (`SeasonOn`), and has no Dormant one. */
+export function isAllYear(season: SeasonOn): boolean {
+  return season.season === 'growing' && season.startsOn === null;
+}
+
+const FACT_DONE = {
+  watering: 'Last watered',
+  fertilizing: 'Last fertilized',
+  repotting: 'Last repotted',
+};
 
 /**
  * What the Care Log says beside a cause, with no diagnosis in it: "Last watered 6 days ago.
- * Schedule: every 7 days, every 14 days in the Dormant season", "Last fed: never logged. No schedule".
+ * Schedule: every 7 days, every 14 days in the Dormant season", "Last fertilized: never logged. No schedule".
  */
 export function causeFactLine(fact: CauseFact, today: string): string {
   if (fact.kind === 'season') return seasonLine(fact.season, today);
@@ -275,8 +291,8 @@ export function feedLine(profile: CareProfile, season: SeasonOn['season']): stri
 }
 
 /** Under Watering and Fertiliser: "Your schedule: every 7 days, every 14 days in the Dormant season". */
-export function yourSchedule(schedule: SeasonalSchedule): string {
-  return `Your schedule: ${scheduleLine(schedule)}`;
+export function yourSchedule(schedule: SeasonalSchedule, allYear = false): string {
+  return `Your schedule: ${scheduleLine(schedule, allYear)}`;
 }
 
 /** The Note a cause's Log it as a Note fills in: "Brown, crispy tips: maybe dry air." */

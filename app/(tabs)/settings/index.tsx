@@ -67,6 +67,15 @@ const MONTHS = Array.from({ length: 12 }, (_, index) => ({
   value: index + 1,
 }));
 
+/** What the season pickers add up to, "Growing all year" or "Growing March – October, Dormant November – February", and how to change it. */
+function seasonSummary(start: number, end: number): string {
+  if (start === end) {
+    return 'Growing all year, so watering and fertilizing follow the Growing interval. Different months make a Dormant season.';
+  }
+  const name = (month: number) => MONTHS[(month + 11) % 12].label;
+  return `Growing ${name(start)} – ${name(end)}, Dormant ${name(end + 1)} – ${name(start - 1)}: watering and fertilizing follow each Season's interval. The same month for both means Growing all year.`;
+}
+
 const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 /** When the last Snapshot reached the relay, as Settings' Last synced row words it. */
@@ -253,10 +262,7 @@ export default function SettingsScreen() {
           modifiers={ROWS}
           title="Growing season"
           footer={
-            <Text>
-              Watering and fertilizing follow the Growing interval in these months and the Dormant
-              interval outside them. The same month for both means Growing all year.
-            </Text>
+            <Text>{seasonSummary(settings.growingStartMonth, settings.growingEndMonth)}</Text>
           }
         >
           <MonthPicker
