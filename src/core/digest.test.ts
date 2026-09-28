@@ -1,6 +1,12 @@
 import { MONSTERA, gardenDb, noon } from '../test/garden';
 import { logCareEvent } from './careLog';
-import { planDigests, scheduleDigests, type Digest, type PendingNotifications } from './digest';
+import {
+  planDigests,
+  scheduleDigests,
+  type Digest,
+  type DigestTime,
+  type PendingNotifications,
+} from './digest';
 import { archivePlant, createPlant, NO_SCHEDULE, type CareSchedule } from './plants';
 import { updateSettings } from './settings';
 
@@ -125,7 +131,7 @@ describe('Daily Digest projection', () => {
   /** A fake of the device's pending notifications. */
   function device() {
     let pending: Digest[] = [];
-    let kept: Pick<Digest, 'day' | 'time'> | undefined;
+    let kept: DigestTime | undefined;
     const notifications: PendingNotifications = {
       replace: async (digests) => void (pending = digests),
       remembered: () => kept,

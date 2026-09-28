@@ -6,7 +6,9 @@ import { getSettings } from './settings';
 /**
  * The Daily Digest (CONTEXT.md): one notification, at the digest time, on each day at least one
  * plant Needs Attention. Pending notifications are a projection of the database (ADR-0001):
- * planned again from the Care Log whenever care state changes, never stored.
+ * planned again from the Care Log whenever care state changes, never stored. The one thing the
+ * phone keeps is which digest it planned last (PendingNotifications.remembered), so today's shows
+ * once however often it is planned.
  */
 
 /**
@@ -26,6 +28,9 @@ const HORIZON_DAYS = 366;
  * Attention that day, most Overdue first.
  */
 export type Digest = { day: string; time: string; displayNames: string[] };
+
+/** When a digest fires: its day and local time. */
+export type DigestTime = Pick<Digest, 'day' | 'time'>;
 
 /**
  * The Daily Digests to have pending at `now`: the soonest DIGEST_CAP days ahead on which at least
@@ -61,8 +66,8 @@ export type PendingNotifications = {
    * The digest last remembered, across launches: the device's own, never in an Export, since it
    * says what this phone has shown. Undefined until the first plan.
    */
-  remembered(): Pick<Digest, 'day' | 'time'> | undefined;
-  remember(digest: Pick<Digest, 'day' | 'time'> | undefined): void;
+  remembered(): DigestTime | undefined;
+  remember(digest: DigestTime | undefined): void;
 };
 
 /**
@@ -76,6 +81,8 @@ export async function scheduleDigests(
   now: Date = new Date(),
 ): Promise<void> {
   const last = pending.remembered();
+  // ponytail: a local day and time, so flying west after today's has shown brings it again at
+  // the new zone's digest time; store the instant it fires if travel ever matters.
   const shownToday = last?.day === localDay(now) && last.time <= localTime(now);
   const digests = planDigests(db, now, shownToday);
   await pending.replace(digests);

@@ -285,8 +285,8 @@ export default function PlantScreen() {
 }
 
 /**
- * The plant as its screen shows it, read again after writes (it spans several tables) and on
- * returning to the foreground, where the day may have turned. Deleted from its Edit screen, the
+ * The plant as its screen shows it, read again after writes (it spans several tables), on
+ * returning to the foreground and at midnight, where the day turns. Deleted from its Edit screen, the
  * plant is gone once Edit has closed, and this screen closes too, showing the plant as it was
  * rather than going blank.
  */

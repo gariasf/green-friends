@@ -81,7 +81,7 @@ function replan(): void {
 
 /**
  * Keeps the pending Daily Digests a projection of the database (ADR-0001): planned at launch,
- * after every burst of writes, and back in the foreground, where the day may have turned.
+ * after every burst of writes, back in the foreground and at midnight, where the day turns.
  */
 export function useDigests(): void {
   useAfterWritesOrForeground(replan);
