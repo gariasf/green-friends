@@ -98,27 +98,25 @@
     font-size: var(--text-md);
   }
 
-  /* A card's care Due as one line of text that breaks after its dot, never inside its parts:
-     "Fertilize · 5 days overdue". */
+  /* A card's care Due on two lines, always: the care type, then its status beneath, so every
+     card keeps one shape at any width. */
   .due li {
-    align-items: baseline;
+    align-items: flex-start;
   }
 
   .due li .care-icon {
-    align-self: flex-start;
     margin-top: 0.2rem;
   }
 
   .due li > .due-words {
+    display: flex;
+    flex-direction: column;
     margin-left: 0;
-  }
-
-  .due-words > :not([aria-hidden]) {
-    white-space: nowrap;
+    line-height: 1.35;
   }
 
   .due-words [aria-hidden] {
-    color: var(--secondary-label);
+    display: none;
   }
 
   /* A narrow calendar: names over two lines rather than cut, without the photos. */
