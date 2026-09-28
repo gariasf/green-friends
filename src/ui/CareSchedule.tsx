@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { plantSeasonOn } from '@/src/core/care';
 import { localDay } from '@/src/core/dates';
@@ -13,8 +13,16 @@ import {
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { Field, optionalNumber, Segmented, wholeNumber } from '@/src/ui/Form';
-import { colors, font, space, text } from '@/src/ui/theme';
-import { everyLine, isAllYear, NO_SCHEDULE_LINE, scheduleLine } from '@/src/ui/words';
+import { Icon } from '@/src/ui/Icon';
+import { colors, font, pressedStyle, space, text } from '@/src/ui/theme';
+import {
+  everyLine,
+  isAllYear,
+  NO_SCHEDULE_LINE,
+  PAUSED,
+  plural,
+  scheduleLine,
+} from '@/src/ui/words';
 
 /**
  * One care type's schedule as the form holds it: an Override while `own`, else the Species
@@ -26,7 +34,7 @@ type CareTypeForm = { own: boolean; growing: string; dormant: string };
  * A plant's care schedule as Edit plant, and New plant without a Species, set it (spec #22): per
  * care type, a segmented control between the Species default ("None" without a known Species) and
  * an Override of the plant's own (ADR-0003), every so many days and, in the Dormant season, every
- * so many or Paused; repotting every so many months. Each time an Override is switched on it
+ * so many or Paused, folded into one line until wanted (spec #92); repotting every so many months. Each time an Override is switched on it
  * starts over, from the plant's own values where it has them, else from the defaults it shadows
  * then, as Edit plant's Species can change meanwhile. Gives the fields to show, the Override
  * columns they set (null for a care type left to its default), whether they differ from the
@@ -111,6 +119,7 @@ function CareTypeSchedule({
   onChange: (value: CareTypeForm) => void;
 }) {
   const { label } = CARE_COPY[type];
+  const [dormantOpen, setDormantOpen] = useState(false);
   return (
     <View style={styles.careType}>
       <View style={styles.careTypeHead}>
@@ -152,18 +161,37 @@ function CareTypeSchedule({
             keyboardType="number-pad"
             accessibilityLabel={`${label}, Growing season, days`}
           />
-          <Field
-            label="Dormant season, every"
-            suffix="days"
-            placeholder="Paused"
-            value={value.dormant}
-            onChangeText={(dormant) => onChange({ ...value, dormant })}
-            keyboardType="number-pad"
-            accessibilityLabel={`${label}, Dormant season, days`}
-          />
-          <Text lineBreakStrategyIOS="standard" style={text.footnote}>
-            Blank pauses it in the Dormant season.
-          </Text>
+          {dormantOpen ? (
+            <>
+              <Field
+                label="Dormant season, every"
+                suffix="days"
+                placeholder="Paused"
+                value={value.dormant}
+                onChangeText={(dormant) => onChange({ ...value, dormant })}
+                keyboardType="number-pad"
+                accessibilityLabel={`${label}, Dormant season, days`}
+              />
+              <Text lineBreakStrategyIOS="standard" style={text.footnote}>
+                Blank pauses it in the Dormant season.
+              </Text>
+            </>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Sets how often in a Dormant season."
+              onPress={() => setDormantOpen(true)}
+              style={({ pressed }) => [styles.fold, pressed && pressedStyle.button]}
+            >
+              <Text style={text.subheadline}>
+                In a Dormant season:{' '}
+                {wholeNumber(value.dormant)
+                  ? `every ${plural(Number(value.dormant), 'day')}`
+                  : PAUSED}
+              </Text>
+              <Icon name="next" size={14} color={colors.tertiaryLabel} />
+            </Pressable>
+          )}
         </>
       )}
     </View>
@@ -209,4 +237,6 @@ const styles = StyleSheet.create({
   careType: { gap: space.s },
   careTypeHead: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   careTypeLabel: { ...text.subheadline, ...font.semibold, color: colors.label },
+  // A 44 pt target, as one line of text.
+  fold: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.xs },
 });

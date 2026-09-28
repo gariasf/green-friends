@@ -129,7 +129,8 @@ function openPlant(plant: PlantCare) {
 
 /** What a card's ⋯ offers besides the one-tap log. */
 const MORE = [
-  { id: 'log', title: 'Log earlier…', image: 'calendar' },
+  // The sheet's own words (spec #92); it opens on Today, a tap from any other day.
+  { id: 'log', title: 'Log care…', image: 'calendar' },
   { id: 'note', title: 'Add note', image: 'note.text' },
   { id: 'edit', title: 'Edit plant', image: 'pencil' },
 ] as const;

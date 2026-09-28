@@ -23,7 +23,7 @@ import { space, text, TITLE2_MAX_SCALE } from '@/src/ui/theme';
 
 /**
  * The log sheet (spec #22): logs any care type or a Note on any day up to today, a repot with its
- * new pot and soil. Opens preset to the care type in its `type` param, else the first one Due. An
+ * new pot and soil. Titled with the plant's name, "Log care" beneath it (spec #92). Opens preset to the care type in its `type` param, else the first one Due. An
  * Archived plant is out of care, so for one it only adds a Note. A `note` param fills the Note.
  */
 export default function LogCareSheet() {
@@ -70,13 +70,13 @@ export default function LogCareSheet() {
         <View
           accessible
           accessibilityRole="header"
-          accessibilityLabel={`Log care, ${displayName}`}
+          accessibilityLabel={`${displayName}, Log care`}
           style={styles.grow}
         >
-          <Text style={text.footnote}>{displayName}</Text>
           <Text maxFontSizeMultiplier={TITLE2_MAX_SCALE} style={text.title2}>
-            Log care
+            {displayName}
           </Text>
+          <Text style={text.footnote}>Log care</Text>
         </View>
         <CloseButton />
       </View>

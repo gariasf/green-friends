@@ -30,11 +30,11 @@ import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useIdentify, type IdentifyState } from '@/src/ui/useIdentify';
 
-/** "When did you last …?", per care type. */
+/** Care so far's questions, one per care type, each whole (spec #92). */
 const LAST_DONE_LABEL: Record<CareType, string> = {
-  water: 'Water it',
-  fertilize: 'Fertilize it',
-  repot: 'Repot it',
+  water: 'When did you last water it?',
+  fertilize: 'When did you last fertilize it?',
+  repot: 'When did you last repot it?',
 };
 
 /**
@@ -220,7 +220,7 @@ export default function NewPlantScreen() {
       )}
 
       <Text accessibilityRole="header" style={styles.heading}>
-        When did you last…
+        Care so far
       </Text>
       <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
         Optional. Answers set the first due dates; the rest count from today.
