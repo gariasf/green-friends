@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { plantSeasonOn } from '@/src/core/care';
 import { localDay } from '@/src/core/dates';
@@ -13,7 +13,9 @@ import {
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { Field, optionalNumber, Segmented, wholeNumber } from '@/src/ui/Form';
-import { colors, font, space, text } from '@/src/ui/theme';
+import { protoForms, useProto } from '@/src/ui/FormsPrototype';
+import { Icon } from '@/src/ui/Icon';
+import { colors, font, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { everyLine, isAllYear, NO_SCHEDULE_LINE, scheduleLine } from '@/src/ui/words';
 
 /**
@@ -36,38 +38,49 @@ export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | nu
   const [form, setForm] = useState(() => startingSchedule(plant));
   // A garden Growing all year has no Dormant season for a default to mention (#82, #90).
   const [allYear] = useState(() => isAllYear(plantSeasonOn(db, null, localDay(new Date()))));
+  const { forms, words } = useProto();
   const override = (type: CareType, interval: string) =>
     form[type].own ? optionalNumber(interval) : null;
+  // PROTOTYPE words B: an all-year garden hides the Dormant field, so a new Override's Dormant
+  // interval copies its Growing one rather than pausing if a Dormant season is made later.
+  const dormantOf = (type: 'water' | 'fertilize') =>
+    words === 'B' && allYear && !hasOverride(plant, type) && !form[type].dormant.trim()
+      ? override(type, form[type].growing)
+      : override(type, form[type].dormant);
   const overrides = {
     wateringGrowingDays: override('water', form.water.growing),
-    wateringDormantDays: override('water', form.water.dormant),
+    wateringDormantDays: dormantOf('water'),
     fertilizingGrowingDays: override('fertilize', form.fertilize.growing),
-    fertilizingDormantDays: override('fertilize', form.fertilize.dormant),
+    fertilizingDormantDays: dormantOf('fertilize'),
     repottingMonths: override('repot', form.repot.growing),
   } satisfies CareSchedule;
 
+  const rows = CARE_TYPES.map((type, index) => (
+    <CareTypeSchedule
+      key={type}
+      index={index}
+      type={type}
+      value={form[type]}
+      defaults={defaults}
+      allYear={allYear}
+      onChange={(value) =>
+        setForm((current) => ({
+          ...current,
+          [type]:
+            value.own === current[type].own
+              ? value
+              : {
+                  own: value.own,
+                  ...intervals(type, hasOverride(plant, type) ? plant : defaults),
+                },
+        }))
+      }
+    />
+  ));
+
   return {
-    fields: CARE_TYPES.map((type) => (
-      <CareTypeSchedule
-        key={type}
-        type={type}
-        value={form[type]}
-        defaults={defaults}
-        allYear={allYear}
-        onChange={(value) =>
-          setForm((current) => ({
-            ...current,
-            [type]:
-              value.own === current[type].own
-                ? value
-                : {
-                    own: value.own,
-                    ...intervals(type, hasOverride(plant, type) ? plant : defaults),
-                  },
-          }))
-        }
-      />
-    )),
+    // PROTOTYPE forms C: one outlined card, a row per care type.
+    fields: forms === 'C' ? <View style={protoForms.outlineCard}>{rows}</View> : rows,
     overrides,
     changed: (Object.keys(overrides) as (keyof CareSchedule)[]).some(
       (column) => !Object.is(overrides[column], plant[column]),
@@ -98,12 +111,14 @@ function scheduleProblem(form: Record<CareType, CareTypeForm>, orPick: string): 
 }
 
 function CareTypeSchedule({
+  index,
   type,
   value,
   defaults,
   allYear,
   onChange,
 }: {
+  index: number;
   type: CareType;
   value: CareTypeForm;
   defaults: CareSchedule | null;
@@ -111,8 +126,20 @@ function CareTypeSchedule({
   onChange: (value: CareTypeForm) => void;
 }) {
   const { label } = CARE_COPY[type];
+  const { forms, words } = useProto();
+  // PROTOTYPE words: B hides the Dormant field in an all-year garden; C folds it into one line.
+  const [dormantOpen, setDormantOpen] = useState(false);
+  const hideDormant = words === 'B' && allYear;
+  const foldDormant = words === 'C' && !dormantOpen;
   return (
-    <View style={styles.careType}>
+    <View
+      style={[
+        styles.careType,
+        forms === 'B' && index > 0 && styles.careTypeApart,
+        forms === 'C' && styles.careTypeRow,
+        forms === 'C' && index > 0 && group.divider,
+      ]}
+    >
       <View style={styles.careTypeHead}>
         <CareSymbol type={type} size={18} />
         {/* A care row's label, a step under the form's heading (#90). */}
@@ -132,7 +159,8 @@ function CareTypeSchedule({
       )}
       {value.own && type === 'repot' && (
         <Field
-          label="Every"
+          label={forms === 'C' ? 'How often' : 'Every'}
+          prefix="every"
           suffix="months"
           placeholder="Required"
           value={value.growing}
@@ -144,7 +172,16 @@ function CareTypeSchedule({
       {value.own && type !== 'repot' && (
         <>
           <Field
-            label="Growing season, every"
+            label={
+              hideDormant
+                ? forms === 'C'
+                  ? 'How often'
+                  : 'Every'
+                : forms === 'C'
+                  ? 'Growing season'
+                  : 'Growing season, every'
+            }
+            prefix="every"
             suffix="days"
             placeholder="Required"
             value={value.growing}
@@ -152,18 +189,37 @@ function CareTypeSchedule({
             keyboardType="number-pad"
             accessibilityLabel={`${label}, Growing season, days`}
           />
-          <Field
-            label="Dormant season, every"
-            suffix="days"
-            placeholder="Paused"
-            value={value.dormant}
-            onChangeText={(dormant) => onChange({ ...value, dormant })}
-            keyboardType="number-pad"
-            accessibilityLabel={`${label}, Dormant season, days`}
-          />
-          <Text lineBreakStrategyIOS="standard" style={text.footnote}>
-            Blank pauses it in the Dormant season.
-          </Text>
+          {!hideDormant && foldDormant && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Sets how often in a Dormant season"
+              onPress={() => setDormantOpen(true)}
+              style={({ pressed }) => [styles.fold, pressed && pressedStyle.button]}
+            >
+              <Text style={text.subheadline}>
+                In a Dormant season:{' '}
+                {value.dormant.trim() ? `every ${value.dormant.trim()} days` : 'Paused'}
+              </Text>
+              <Icon name="next" size={14} color={colors.tertiaryLabel} />
+            </Pressable>
+          )}
+          {!hideDormant && !foldDormant && (
+            <>
+              <Field
+                label={forms === 'C' ? 'Dormant season' : 'Dormant season, every'}
+                prefix="every"
+                suffix="days"
+                placeholder="Paused"
+                value={value.dormant}
+                onChangeText={(dormant) => onChange({ ...value, dormant })}
+                keyboardType="number-pad"
+                accessibilityLabel={`${label}, Dormant season, days`}
+              />
+              <Text lineBreakStrategyIOS="standard" style={text.footnote}>
+                Blank pauses it in the Dormant season.
+              </Text>
+            </>
+          )}
         </>
       )}
     </View>
@@ -209,4 +265,7 @@ const styles = StyleSheet.create({
   careType: { gap: space.s },
   careTypeHead: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   careTypeLabel: { ...text.subheadline, ...font.semibold, color: colors.label },
+  careTypeApart: { marginTop: space.m },
+  careTypeRow: { paddingVertical: space.m },
+  fold: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.xs },
 });

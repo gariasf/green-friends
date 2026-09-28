@@ -5,6 +5,7 @@ import { searchSpecies, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { Field, TextButton } from '@/src/ui/Form';
+import { useProto } from '@/src/ui/FormsPrototype';
 import { scientificBeneath } from '@/src/ui/words';
 import {
   accessibilitySize,
@@ -30,6 +31,19 @@ export function SpeciesSearch({
 }) {
   const [query, setQuery] = useState('');
   const matches = useMemo(() => searchSpecies(db, query), [query]);
+  const { species: variant } = useProto();
+  if (variant !== 'A') {
+    return (
+      <SpeciesSearchCard
+        query={query}
+        setQuery={setQuery}
+        matches={matches}
+        onPick={onPick}
+        fallback={fallback}
+        asCard={variant === 'C'}
+      />
+    );
+  }
   return (
     <>
       <Field
@@ -75,6 +89,94 @@ export function SpeciesSearch({
   );
 }
 
+/** PROTOTYPE species B and C: at most 20 matches. */
+const SHOWN = 20;
+
+/**
+ * PROTOTYPE species B and C: the way back right under the field, the best 20 matches in a card
+ * and how many more, and no match inline (B) or as the card a pick turns into (C).
+ */
+function SpeciesSearchCard({
+  query,
+  setQuery,
+  matches,
+  onPick,
+  fallback,
+  asCard,
+}: {
+  query: string;
+  setQuery: (query: string) => void;
+  matches: Species[];
+  onPick: (species: Species) => void;
+  fallback: { label: string; line: string; onPress: () => void };
+  asCard: boolean;
+}) {
+  const none = query.trim() !== '' && matches.length === 0;
+  return (
+    <>
+      <Field
+        placeholder="Search by name, e.g. monstera"
+        accessibilityLabel="Search species"
+        value={query}
+        onChangeText={setQuery}
+        autoFocus
+        autoCorrect={false}
+        clearButtonMode="while-editing"
+        returnKeyType="search"
+      />
+      {none && asCard && (
+        <PickedSpecies
+          title="Not in the catalog"
+          subtitle={fallback.line}
+          action={fallback.label}
+          stacked
+          onAction={fallback.onPress}
+        />
+      )}
+      {none && !asCard && (
+        <View style={styles.none}>
+          <Text accessibilityRole="header" style={text.headline}>
+            Not in the catalog
+          </Text>
+          <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
+            {fallback.line}
+          </Text>
+        </View>
+      )}
+      {!(none && asCard) && fallback.label !== '' && (
+        <TextButton label={fallback.label} onPress={fallback.onPress} style={styles.back} />
+      )}
+      {matches.length > 0 && (
+        <View style={styles.list}>
+          {matches.slice(0, SHOWN).map((s, index) => {
+            const scientific = scientificBeneath(s.colloquialName, s.scientificName);
+            return (
+              <Pressable
+                key={s.id}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.listRow,
+                  index > 0 && group.divider,
+                  pressed && pressedStyle.row,
+                ]}
+                onPress={() => onPick(s)}
+              >
+                <Text style={text.body}>{s.colloquialName}</Text>
+                {scientific && <Text style={styles.scientific}>{scientific}</Text>}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+      {matches.length > SHOWN && (
+        <Text style={text.footnote}>
+          {matches.length - SHOWN} more. Keep typing to narrow them down.
+        </Text>
+      )}
+    </>
+  );
+}
+
 /**
  * The Species picked (or its absence), with the action that changes it: under a Species' name its
  * scientific name, in italics as everywhere else, or else a line about the plant's schedule;
@@ -86,6 +188,7 @@ export function PickedSpecies({
   subtitle,
   action,
   actionLabel,
+  stacked: stackedAlways = false,
   onAction,
 }: {
   title: string;
@@ -93,10 +196,13 @@ export function PickedSpecies({
   subtitle?: string;
   action: string;
   actionLabel?: string;
+  /** PROTOTYPE species C: a long action goes under the words. */
+  stacked?: boolean;
   onAction: () => void;
 }) {
   // Beside the action, the title breaks mid-word at accessibility text sizes, so there it stacks.
-  const stacked = accessibilitySize(useWindowDimensions().fontScale);
+  const { fontScale } = useWindowDimensions();
+  const stacked = stackedAlways || accessibilitySize(fontScale);
   return (
     <View style={[styles.picked, stacked && styles.pickedStacked]}>
       <View style={!stacked && styles.grow}>
@@ -108,7 +214,9 @@ export function PickedSpecies({
           </Text>
         )}
       </View>
-      <TextButton label={action} accessibilityLabel={actionLabel} onPress={onAction} />
+      {action !== '' && (
+        <TextButton label={action} accessibilityLabel={actionLabel} onPress={onAction} />
+      )}
     </View>
   );
 }
@@ -129,4 +237,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   pickedStacked: { flexDirection: 'column', alignItems: 'flex-start' },
+  none: { gap: space.xs },
+  back: { alignSelf: 'flex-start' },
+  list: {
+    paddingHorizontal: space.m,
+    borderRadius: radius.surface,
+    borderCurve: 'continuous',
+    backgroundColor: colors.surface,
+  },
+  listRow: { minHeight: 44, justifyContent: 'center', paddingVertical: space.s },
 });

@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
+import { ProtoPill, useProto } from '@/src/ui/FormsPrototype';
 import { Icon } from '@/src/ui/Icon';
 import {
   accessibilitySize,
@@ -51,28 +52,47 @@ const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pa
 export function Field({
   label,
   suffix,
+  prefix,
   ...props
-}: TextInputProps & { label?: string; suffix?: string }) {
+}: TextInputProps & { label?: string; suffix?: string; prefix?: string }) {
   const doneBar = useId();
   const numberPad = NUMBER_PADS.includes(props.keyboardType) || !!props.multiline;
+  // PROTOTYPE forms: B and C a number field as short as its number, its unit right after it, and
+  // no "Optional"; C also a word before the number ("every 4 days").
+  const { forms } = useProto();
+  const compact = forms !== 'A' && NUMBER_PADS.includes(props.keyboardType);
+  const placeholder =
+    forms !== 'A' && props.placeholder === 'Optional' ? undefined : props.placeholder;
+  // Blank, a word stands alone ("Paused", not "every Paused days").
+  const bare = compact && !props.value && !!placeholder;
   return (
     <View style={styles.fieldBlock}>
       {/* The input carries the label for VoiceOver. */}
       {label && (
-        <Text accessibilityElementsHidden style={styles.label}>
+        <Text accessibilityElementsHidden style={[styles.label, forms === 'B' && styles.labelEdge]}>
           {label}
         </Text>
       )}
-      <View style={styles.field}>
+      <View style={[styles.field, compact && styles.fieldCompact]}>
+        {prefix && forms === 'C' && !bare && (
+          <Text accessibilityElementsHidden style={styles.prefix}>
+            {prefix}
+          </Text>
+        )}
         <TextInput
-          style={[styles.input, props.multiline && styles.multiline]}
+          style={[
+            styles.input,
+            props.multiline && styles.multiline,
+            compact && styles.inputCompact,
+          ]}
           placeholderTextColor={colors.placeholder}
           selectionColor={colors.tint}
           accessibilityLabel={label && suffix ? `${label}, ${suffix}` : label}
           inputAccessoryViewID={numberPad ? doneBar : undefined}
           {...props}
+          placeholder={placeholder}
         />
-        {suffix && (
+        {suffix && !bare && (
           <Text accessibilityElementsHidden style={styles.suffix}>
             {suffix}
           </Text>
@@ -107,6 +127,7 @@ export function WhenPicker({
   | { optional: true; value: string | null; onChange: (day: string | null) => void }
 )) {
   const stacked = accessibilitySize(useWindowDimensions().fontScale);
+  const { forms } = useProto();
   const today = localDay(new Date());
   const quick = [
     ...(props.optional ? [{ label: 'Not sure', value: null }] : []),
@@ -120,7 +141,7 @@ export function WhenPicker({
   const picking = !quick.some((option) => option.value === props.value);
   return (
     <View style={styles.fieldBlock}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, forms === 'B' && styles.labelEdge]}>{label}</Text>
       <View style={styles.whenStack}>
         <ChipGroup
           options={[...quick, { label: 'Earlier…', value: EARLIER }]}
@@ -132,7 +153,11 @@ export function WhenPicker({
         />
         {picking && (
           <View style={[styles.pickerRow, stacked && styles.pickerStacked]}>
-            <Text style={[styles.label, !stacked && styles.grow]}>Pick a day</Text>
+            <Text
+              style={[styles.label, forms === 'B' && styles.labelEdge, !stacked && styles.grow]}
+            >
+              Pick a day
+            </Text>
             {/* Sized by its SwiftUI content both ways (the community datetime-picker drop-in only
                 matches it vertically, and collapses in a row). A Host inside a row that wraps loses
                 its place (@expo/ui 57), so it sits beside what may wrap, never within it. Left to
@@ -207,6 +232,7 @@ export function SheetBody({ children }: { children: ReactNode }) {
       alwaysBounceVertical={false}
     >
       {children}
+      <ProtoPill />
     </ScrollView>
   );
 }
@@ -258,6 +284,13 @@ export function PrimaryButton({
   disabled?: boolean;
   onPress: () => void;
 }) {
+  // PROTOTYPE chips: disabled, A the fields' grey, B the tint faded, C outlined.
+  const { chips } = useProto();
+  const disabledStyle = {
+    A: styles.buttonDisabled,
+    B: styles.buttonFaded,
+    C: styles.buttonOutlined,
+  }[chips];
   return (
     <Pressable
       accessibilityRole="button"
@@ -266,11 +299,13 @@ export function PrimaryButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        disabled && styles.buttonDisabled,
+        disabled && disabledStyle,
         pressed && pressedStyle.button,
       ]}
     >
-      <Text style={[styles.buttonLabel, disabled && styles.buttonLabelDisabled]}>{label}</Text>
+      <Text style={[styles.buttonLabel, disabled && chips !== 'B' && styles.buttonLabelDisabled]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -367,6 +402,10 @@ export function potSizeProblem(input: string): string | null {
 const styles = StyleSheet.create({
   fieldBlock: { gap: space.xs },
   label: { ...text.footnote, marginLeft: space.xs },
+  labelEdge: { marginLeft: 0 },
+  fieldCompact: { alignSelf: 'flex-start', minWidth: 128 },
+  inputCompact: { flex: 0, minWidth: 24 },
+  prefix: { ...text.body, color: colors.secondaryLabel, marginRight: space.s },
   grow: { flex: 1 },
   whenStack: { gap: space.s },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: space.s },
@@ -401,6 +440,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tint,
   },
   buttonDisabled: { backgroundColor: colors.fill },
+  buttonFaded: { opacity: 0.4 },
+  buttonOutlined: {
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: colors.outline,
+  },
   // Centred for when it wraps, at the largest text sizes.
   buttonLabel: { ...text.headline, color: colors.onTint, textAlign: 'center' },
   buttonLabelDisabled: { color: colors.tertiaryLabel },

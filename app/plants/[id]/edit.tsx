@@ -22,6 +22,7 @@ import {
   TextButton,
   useConfirmDiscard,
 } from '@/src/ui/Form';
+import { ProtoPill, protoForms, ProtoSection, useProto } from '@/src/ui/FormsPrototype';
 import { photoFiles } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
@@ -53,6 +54,9 @@ export default function EditPlantScreen() {
     soil !== (plant.soil ?? '') ||
     schedule.changed;
   const leave = useConfirmDiscard(changed, 'Discard your changes?');
+  // PROTOTYPE save: A at the bottom, B in the header, C in a modal's header (app/_layout.tsx).
+  const { save: saveVariant, forms } = useProto();
+  const heading = [styles.heading, forms === 'B' && protoForms.headingB];
 
   /** Saves the form, or says why it can't; whether it saved. */
   const apply = (): boolean => {
@@ -102,103 +106,125 @@ export default function EditPlantScreen() {
     );
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.screen}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-    >
-      <Stack.Screen options={{ title: displayName }} />
-      <Text accessibilityRole="header" style={styles.heading}>
-        Species
-      </Text>
-      {searching ? (
-        <SpeciesSearch
-          onPick={(picked) => {
-            setSpecies(picked);
-            setSearching(false);
+    <View style={styles.fill}>
+      <ScrollView
+        contentContainerStyle={styles.screen}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
+        <Stack.Screen
+          options={{
+            title: displayName,
+            headerRight:
+              saveVariant === 'A'
+                ? undefined
+                : () => (
+                    <TextButton
+                      label="Save"
+                      header
+                      bold
+                      disabled={!changed}
+                      accessibilityHint={changed ? undefined : 'Nothing has changed yet.'}
+                      onPress={save}
+                    />
+                  ),
           }}
-          fallback={{
-            label: species
-              ? `Keep ${species.colloquialName}`
-              : plant.speciesId
-                ? 'Keep its species'
-                : 'Keep it without a species',
-            line: 'Check the spelling, or search by its scientific name.',
-            onPress: () => setSearching(false),
-          }}
         />
-      ) : species ? (
-        <PickedSpecies
-          title={species.colloquialName}
-          scientific={scientificBeneath(species.colloquialName, species.scientificName)}
-          action="Change"
-          actionLabel="Change species"
-          onAction={() => setSearching(true)}
-        />
-      ) : plant.speciesId ? (
-        <PickedSpecies
-          title="Not in the catalog"
-          subtitle="Its species came with an Import from a newer catalog."
-          action="Change"
-          actionLabel="Change species"
-          onAction={() => setSearching(true)}
-        />
-      ) : (
-        <PickedSpecies
-          title="No species"
-          subtitle="This plant carries its own care schedule."
-          action="Pick a species"
-          onAction={() => setSearching(true)}
-        />
-      )}
-
-      <Text accessibilityRole="header" style={styles.heading}>
-        About this plant
-      </Text>
-      <Field
-        label="Nickname"
-        // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).
-        placeholder={species?.colloquialName ?? 'Required without a known species'}
-        value={nickname}
-        onChangeText={setNickname}
-        autoCapitalize="words"
-        // iOS would offer contacts' names.
-        textContentType="none"
-      />
-      <Field
-        label="Pot size"
-        suffix="cm"
-        placeholder="Optional"
-        value={potSizeCm}
-        onChangeText={setPotSizeCm}
-        keyboardType="decimal-pad"
-      />
-      <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
-
-      <Text accessibilityRole="header" style={styles.heading}>
-        Care schedule
-      </Text>
-      {schedule.fields}
-
-      <PrimaryButton label="Save" onPress={save} />
-
-      <View style={styles.actions}>
-        {plant.archivedAt ? (
-          <Action
-            label="Unarchive"
-            hint="Back in care, due as its Care Log says."
-            onPress={thenLeave(() => unarchivePlant(db, plant.id))}
+        <Text accessibilityRole="header" style={heading}>
+          Species
+        </Text>
+        {searching ? (
+          <SpeciesSearch
+            onPick={(picked) => {
+              setSpecies(picked);
+              setSearching(false);
+            }}
+            fallback={{
+              label: species
+                ? `Keep ${species.colloquialName}`
+                : plant.speciesId
+                  ? 'Keep its species'
+                  : 'Keep it without a species',
+              line: 'Check the spelling, or search by its scientific name.',
+              onPress: () => setSearching(false),
+            }}
+          />
+        ) : species ? (
+          <PickedSpecies
+            title={species.colloquialName}
+            scientific={scientificBeneath(species.colloquialName, species.scientificName)}
+            action="Change"
+            actionLabel="Change species"
+            onAction={() => setSearching(true)}
+          />
+        ) : plant.speciesId ? (
+          <PickedSpecies
+            title="Not in the catalog"
+            subtitle="Its species came with an Import from a newer catalog."
+            action="Change"
+            actionLabel="Change species"
+            onAction={() => setSearching(true)}
           />
         ) : (
-          <Action
-            label="Archive"
-            hint="Died or given away: it moves to Archived, its Care Log and photo kept."
-            onPress={thenLeave(() => archivePlant(db, plant.id))}
+          <PickedSpecies
+            title="No species"
+            subtitle="This plant carries its own care schedule."
+            action="Pick a species"
+            onAction={() => setSearching(true)}
           />
         )}
-        <TextButton label="Delete plant" destructive onPress={remove} style={styles.centered} />
-      </View>
-    </ScrollView>
+
+        <Text accessibilityRole="header" style={heading}>
+          About this plant
+        </Text>
+        <ProtoSection>
+          <Field
+            label="Nickname"
+            // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).
+            placeholder={species?.colloquialName ?? 'Required without a known species'}
+            value={nickname}
+            onChangeText={setNickname}
+            autoCapitalize="words"
+            // iOS would offer contacts' names.
+            textContentType="none"
+          />
+          <Field
+            label="Pot size"
+            suffix="cm"
+            placeholder="Optional"
+            value={potSizeCm}
+            onChangeText={setPotSizeCm}
+            keyboardType="decimal-pad"
+          />
+          <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
+        </ProtoSection>
+
+        <Text accessibilityRole="header" style={heading}>
+          Care schedule
+        </Text>
+        {schedule.fields}
+
+        {saveVariant === 'A' && <PrimaryButton label="Save" onPress={save} />}
+
+        <View style={styles.actions}>
+          {plant.archivedAt ? (
+            <Action
+              label="Unarchive"
+              hint="Back in care, due as its Care Log says."
+              onPress={thenLeave(() => unarchivePlant(db, plant.id))}
+            />
+          ) : (
+            <Action
+              label="Archive"
+              hint="Died or given away: it moves to Archived, its Care Log and photo kept."
+              onPress={thenLeave(() => archivePlant(db, plant.id))}
+            />
+          )}
+          <TextButton label="Delete plant" destructive onPress={remove} style={styles.centered} />
+        </View>
+      </ScrollView>
+      <ProtoPill floating />
+    </View>
   );
 }
 
@@ -221,7 +247,9 @@ function Action({ label, hint, onPress }: { label: string; hint: string; onPress
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
+  fill: { flex: 1 },
+  // PROTOTYPE: room at the end for the pill.
+  screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl + 56 },
   heading: { ...group.header, marginTop: space.s },
   centered: { alignSelf: 'center' },
   centeredText: { textAlign: 'center' },

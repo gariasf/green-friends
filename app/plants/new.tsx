@@ -23,17 +23,22 @@ import {
   useConfirmDiscard,
   WhenPicker,
 } from '@/src/ui/Form';
+import { ProtoPill, protoForms, ProtoSection, useProto } from '@/src/ui/FormsPrototype';
 import { PlantPhoto, photoFiles, usePhotoPicker, type Picked } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 import { useIdentify, type IdentifyState } from '@/src/ui/useIdentify';
 
-/** "When did you last …?", per care type. */
-const LAST_DONE_LABEL: Record<CareType, string> = {
-  water: 'Water it',
-  fertilize: 'Fertilize it',
-  repot: 'Repot it',
+/** "When did you last …?", per care type; PROTOTYPE words B and C say it their ways. */
+const LAST_DONE_LABEL: Record<'A' | 'B' | 'C', Record<CareType, string>> = {
+  A: { water: 'Water it', fertilize: 'Fertilize it', repot: 'Repot it' },
+  B: { water: 'Last watered', fertilize: 'Last fertilized', repot: 'Last repotted' },
+  C: {
+    water: 'When did you last water it?',
+    fertilize: 'When did you last fertilize it?',
+    repot: 'When did you last repot it?',
+  },
 };
 
 /**
@@ -58,10 +63,16 @@ export default function NewPlantScreen() {
   /** The day each care type was last done; unanswered ones count from the plant's creation. */
   const [lastDone, setLastDone] = useState<Partial<Record<CareType, string>>>({});
 
-  const whyNot = potSizeProblem(potSizeCm) ?? whyNotYet(species, ownSchedule, nickname, schedule);
+  // PROTOTYPE species C: no switch; without a Species, the plant takes its own schedule.
+  const { forms, species: speciesVariant, words } = useProto();
+  const own = speciesVariant === 'C' ? species === null : ownSchedule;
+  const heading = [styles.heading, forms === 'B' && protoForms.headingB];
+  const whyNot =
+    potSizeProblem(potSizeCm) ?? whyNotYet(species, own, nickname, schedule, speciesVariant);
   const leave = useConfirmDiscard(
     species !== null ||
       ownSchedule ||
+      schedule.changed ||
       picked !== null ||
       [nickname, potSizeCm, soil].some((field) => field.trim() !== '') ||
       Object.values(lastDone).some(Boolean),
@@ -106,145 +117,177 @@ export default function NewPlantScreen() {
   });
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.screen}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-    >
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TextButton
-              label="Add"
-              header
-              bold
-              disabled={whyNot !== null}
-              // Why it's dimmed, for VoiceOver, which doesn't read the form's first line as it changes.
-              accessibilityHint={whyNot ?? undefined}
-              onPress={save}
-            />
-          ),
-        }}
-      />
-      {whyNot && (
-        <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
-          {whyNot}
-        </Text>
-      )}
-      <Text accessibilityRole="header" style={styles.heading}>
-        Species
-      </Text>
-      {species && !searching ? (
-        <PickedSpecies
-          title={species.colloquialName}
-          scientific={scientificBeneath(species.colloquialName, species.scientificName)}
-          action="Change"
-          actionLabel="Change species"
-          onAction={() => setSearching(true)}
-        />
-      ) : ownSchedule ? (
-        <PickedSpecies
-          title="No species"
-          subtitle="This plant carries its own care schedule."
-          action="Pick a species"
-          onAction={() => setOwnSchedule(false)}
-        />
-      ) : (
-        <SpeciesSearch
-          onPick={pickSpecies}
-          fallback={
-            species
-              ? {
-                  label: `Keep ${species.colloquialName}`,
-                  line: 'Check the spelling, or search by its scientific name.',
-                  onPress: () => setSearching(false),
-                }
-              : {
-                  label: 'Add without a species',
-                  line: 'Check the spelling, or add it without a species and give it its own schedule.',
-                  onPress: addWithoutSpecies,
-                }
-          }
-        />
-      )}
-
-      <Text accessibilityRole="header" style={styles.heading}>
-        About this plant
-      </Text>
-      <View style={styles.photoRow}>
-        {/* The square picks a photo too, as on the Plant screen. */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={prepared ? 'Replace photo' : 'Add photo'}
-          onPress={photoPicker.choose}
-          style={({ pressed }) => pressed && pressedStyle.button}
-        >
-          <PlantPhoto
-            uri={prepared}
-            focus={picked?.focus}
-            size={64}
-            name={nickname || species?.colloquialName || ''}
-          />
-        </Pressable>
-        <TextButton label={prepared ? 'Replace photo' : 'Add photo'} onPress={photoPicker.choose} />
-      </View>
-      {photoPicker.framing}
-      {IDENTIFY_SHOWN && prepared && (
-        <IdentifyFromPhoto
-          state={identify.state}
-          onIdentify={() => identify.run(prepared)}
-          onPick={(picked) => {
-            pickSpecies(picked);
-            identify.clear();
+    <View style={styles.fill}>
+      <ScrollView
+        contentContainerStyle={styles.screen}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
+        <Stack.Screen
+          options={{
+            headerRight: () => (
+              <TextButton
+                label="Add"
+                header
+                bold
+                disabled={whyNot !== null}
+                // Why it's dimmed, for VoiceOver, which doesn't read the form's first line as it changes.
+                accessibilityHint={whyNot ?? undefined}
+                onPress={save}
+              />
+            ),
           }}
-          onDismiss={identify.clear}
         />
-      )}
-      <Field
-        label="Nickname"
-        // Blank, the plant goes by its species' name (CONTEXT.md, Display Name), as in Edit plant.
-        placeholder={species?.colloquialName ?? (ownSchedule ? 'Required' : 'Optional')}
-        value={nickname}
-        onChangeText={setNickname}
-        autoCapitalize="words"
-        // iOS would offer contacts' names.
-        textContentType="none"
-      />
-      <Field
-        label="Pot size"
-        suffix="cm"
-        placeholder="Optional"
-        value={potSizeCm}
-        onChangeText={setPotSizeCm}
-        keyboardType="decimal-pad"
-      />
-      <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
-
-      {ownSchedule && (
-        <>
-          <Text accessibilityRole="header" style={styles.heading}>
-            Care schedule
+        {whyNot && (
+          <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
+            {whyNot}
           </Text>
-          {schedule.fields}
-        </>
-      )}
+        )}
+        <Text accessibilityRole="header" style={heading}>
+          Species
+        </Text>
+        {species && !searching ? (
+          <PickedSpecies
+            title={species.colloquialName}
+            scientific={scientificBeneath(species.colloquialName, species.scientificName)}
+            action="Change"
+            actionLabel="Change species"
+            onAction={() => setSearching(true)}
+          />
+        ) : ownSchedule && speciesVariant !== 'C' ? (
+          <PickedSpecies
+            title="No species"
+            subtitle="This plant carries its own care schedule."
+            action="Pick a species"
+            onAction={() => setOwnSchedule(false)}
+          />
+        ) : (
+          <SpeciesSearch
+            onPick={pickSpecies}
+            fallback={
+              species
+                ? {
+                    label: `Keep ${species.colloquialName}`,
+                    line: 'Check the spelling, or search by its scientific name.',
+                    onPress: () => setSearching(false),
+                  }
+                : {
+                    A: {
+                      label: 'Add without a species',
+                      line: 'Check the spelling, or add it without a species and give it its own schedule.',
+                      onPress: addWithoutSpecies,
+                    },
+                    B: {
+                      label: 'Give it its own schedule',
+                      line: 'Check the spelling, or give it its own schedule and a nickname.',
+                      onPress: addWithoutSpecies,
+                    },
+                    C: {
+                      label: '',
+                      line: 'Check the spelling, or give it a nickname and its own schedule below.',
+                      onPress: addWithoutSpecies,
+                    },
+                  }[speciesVariant]
+            }
+          />
+        )}
 
-      <Text accessibilityRole="header" style={styles.heading}>
-        When did you last…
-      </Text>
-      <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
-        Optional. Answers set the first due dates; the rest count from today.
-      </Text>
-      {CARE_TYPES.map((type) => (
-        <WhenPicker
-          key={type}
-          label={LAST_DONE_LABEL[type]}
-          optional
-          value={lastDone[type] ?? null}
-          onChange={(day) => setLastDone({ ...lastDone, [type]: day ?? undefined })}
-        />
-      ))}
-    </ScrollView>
+        <Text accessibilityRole="header" style={heading}>
+          About this plant
+        </Text>
+        <ProtoSection>
+          <View style={styles.photoRow}>
+            {/* The square picks a photo too, as on the Plant screen. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={prepared ? 'Replace photo' : 'Add photo'}
+              onPress={photoPicker.choose}
+              style={({ pressed }) => pressed && pressedStyle.button}
+            >
+              <PlantPhoto
+                uri={prepared}
+                focus={picked?.focus}
+                size={64}
+                name={nickname || species?.colloquialName || ''}
+              />
+            </Pressable>
+            <TextButton
+              label={prepared ? 'Replace photo' : 'Add photo'}
+              onPress={photoPicker.choose}
+            />
+          </View>
+          {photoPicker.framing}
+          {IDENTIFY_SHOWN && prepared && (
+            <IdentifyFromPhoto
+              state={identify.state}
+              onIdentify={() => identify.run(prepared)}
+              onPick={(picked) => {
+                pickSpecies(picked);
+                identify.clear();
+              }}
+              onDismiss={identify.clear}
+            />
+          )}
+          <Field
+            label="Nickname"
+            // Blank, the plant goes by its species' name (CONTEXT.md, Display Name), as in Edit plant.
+            placeholder={species?.colloquialName ?? (own ? 'Required' : 'Optional')}
+            value={nickname}
+            onChangeText={setNickname}
+            autoCapitalize="words"
+            // iOS would offer contacts' names.
+            textContentType="none"
+          />
+          {/* PROTOTYPE species B: the reason under what's missing. */}
+          {speciesVariant === 'B' && own && !species && !nickname.trim() && (
+            <Text style={text.footnote}>Give it a nickname to add it without a species.</Text>
+          )}
+          <Field
+            label="Pot size"
+            suffix="cm"
+            placeholder="Optional"
+            value={potSizeCm}
+            onChangeText={setPotSizeCm}
+            keyboardType="decimal-pad"
+          />
+          <Field label="Soil" placeholder="Optional" value={soil} onChangeText={setSoil} />
+        </ProtoSection>
+
+        {own && (
+          <>
+            <Text accessibilityRole="header" style={heading}>
+              Care schedule
+            </Text>
+            {speciesVariant === 'B' &&
+              !CARE_TYPES.some((type) => hasOverride(schedule.overrides, type)) && (
+                <Text style={text.footnote}>
+                  Give it its own schedule for at least one care type.
+                </Text>
+              )}
+            {schedule.fields}
+          </>
+        )}
+
+        <Text accessibilityRole="header" style={heading}>
+          {words === 'A' ? 'When did you last…' : 'Care so far'}
+        </Text>
+        <ProtoSection>
+          <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
+            Optional. Answers set the first due dates; the rest count from today.
+          </Text>
+          {CARE_TYPES.map((type) => (
+            <WhenPicker
+              key={type}
+              label={LAST_DONE_LABEL[words][type]}
+              optional
+              value={lastDone[type] ?? null}
+              onChange={(day) => setLastDone({ ...lastDone, [type]: day ?? undefined })}
+            />
+          ))}
+        </ProtoSection>
+      </ScrollView>
+      <ProtoPill floating />
+    </View>
   );
 }
 
@@ -338,10 +381,19 @@ function whyNotYet(
   ownSchedule: boolean,
   nickname: string,
   schedule: ReturnType<typeof useCareSchedule>,
+  variant: 'A' | 'B' | 'C',
 ): string | null {
   if (species) return null;
-  if (!ownSchedule) return 'Pick a species, or add without one and give it a nickname.';
-  if (!nickname.trim()) return 'Give it a nickname to add it without a species.';
+  if (!ownSchedule) {
+    return variant === 'B'
+      ? 'Pick a species, or give it its own schedule and a nickname.'
+      : 'Pick a species, or add without one and give it a nickname.';
+  }
+  if (!nickname.trim()) {
+    return variant === 'C'
+      ? 'Pick a species, or give it a nickname and its own schedule.'
+      : 'Give it a nickname to add it without a species.';
+  }
   if (schedule.problem) return schedule.problem;
   if (!CARE_TYPES.some((type) => hasOverride(schedule.overrides, type))) {
     return 'Give it its own schedule for at least one care type.';
@@ -350,7 +402,9 @@ function whyNotYet(
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
+  fill: { flex: 1 },
+  // PROTOTYPE: room at the end for the pill.
+  screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl + 56 },
   heading: { ...group.header, marginTop: space.s },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   identify: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.s },

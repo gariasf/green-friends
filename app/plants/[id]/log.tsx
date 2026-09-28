@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 
 import { dueCare, evaluateCare } from '@/src/core/care';
 import { CARE_EVENT_TYPES, logCareEvent, type CareEventType } from '@/src/core/careLog';
-import { localDay } from '@/src/core/dates';
+import { localDay, shiftDays } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
@@ -18,8 +18,9 @@ import {
   useConfirmDiscard,
   WhenPicker,
 } from '@/src/ui/Form';
+import { proto, useProto } from '@/src/ui/FormsPrototype';
 import { taskHaptic, useSheetEntering } from '@/src/ui/motion';
-import { space, text, TITLE2_MAX_SCALE } from '@/src/ui/theme';
+import { colors, font, space, text, TITLE2_MAX_SCALE } from '@/src/ui/theme';
 
 /**
  * The log sheet (spec #22): logs any care type or a Note on any day up to today, a repot with its
@@ -31,7 +32,8 @@ export default function LogCareSheet() {
     id,
     type: preset,
     note,
-  } = useLocalSearchParams<'/plants/[id]/log', { type?: string; note?: string }>();
+    when,
+  } = useLocalSearchParams<'/plants/[id]/log', { type?: string; note?: string; when?: string }>();
   const [displayName] = useState(() => getDisplayName(db, id));
   // ponytail: evaluates the whole garden to find one plant; fine at dozens of plants, a core read
   // of one plant by id at hundreds.
@@ -43,7 +45,13 @@ export default function LogCareSheet() {
         'water')
       : 'note',
   );
-  const [day, setDay] = useState(() => localDay(new Date()));
+  // PROTOTYPE words B: Log earlier… opens on Yesterday.
+  const [day, setDay] = useState(() =>
+    when === 'earlier' && proto().words === 'B'
+      ? shiftDays(localDay(new Date()), -1)
+      : localDay(new Date()),
+  );
+  const { words } = useProto();
   // A Symptom's Log it as a Note fills the Note.
   const details = useCareEventDetails(type, { note });
   const enter = useSheetEntering();
@@ -73,10 +81,14 @@ export default function LogCareSheet() {
           accessibilityLabel={`Log care, ${displayName}`}
           style={styles.grow}
         >
-          <Text style={text.footnote}>{displayName}</Text>
+          {/* PROTOTYPE words: B the name raised, C the name as the title. */}
+          {words !== 'C' && (
+            <Text style={words === 'B' ? styles.nameRaised : text.footnote}>{displayName}</Text>
+          )}
           <Text maxFontSizeMultiplier={TITLE2_MAX_SCALE} style={text.title2}>
-            Log care
+            {words === 'C' ? displayName : 'Log care'}
           </Text>
+          {words === 'C' && <Text style={text.footnote}>Log care</Text>}
         </View>
         <CloseButton />
       </View>
@@ -108,4 +120,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.m },
   grow: { flex: 1 },
   part: { gap: space.l },
+  nameRaised: { ...text.subheadline, ...font.semibold, color: colors.label },
 });

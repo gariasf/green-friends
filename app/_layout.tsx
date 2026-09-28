@@ -8,6 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
+import { useProto } from '@/src/ui/FormsPrototype';
 import { useFindMissingFocus } from '@/src/ui/Photo';
 import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
@@ -55,6 +56,8 @@ export default function RootLayout() {
   // React Native never measures text again when the text size changes under a running app, so
   // cards keep the heights of the old size; drawing every screen anew at the new size fixes it.
   const { fontScale } = useWindowDimensions();
+  // PROTOTYPE save C: Edit plant as a modal with Cancel, like New plant; the next time it opens.
+  const { save } = useProto();
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack
@@ -88,6 +91,19 @@ export default function RootLayout() {
         <Stack.Screen name="plants/[id]/log" options={SHEET} />
         <Stack.Screen name="care-events/[id]" options={SHEET} />
         <Stack.Screen name="archived" options={{ title: 'Archived' }} />
+        <Stack.Screen
+          name="plants/[id]/edit"
+          options={
+            save === 'C'
+              ? {
+                  presentation: 'modal',
+                  headerLeft: () => (
+                    <TextButton label="Cancel" header onPress={() => router.back()} />
+                  ),
+                }
+              : { presentation: 'card' }
+          }
+        />
       </Stack>
     </ThemeProvider>
   );

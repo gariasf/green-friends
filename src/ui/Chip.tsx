@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { tintFill, useProto } from '@/src/ui/FormsPrototype';
 import { colors, font, pressedStyle, radius, space, text } from '@/src/ui/theme';
 
 /** A selectable pill on a fill. */
@@ -13,6 +14,12 @@ export function Chip({
   selected: boolean;
   onPress: () => void;
 }) {
+  // PROTOTYPE chips: A solid tint, B a tint ring on the fill, C a pale tint fill in ink.
+  const { chips } = useProto();
+  const selectedStyle = { A: styles.chipSelected, B: styles.chipRing, C: styles.chipTinted }[chips];
+  const selectedLabel = { A: styles.labelSelected, B: styles.labelRing, C: styles.labelTinted }[
+    chips
+  ];
   return (
     <Pressable
       accessibilityRole="button"
@@ -22,11 +29,11 @@ export function Chip({
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
-        selected && styles.chipSelected,
+        selected && selectedStyle,
         pressed && pressedStyle.button,
       ]}
     >
-      <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+      <Text style={[styles.label, selected && selectedLabel]}>{label}</Text>
     </Pressable>
   );
 }
@@ -70,4 +77,14 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: colors.tint },
   label: { ...text.subheadline, color: colors.label },
   labelSelected: { ...font.semibold, color: colors.onTint },
+  // An outline draws outside the layout, so the ring moves nothing; the offset keeps it inside.
+  chipRing: {
+    outlineColor: colors.tint,
+    outlineWidth: 1.5,
+    outlineOffset: -1.5,
+    outlineStyle: 'solid',
+  },
+  labelRing: { ...font.semibold, color: colors.tint },
+  chipTinted: { backgroundColor: tintFill },
+  labelTinted: { ...font.semibold, color: colors.label },
 });

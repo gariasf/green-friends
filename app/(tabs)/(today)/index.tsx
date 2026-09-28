@@ -29,6 +29,7 @@ import {
 } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
+import { useProto } from '@/src/ui/FormsPrototype';
 import {
   nextCareLine,
   nextCareWhen,
@@ -138,8 +139,9 @@ const MORE = [
 function openPicked({ id }: PlantCare, action: string) {
   switch (action) {
     case 'log':
-      // With no type, the log sheet opens on the first Due care type.
-      return router.push({ pathname: '/plants/[id]/log', params: { id } });
+      // With no type, the log sheet opens on the first Due care type. PROTOTYPE words B: on
+      // Yesterday, from Log earlier….
+      return router.push({ pathname: '/plants/[id]/log', params: { id, when: 'earlier' } });
     case 'note':
       return router.push({ pathname: '/plants/[id]/log', params: { id, type: 'note' } });
     case 'edit':
@@ -183,6 +185,7 @@ function CareCard({
   };
 
   const surface = hero ? raised : styles.outlined;
+  const { words } = useProto();
   // iOS's own menu, which opens on a tap. SwiftUI's Menu is the button VoiceOver reads, so the
   // label goes on it; @expo/ui's MenuView drop-in can't pass it one. A bare glyph, quieter than the
   // circle beside it (spec #84).
@@ -202,7 +205,8 @@ function CareCard({
           {MORE.map(({ id, title, image }) => (
             <Button
               key={id}
-              label={title}
+              // PROTOTYPE words C: Log care…, the sheet's own title.
+              label={id === 'log' && words === 'C' ? 'Log care…' : title}
               systemImage={image}
               onPress={() => openPicked(plant, id)}
             />

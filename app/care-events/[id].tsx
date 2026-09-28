@@ -4,6 +4,7 @@ import { Alert, StyleSheet, Text, useWindowDimensions, View } from 'react-native
 import Animated from 'react-native-reanimated';
 
 import { deleteCareEvent, editCareEvent, getCareEvent } from '@/src/core/careLog';
+import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol, useCareEventDetails } from '@/src/ui/CareEvent';
 import {
@@ -15,8 +16,9 @@ import {
   useConfirmDiscard,
   WhenPicker,
 } from '@/src/ui/Form';
+import { useProto } from '@/src/ui/FormsPrototype';
 import { useSheetEntering } from '@/src/ui/motion';
-import { accessibilitySize, space, text, TITLE2_MAX_SCALE } from '@/src/ui/theme';
+import { accessibilitySize, colors, font, space, text, TITLE2_MAX_SCALE } from '@/src/ui/theme';
 
 /** What deleting a Care Event changes, by its type: a Note changes no due date. */
 const DELETE_LINE = {
@@ -34,6 +36,9 @@ const DELETE_LINE = {
 export default function CareEventSheet() {
   const { id } = useLocalSearchParams<'/care-events/[id]'>();
   const [event] = useState(() => getCareEvent(db, id));
+  // PROTOTYPE words: B the plant's name above the title, C the name as the title.
+  const [name] = useState(() => getDisplayName(db, event.plantId));
+  const { words } = useProto();
   const [occurredOn, setOccurredOn] = useState(event.occurredOn);
   const details = useCareEventDetails(event.type, event);
   const enter = useSheetEntering();
@@ -77,29 +82,60 @@ export default function CareEventSheet() {
     </Text>
   );
 
+  if (words === 'C') {
+    return (
+      <SheetBody>
+        <View style={styles.header}>
+          <Text
+            accessibilityRole="header"
+            maxFontSizeMultiplier={TITLE2_MAX_SCALE}
+            style={[text.title2, styles.grow]}
+          >
+            {name}
+          </Text>
+          <CloseButton />
+        </View>
+        <View style={styles.typeLine}>
+          <CareSymbol type={event.type} size={16} />
+          <Text style={styles.nameRaised}>{CARE_COPY[event.type].done}</Text>
+        </View>
+        {body()}
+      </SheetBody>
+    );
+  }
+
   return (
     <SheetBody>
+      {words === 'B' && <Text style={styles.nameRaised}>{name}</Text>}
       <View style={styles.header}>
         <CareSymbol type={event.type} size={22} />
         {stacked ? <View style={styles.grow} /> : title}
         <CloseButton />
       </View>
       {stacked && title}
-      <Animated.View entering={enter(1)} style={styles.part}>
-        <WhenPicker label="When did it happen?" value={occurredOn} onChange={setOccurredOn} />
-        {details.fields}
-        {event.type === 'repot' && (
-          <Text lineBreakStrategyIOS="standard" style={text.footnote}>
-            {"The plant's pot stays as it is; change it in Edit plant."}
-          </Text>
-        )}
-      </Animated.View>
-      <Animated.View entering={enter(2)} style={styles.part}>
-        <PrimaryButton label="Save" disabled={!details.complete} onPress={save} />
-        <TextButton label="Delete" destructive onPress={remove} style={styles.delete} />
-      </Animated.View>
+      {body()}
     </SheetBody>
   );
+
+  function body() {
+    return (
+      <>
+        <Animated.View entering={enter(1)} style={styles.part}>
+          <WhenPicker label="When did it happen?" value={occurredOn} onChange={setOccurredOn} />
+          {details.fields}
+          {event.type === 'repot' && (
+            <Text lineBreakStrategyIOS="standard" style={text.footnote}>
+              {"The plant's pot stays as it is; change it in Edit plant."}
+            </Text>
+          )}
+        </Animated.View>
+        <Animated.View entering={enter(2)} style={styles.part}>
+          <PrimaryButton label="Save" disabled={!details.complete} onPress={save} />
+          <TextButton label="Delete" destructive onPress={remove} style={styles.delete} />
+        </Animated.View>
+      </>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
@@ -107,4 +143,6 @@ const styles = StyleSheet.create({
   grow: { flex: 1 },
   delete: { alignSelf: 'center' },
   part: { gap: space.l },
+  nameRaised: { ...text.subheadline, ...font.semibold, color: colors.label },
+  typeLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 });
