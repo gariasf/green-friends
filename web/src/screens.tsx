@@ -89,9 +89,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
       {inCare.length === 0 && (
         <Empty title="No plants in care" line="Add one in Green Friends on your phone." />
       )}
-      {inCare.length > 0 && plants.length === 0 && (
-        <Empty title="All caught up" line="Nothing needs you today." />
-      )}
+      {inCare.length > 0 && plants.length === 0 && <Empty title="All caught up" />}
       {plants.length > 0 && (
         <Section title={plantsNeedYou(plants.length)}>
           <ul className="cards">
@@ -474,11 +472,11 @@ function Scientific({ name, scientificName }: { name: string; scientificName: st
   return scientific && <span className="scientific">{scientific}</span>;
 }
 
-function Empty({ title, line }: { title: string; line: string }) {
+function Empty({ title, line }: { title: string; line?: string }) {
   return (
     <div className="empty">
       <h2>{title}</h2>
-      <p className="quiet">{line}</p>
+      {line && <p className="quiet">{line}</p>}
     </div>
   );
 }

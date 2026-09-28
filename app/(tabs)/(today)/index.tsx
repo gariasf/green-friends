@@ -85,7 +85,7 @@ export default function TodayScreen() {
           ))}
           {needingAttention.length === 0 && plants.length > 0 && (
             <Animated.View entering={FadeIn}>
-              <EmptyState symbol="allDone" title="All caught up" line="Nothing needs you today." />
+              <EmptyState symbol="allDone" title="All caught up" />
             </Animated.View>
           )}
           {plants.length === 0 && (

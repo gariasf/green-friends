@@ -727,6 +727,11 @@ kbd {
   text-align: center;
 }
 
+/* Its line keeps p's measure, so it centres as a block too. */
+.empty p {
+  margin-inline: auto;
+}
+
 .badge {
   display: inline-block;
   background: var(--fill);

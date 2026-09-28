@@ -6,7 +6,7 @@ import { colors, space, text } from '@/src/ui/theme';
 
 /**
  * What a screen or a list shows while it has nothing to show (spec #22): a symbol, a title, one
- * line of explanation and, where one applies, the action that fills it.
+ * line of explanation where the title needs one and, where one applies, the action that fills it.
  */
 export function EmptyState({
   symbol,
@@ -16,7 +16,7 @@ export function EmptyState({
 }: {
   symbol: IconName;
   title: string;
-  line: string;
+  line?: string;
   action?: { label: string; onPress: () => void };
 }) {
   return (
@@ -25,7 +25,7 @@ export function EmptyState({
       <Text accessibilityRole="header" style={styles.title}>
         {title}
       </Text>
-      <Text style={styles.line}>{line}</Text>
+      {line ? <Text style={styles.line}>{line}</Text> : null}
       {action && <TextButton label={action.label} onPress={action.onPress} style={styles.action} />}
     </View>
   );
