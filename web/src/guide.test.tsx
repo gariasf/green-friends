@@ -49,7 +49,9 @@ test("a Monstera's Care group opens its Care Guide, with its light step and dire
   expect(guide).toContain('Morning sun');
   expect(guide).toContain('N-P-K roughly 3-1-2');
   expect(guide).toContain('nitrogen, phosphorus and potassium');
-  expect(guide).toContain('Your schedule: every 7 days, every 14 days in the Dormant season');
+  expect(guide).toContain(
+    'Your schedule: every 7\u00a0days, every 14\u00a0days in the Dormant season',
+  );
   expect(guide).toContain('More on Wikipedia');
 });
 
@@ -59,7 +61,7 @@ test('a Symptom lists its causes with the watering fact, and nothing to log', as
   expect(render(monty, { page: 'symptoms' })).toContain('Leaves and stems');
   const symptom = render(monty, { page: 'symptom', symptomId: 'brown-tips' });
   expect(symptom).toContain('tropical aroid');
-  expect(symptom).toMatch(/Last watered [^<]+ ago\. Schedule: every 7 days/);
+  expect(symptom).toMatch(/Last watered [^<]+ ago\. Schedule: every 7\u00a0days/);
   expect(symptom).toContain('How to tell');
   expect(symptom).not.toContain('Log it as a Note');
 });

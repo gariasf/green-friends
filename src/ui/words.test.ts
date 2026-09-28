@@ -4,7 +4,10 @@ import {
   feedLine,
   lightLabel,
   lightWords,
+  nextCareLine,
+  nextCareWhen,
   npkNote,
+  plural,
   scheduleLine,
   seasonLine,
 } from './words';
@@ -30,10 +33,10 @@ describe('dueLine', () => {
 describe('Care Guide lines', () => {
   it('says a seasonal schedule in one line', () => {
     expect(scheduleLine({ growing: 7, dormant: 14 })).toBe(
-      'every 7 days, every 14 days in the Dormant season',
+      'every 7\u00a0days, every 14\u00a0days in the Dormant season',
     );
     expect(scheduleLine({ growing: 30, dormant: null })).toBe(
-      'every 30 days, paused in the Dormant season',
+      'every 30\u00a0days, paused in the Dormant season',
     );
     expect(scheduleLine({ growing: null, dormant: null })).toBe('no schedule');
   });
@@ -53,10 +56,10 @@ describe('Care Guide lines', () => {
   it('says what the Care Log says beside a cause', () => {
     const schedule = { growing: 7, dormant: 14 };
     expect(causeFactLine({ kind: 'watering', lastOn: '2026-09-16', schedule }, '2026-09-22')).toBe(
-      'Last watered 6 days ago. Schedule: every 7 days, every 14 days in the Dormant season',
+      'Last watered 6\u00a0days ago. Schedule: every 7\u00a0days, every 14\u00a0days in the Dormant season',
     );
     expect(causeFactLine({ kind: 'watering', lastOn: '2026-09-21', schedule }, '2026-09-22')).toBe(
-      'Last watered yesterday. Schedule: every 7 days, every 14 days in the Dormant season',
+      'Last watered yesterday. Schedule: every 7\u00a0days, every 14\u00a0days in the Dormant season',
     );
     expect(
       causeFactLine(
@@ -66,7 +69,7 @@ describe('Care Guide lines', () => {
     ).toBe('Last fed: never logged. No schedule');
     expect(
       causeFactLine({ kind: 'repotting', lastOn: '2025-09-22', potSizeCm: 17 }, '2026-09-22'),
-    ).toBe('Last repotted 12 months ago, in a 17 cm pot');
+    ).toBe('Last repotted 12\u00a0months ago, in a 17 cm pot');
     expect(causeFactLine({ kind: 'repotting', lastOn: null, potSizeCm: null }, '2026-09-22')).toBe(
       'Last repotted: never logged',
     );
@@ -127,5 +130,28 @@ describe('Care Guide lines', () => {
     } as Parameters<typeof feedLine>[0];
     expect(feedLine(profile, 'growing')).toBe('Balanced liquid fertiliser');
     expect(feedLine(profile, 'dormant')).toBe('Stop feeding.');
+  });
+});
+
+describe('next care', () => {
+  // A no-break space: a line may wrap before the count, never between it and its unit.
+  const NBSP = '\u00a0';
+
+  test('a count keeps its unit on its line', () => {
+    expect(plural(12, 'day')).toBe(`12${NBSP}days`);
+    expect(plural(1, 'plant')).toBe(`1${NBSP}plant`);
+  });
+
+  test('when, for a strip that shows the care type as its icon', () => {
+    expect(nextCareWhen({ type: 'water', days: 12, paused: false })).toBe(`in 12${NBSP}days`);
+    expect(nextCareWhen({ type: 'fertilize', days: 1, paused: false })).toBe('tomorrow');
+    expect(nextCareWhen({ type: 'repot', days: 90, paused: false })).toBe(`in 3${NBSP}months`);
+  });
+
+  test('the whole line names the care type before when', () => {
+    expect(nextCareLine({ type: 'water', days: 12, paused: false })).toBe(`Water in 12${NBSP}days`);
+    expect(nextCareLine({ type: 'fertilize', days: 1, paused: false })).toBe('Fertilize tomorrow');
+    expect(nextCareLine({ type: 'water', days: 40, paused: true })).toBe('Resting');
+    expect(nextCareLine(null)).toBe('No schedule');
   });
 });

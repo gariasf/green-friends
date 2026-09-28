@@ -27,9 +27,9 @@ export function plantsNeedYou(count: number): string {
   return count === 1 ? '1 plant needs you' : `${count} plants need you`;
 }
 
-/** A count and its unit: "1 day", "3 days". */
+/** A count and its unit: "1 day", "3 days", joined by a no-break space so no line splits them. */
 export function plural(count: number, unit: string): string {
-  return `${count} ${unit}${count === 1 ? '' : 's'}`;
+  return `${count}\u00a0${unit}${count === 1 ? '' : 's'}`;
 }
 
 /** Days ahead as they are counted: in days, or from 60 on in months. */
@@ -45,10 +45,17 @@ export function daysOrMonths(days: number): [count: number, unit: 'day' | 'month
 export function nextCareLine(next: NextCare | null): string {
   if (next === null) return 'No schedule';
   if (next.paused && next.type === 'water') return 'Resting';
-  const { label } = CARE_WORDS[next.type];
-  if (next.days === 1) return `${label} tomorrow`;
+  return `${CARE_WORDS[next.type].label} ${nextCareWhen(next)}`;
+}
+
+/**
+ * When nextCareLine's care comes, for where its care type shows as its icon (Today's Everything
+ * else): "in 3 days", "tomorrow".
+ */
+export function nextCareWhen(next: NextCare): string {
+  if (next.days === 1) return 'tomorrow';
   const [count, unit] = daysOrMonths(next.days);
-  return `${label} in ${plural(count, unit)}`;
+  return `in ${plural(count, unit)}`;
 }
 
 /**

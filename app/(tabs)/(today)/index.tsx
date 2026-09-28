@@ -29,7 +29,13 @@ import {
 } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
-import { nextCareLine, plantsNeedYou, plural, scientificBeneath } from '@/src/ui/words';
+import {
+  nextCareLine,
+  nextCareWhen,
+  plantsNeedYou,
+  plural,
+  scientificBeneath,
+} from '@/src/ui/words';
 
 /**
  * Today (spec #8, prototype #6; spec #22): the day and how many plants need you, then one card per
@@ -291,7 +297,7 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
   const { layout } = useListMotion();
   // Text grows by fontScale at every size, so a plant this much wider wraps its words as it does
   // at the default size.
-  const width = 84 * useWindowDimensions().fontScale;
+  const width = 92 * useWindowDimensions().fontScale;
   return (
     <Animated.View layout={layout}>
       <Text accessibilityRole="header" style={[group.header, styles.restHeading]}>
@@ -303,7 +309,8 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
         contentContainerStyle={styles.restStrip}
       >
         {plants.map((plant) => {
-          const next = nextCareLine(nextCare(plant, today));
+          const coming = nextCare(plant, today);
+          const next = nextCareLine(coming);
           return (
             <Pressable
               key={plant.id}
@@ -321,7 +328,15 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
               <Text style={styles.restName} numberOfLines={2}>
                 {plant.displayName}
               </Text>
-              <Text style={text.footnote}>{next}</Text>
+              {coming && !(coming.paused && coming.type === 'water') ? (
+                // The care type as its icon, as on the cards above, so when fits on one line.
+                <View style={styles.restNext}>
+                  <CareSymbol type={coming.type} size={14} />
+                  <Text style={text.footnote}>{nextCareWhen(coming)}</Text>
+                </View>
+              ) : (
+                <Text style={text.footnote}>{next}</Text>
+              )}
             </Pressable>
           );
         })}
@@ -388,4 +403,5 @@ const styles = StyleSheet.create({
   restStrip: { gap: space.m, paddingHorizontal: space.l, paddingVertical: space.s },
   restPlant: { gap: space.xs },
   restName: { ...text.footnote, ...font.semibold, color: colors.label },
+  restNext: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 });
