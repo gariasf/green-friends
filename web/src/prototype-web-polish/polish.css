@@ -667,3 +667,28 @@
     border-color: color-mix(in srgb, var(--hero-outline), var(--label) 15%);
   }
 }
+
+/* C, the owner's verdict (round 5): Today's calendar as on main, a near-white table under an
+   outline with a header rule, past days on the ground and today raised with its shadow. */
+:root[data-variant='C'] {
+  .calendar {
+    border: 1px solid var(--outline);
+    background: var(--surface);
+  }
+
+  .calendar th {
+    padding-block: 0.5rem;
+    border-bottom: 1px solid var(--separator);
+  }
+
+  .calendar td.today {
+    background: var(--raised);
+    box-shadow:
+      0 1px 2px rgb(70 56 24 / 0.08),
+      0 6px 18px rgb(70 56 24 / 0.09);
+
+    @media (prefers-color-scheme: dark) {
+      box-shadow: none;
+    }
+  }
+}
