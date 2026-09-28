@@ -37,7 +37,14 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
 import { heroDrift, heroStretch, tickHaptic, useHeroEntering } from '@/src/ui/motion';
-import { coverStyle, photoFiles, photoUri, PlantPhoto, usePhotoPicker } from '@/src/ui/Photo';
+import {
+  coverStyle,
+  HERO_HEIGHT,
+  photoFiles,
+  photoUri,
+  PlantPhoto,
+  usePhotoPicker,
+} from '@/src/ui/Photo';
 import {
   accessibilitySize,
   colors,
@@ -69,7 +76,7 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   // Whether the photo has scrolled up under the navigation bar.
   const [pastHero, setPastHero] = useState(false);
-  const heroHeight = width * 0.92;
+  const heroHeight = width * HERO_HEIGHT;
   // The photo drifts as it scrolls up and stretches when pulled down, and the bar's ground fades
   // in over the last of it.
   const scroll = useAnimatedRef<Animated.ScrollView>();

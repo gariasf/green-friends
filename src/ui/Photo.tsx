@@ -82,8 +82,17 @@ export function useFindMissingFocus(): void {
 /** The long edge of a stored photo, in pixels (ADR-0001). */
 const LONG_EDGE = 1600;
 
-/** A picked photo, prepared for setPlantPhoto, with the Focal point it is framed on. */
-export type Picked = { prepared: string; focus: Focus };
+/**
+ * A picked photo, prepared for setPlantPhoto, with its Focal point: none where Vision found none
+ * and the user left the centre as it was, so the launch pass tries again (useFindMissingFocus).
+ */
+export type Picked = { prepared: string; focus: Focus | null };
+
+/** A photo as Frame photo opens on it: its point, or its centre where Vision found none. */
+type Found = { prepared: string; focus: Focus; byVision: boolean };
+
+/** The Plant screen's hero, as tall as this share of its width. */
+export const HERO_HEIGHT = 0.92;
 
 /** "Add photo", or "Replace photo" once there is one: usePhotoPicker as a button. */
 export function PhotoButton({
@@ -112,7 +121,7 @@ export function usePhotoPicker(onPick: (picked: Picked) => void): {
   choose: () => void;
   framing: ReactNode;
 } {
-  const [found, setFound] = useState<Picked | null>(null);
+  const [found, setFound] = useState<Found | null>(null);
   return {
     choose: () => void choosePhoto(setFound),
     framing: found && (
@@ -123,9 +132,9 @@ export function usePhotoPicker(onPick: (picked: Picked) => void): {
           deleteIfThere(new File(found.prepared));
           setFound(null);
         }}
-        onUse={(focus) => {
+        onUse={(focus, moved) => {
           setFound(null);
-          onPick({ prepared: found.prepared, focus });
+          onPick({ prepared: found.prepared, focus: found.byVision || moved ? focus : null });
         }}
       />
     ),
@@ -137,16 +146,27 @@ export function usePhotoPicker(onPick: (picked: Picked) => void): {
  * `onFound`, telling the user when picking or preparing fails. Where Vision finds no point (the
  * simulator never does), the photo's centre.
  */
-async function choosePhoto(onFound: (picked: Picked) => void): Promise<void> {
+async function choosePhoto(onFound: (found: Found) => void): Promise<void> {
+  let prepared: string | null = null;
   try {
-    const prepared = await pickPhoto();
+    prepared = await pickPhoto();
     if (!prepared) return;
-    const focus = await findFocus(prepared).catch(async () => {
-      const { width, height } = await Image.getSize(prepared);
-      return { x: 0.5, y: 0.5, aspect: width / height };
-    });
-    onFound({ prepared, focus });
+    const file = prepared;
+    const found = await findFocus(file).then(
+      (focus) => ({ prepared: file, focus, byVision: true }),
+      async () => {
+        const { width, height } = await Image.getSize(file);
+        return {
+          prepared: file,
+          focus: { x: 0.5, y: 0.5, aspect: width / height },
+          byVision: false,
+        };
+      },
+    );
+    onFound(found);
   } catch (error) {
+    // A photo that got no further than preparing is dropped, as Cancel drops it.
+    if (prepared) deleteIfThere(new File(prepared));
     alertError('Could not add the photo', error);
   }
 }
@@ -163,11 +183,12 @@ function FramePhoto({
   onCancel,
   onUse,
 }: {
-  found: Picked;
+  found: Found;
   onCancel: () => void;
-  onUse: (focus: Focus) => void;
+  onUse: (focus: Focus, moved: boolean) => void;
 }) {
   const [focus, setFocus] = useState(found.focus);
+  const moved = focus !== found.focus;
   const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
   // The whole photo, as wide as the sheet allows, no taller than FRAME_HEIGHT of the screen.
@@ -191,7 +212,7 @@ function FramePhoto({
     });
   }, [width, height]);
   const heroWidth = 132;
-  const heroHeight = heroWidth * 0.92;
+  const heroHeight = heroWidth * HERO_HEIGHT;
   const square = heroHeight;
 
   return (
@@ -203,7 +224,7 @@ function FramePhoto({
           <Text accessibilityRole="header" style={text.headline}>
             Frame photo
           </Text>
-          <TextButton label="Use Photo" header onPress={() => onUse(focus)} />
+          <TextButton label="Use Photo" header onPress={() => onUse(focus, moved)} />
         </View>
         <Text style={[text.subheadline, styles.hint]}>
           Drag to the part of the plant to keep in view.
@@ -383,7 +404,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 3,
     borderColor: colors.onPhoto,
-    boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.4)',
+    boxShadow: colors.markerShadow,
   },
   previews: { flexDirection: 'row', gap: space.xxl, marginTop: space.xxl },
   preview: { alignItems: 'center', gap: space.s },

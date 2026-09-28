@@ -101,6 +101,8 @@ export const colors = {
   /** Beneath the name over a photo: a gradient, not a blur, so Reduce Transparency changes nothing. */
   scrim:
     'linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.7) 100%)',
+  /** Frame photo's marker, a ring in onPhoto: a dark hairline and shadow keep it seen on white. */
+  markerShadow: '0 0 0 1px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.4)',
 };
 
 /**
