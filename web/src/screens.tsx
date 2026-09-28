@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import {
   dueCare,
@@ -17,16 +18,21 @@ import {
   dueLine,
   lastLine,
   nextCareLine,
+  NEEDS_YOU,
+  noPlantCalled,
+  plantsInCare,
   plantsNeedYou,
   plural,
   scientificBeneath,
+  SEARCH_PLANTS,
   tileValue,
   whoseSchedule,
 } from '../../src/ui/words';
 import type { Garden } from './garden';
 import { guides } from '../../src/ui/guides';
+import { Breadcrumbs, Section, Toggle } from './frame';
 import { CareRows, GuideView, SymptomsView, SymptomView, type PlantView } from './guide';
-import { AppMark, BackCaret, CareIcon, objectPosition, Thumb } from './icons';
+import { CareIcon, objectPosition, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
@@ -52,10 +58,12 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
 
   return (
     <>
-      <h1 tabIndex={-1}>Today</h1>
-      <p className="quiet">
-        {plants.length > 0 ? `${date} · ${plantsNeedYou(plants.length)}` : date}
-      </p>
+      <header className="page-head">
+        <h1 tabIndex={-1}>Today</h1>
+        <p className="quiet">
+          {plants.length > 0 ? `${date} · ${plantsNeedYou(plants.length)}` : date}
+        </p>
+      </header>
       {inCare.length === 0 && (
         <Empty title="No plants in care" line="Add one in Green Friends on your phone." />
       )}
@@ -94,8 +102,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         ))}
       </ul>
       {rest.length > 0 && (
-        <>
-          <h2>Everything else</h2>
+        <Section title="Everything else">
           <ul className="group rows">
             {rest.map((plant) => {
               const next = nextCare(plant, today);
@@ -117,82 +124,141 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
               );
             })}
           </ul>
-        </>
+        </Section>
       )}
     </>
   );
 }
 
+const SIZES = { S: '9rem', M: '13rem', L: '18rem' } as const;
+type Size = keyof typeof SIZES;
+const SIZE_KEY = 'garden-photo-size';
+
+/** The photo size this browser chose last; M where it chose none or keeps nothing. */
+function storedSize(): Size {
+  try {
+    const kept = localStorage.getItem(SIZE_KEY);
+    return kept && kept in SIZES ? (kept as Size) : 'M';
+  } catch {
+    return 'M';
+  }
+}
+
 /**
- * The Garden as panes, like Mail or Notes (spec #41): a grid of every live plant by Display Name
- * (spec #61), each photo over what's Due or Overdue, or its next care, and the chosen plant beside
- * the grid. Below 60rem, the grid or the plant, with a way back.
+ * The Garden, a page of its own (spec #72): every plant in care by Display Name as a grid of
+ * square photos across the window (spec #61), each over what's Due or Overdue, or its next care;
+ * above it, All | Needs you, a search by name (`/` to reach it) and the photos' size.
  */
-export function GardenPanes({
-  garden,
-  id,
-  view,
-  photoUrl,
-}: {
-  garden: Garden;
-  id: string | null;
-  view: PlantView;
-  photoUrl: PhotoUrl;
-}) {
+export function GardenPage({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl }) {
   // The day the screen was drawn on, as Today's.
   const today = localDay(new Date());
   const plants = useMemo(() => {
     const care = new Map(evaluateCare(garden.db, today).map((plant) => [plant.id, plant]));
     return listPlants(garden.db).flatMap((plant) => care.get(plant.id) ?? []);
   }, [garden, today]);
+  const [show, setShow] = useState<'all' | 'needYou'>('all');
+  const [query, setQuery] = useState('');
+  const [size, setSize] = useState<Size>(storedSize);
+  const search = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const typing = (event.target as HTMLElement).closest('input, textarea, [contenteditable]');
+      if (event.key === '/' && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        search.current?.focus();
+      }
+    };
+    addEventListener('keydown', onKey);
+    return () => removeEventListener('keydown', onKey);
+  }, []);
+
+  const choose = (next: Size) => {
+    setSize(next);
+    try {
+      localStorage.setItem(SIZE_KEY, next);
+    } catch {
+      // Kept for this visit only.
+    }
+  };
+  const needYou = plants.filter(needsAttention);
+  const needle = query.trim().toLowerCase();
+  const shown = (show === 'needYou' ? needYou : plants).filter(
+    (plant) =>
+      !needle ||
+      `${plant.displayName} ${plant.scientificName ?? ''}`.toLowerCase().includes(needle),
+  );
 
   return (
     <>
-      <section className="list" aria-labelledby="garden-heading">
-        <h1 id="garden-heading" tabIndex={-1}>
-          Garden
-        </h1>
-        {plants.length === 0 ? (
-          <Empty title="No plants yet" line="Add one in Green Friends on your phone." />
-        ) : (
-          <ul>
-            {plants.map((plant) => {
-              const due = dueCare(plant);
-              const tone = due.some((care) => care.daysOverdue > 0) ? 'overdue' : 'due-today';
-              return (
-                <li key={plant.id}>
-                  <a
-                    href={`#/plant/${plant.id}`}
-                    aria-current={plant.id === id ? 'page' : undefined}
-                  >
-                    <Thumb
-                      src={photoUrl(plant.photo)}
-                      focus={plant.focus}
-                      name={plant.displayName}
-                      size="cell"
-                    />
-                    <span className="name">{plant.displayName}</span>
-                    <span className="quiet line">
-                      {due.length > 0 && <span className={`dot ${tone}`} />}
-                      {due.length > 0 ? dueLine(due) : nextCareLine(nextCare(plant, today))}
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-      <main className="detail">
-        {id ? (
-          <PlantDetail garden={garden} id={id} view={view} photoUrl={photoUrl} />
-        ) : (
-          <div className="pick">
-            <AppMark size={48} />
-            <p className="quiet">Pick a plant to see its care and Care Log.</p>
+      <header className="page-head garden-head">
+        <div>
+          <h1 tabIndex={-1}>Garden</h1>
+          <p className="quiet">{plantsInCare(plants.length)}</p>
+        </div>
+        {plants.length > 0 && (
+          <div className="tools">
+            <Toggle
+              label="Show"
+              options={[
+                ['all', 'All'],
+                ['needYou', `${NEEDS_YOU} · ${needYou.length}`],
+              ]}
+              value={show}
+              onChange={setShow}
+            />
+            <label className="search">
+              <MagnifyingGlassIcon size={16} aria-hidden="true" />
+              <input
+                ref={search}
+                type="search"
+                placeholder={SEARCH_PLANTS}
+                aria-label={SEARCH_PLANTS}
+                aria-keyshortcuts="/"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => event.key === 'Escape' && event.currentTarget.blur()}
+              />
+              <kbd aria-hidden="true">/</kbd>
+            </label>
+            <Toggle
+              label="Photo size"
+              options={(Object.keys(SIZES) as Size[]).map((key) => [key, key])}
+              value={size}
+              onChange={choose}
+            />
           </div>
         )}
-      </main>
+      </header>
+      {plants.length === 0 && (
+        <Empty title="No plants yet" line="Add one in Green Friends on your phone." />
+      )}
+      {plants.length > 0 && shown.length === 0 && (
+        <p className="quiet">{needle ? noPlantCalled(query) : 'Nothing needs you today.'}</p>
+      )}
+      <ul className={`garden-grid size-${size}`} style={{ '--cell': SIZES[size] } as CSSProperties}>
+        {shown.map((plant) => {
+          const due = dueCare(plant);
+          const tone = due.some((care) => care.daysOverdue > 0) ? 'overdue' : 'due-today';
+          return (
+            <li key={plant.id}>
+              <a href={`#/plant/${plant.id}`}>
+                <Thumb
+                  src={photoUrl(plant.photo)}
+                  focus={plant.focus}
+                  name={plant.displayName}
+                  size="cell"
+                />
+                <span className="name">{plant.displayName}</span>
+                <span className="quiet line">
+                  {due.length > 0 && <span className={`dot ${tone}`} />}
+                  {due.length > 0 ? dueLine(due) : nextCareLine(nextCare(plant, today))}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
     </>
   );
 }
@@ -232,7 +298,7 @@ export function PlantDetail({
   if (!plant) {
     return (
       <>
-        <BackLink />
+        <Breadcrumbs trail={[['Garden', '#/garden']]} />
         <h1 tabIndex={-1}>Not in your Garden</h1>
         <p>This plant isn&apos;t in the Garden your phone last synced.</p>
       </>
@@ -242,19 +308,31 @@ export function PlantDetail({
   const { row, events, guide } = plant;
   const name = plant.displayName;
   if (view.page === 'guide' && guide) {
-    return <GuideView id={id} name={name} guide={guide} today={today} />;
+    return (
+      <div className="plant">
+        <GuideView id={id} name={name} guide={guide} today={today} />
+      </div>
+    );
   }
-  if (view.page === 'symptoms') return <SymptomsView id={id} name={name} />;
+  if (view.page === 'symptoms') {
+    return (
+      <div className="plant">
+        <SymptomsView id={id} name={name} />
+      </div>
+    );
+  }
   if (view.page === 'symptom') {
     return (
-      <SymptomView
-        garden={garden}
-        id={id}
-        name={name}
-        symptomId={view.symptomId}
-        profile={guide?.profile ?? null}
-        today={today}
-      />
+      <div className="plant">
+        <SymptomView
+          garden={garden}
+          id={id}
+          name={name}
+          symptomId={view.symptomId}
+          profile={guide?.profile ?? null}
+          today={today}
+        />
+      </div>
     );
   }
 
@@ -265,10 +343,10 @@ export function PlantDetail({
     </p>
   );
   return (
-    <>
-      <BackLink />
+    <div className="plant">
+      <Breadcrumbs trail={[['Garden', '#/garden'], [name]]} />
       {photo ? (
-        // As the phone's hero: the photo across the pane, the names over its foot on a scrim.
+        // As the phone's hero: the photo across the page's column, the names over its foot on a scrim.
         <div className="hero">
           <img
             src={photo}
@@ -292,54 +370,47 @@ export function PlantDetail({
         </div>
       )}
 
-      <h2>Care</h2>
-      <dl className="group care">
-        {CARE_TYPES.map((type) => {
-          const status = plant.care[type];
-          const [, spoken] = tileValue(status, today);
-          const lastDone = events.find((event) => event.type === type)?.occurredOn;
-          const tone =
-            status.state === 'due' ? (status.daysOverdue > 0 ? 'overdue' : 'due-today') : '';
-          return (
-            <div key={type}>
-              <dt>
-                <CareIcon type={type} />
-                {CARE_WORDS[type].label}
-              </dt>
-              <dd>
-                <span className={tone}>{sentence(spoken)}</span>
-                <span className="quiet">{lastLine(lastDone, today)}</span>
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
-      <p className="quiet">
-        {[whoseSchedule(row), potLine(row.potSizeCm, row.soil)].filter(Boolean).join(' · ')}
-      </p>
+      <Section title="Care">
+        <dl className="group care">
+          {CARE_TYPES.map((type) => {
+            const status = plant.care[type];
+            const [, spoken] = tileValue(status, today);
+            const lastDone = events.find((event) => event.type === type)?.occurredOn;
+            const tone =
+              status.state === 'due' ? (status.daysOverdue > 0 ? 'overdue' : 'due-today') : '';
+            return (
+              <div key={type}>
+                <dt>
+                  <CareIcon type={type} />
+                  {CARE_WORDS[type].label}
+                </dt>
+                <dd>
+                  <span className={tone}>{sentence(spoken)}</span>
+                  <span className="quiet">{lastLine(lastDone, today)}</span>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+        <p className="quiet">
+          {[whoseSchedule(row), potLine(row.potSizeCm, row.soil)].filter(Boolean).join(' · ')}
+        </p>
+      </Section>
 
       <CareRows id={id} guide={guide} season={plant.season} today={today} />
 
-      <h2>Care Log</h2>
-      {events.length === 0 ? (
-        <p className="quiet">Nothing logged yet.</p>
-      ) : (
-        <ol className="group log">
-          {events.map((event) => (
-            <CareLogRow key={event.id} event={event} today={today} />
-          ))}
-        </ol>
-      )}
-    </>
-  );
-}
-
-/** Back to the Garden's list, shown only where the panes fold into one. */
-function BackLink() {
-  return (
-    <a className="back" href="#/garden">
-      <BackCaret /> Garden
-    </a>
+      <Section title="Care Log">
+        {events.length === 0 ? (
+          <p className="quiet">Nothing logged yet.</p>
+        ) : (
+          <ol className="group log">
+            {events.map((event) => (
+              <CareLogRow key={event.id} event={event} today={today} />
+            ))}
+          </ol>
+        )}
+      </Section>
+    </div>
   );
 }
 

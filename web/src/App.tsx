@@ -10,7 +10,7 @@ import { plantsNeedYou, plural } from '../../src/ui/words';
 import { openGarden, type Garden } from './garden';
 import { AppMark } from './icons';
 import type { PlantView } from './guide';
-import { GardenPanes, Today, type PhotoUrl } from './screens';
+import { GardenPage, PlantDetail, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
 
@@ -135,7 +135,7 @@ const SYNCED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeSty
 /**
  * The Garden's screens in the shell (spec #41): a sidebar with the app's mark and name, Today and
  * Garden with their counts, and when the Snapshot was taken at its foot; below 60rem, a top bar.
- * Each plant has its own address.
+ * Beside it one page (spec #72): Today, the Garden, or a plant at its own address.
  */
 function GardenView({
   garden,
@@ -166,7 +166,7 @@ function GardenView({
   }, [screen]);
 
   return (
-    <div className={`shell ${{ today: '', garden: 'panes', plant: 'panes chosen' }[screen.tab]}`}>
+    <div className="shell">
       <header className="sidebar">
         <p className="brand">
           <AppMark />
@@ -196,18 +196,13 @@ function GardenView({
         </a>
         {takenAt && <p className="synced">Synced {SYNCED.format(takenAt)}</p>}
       </header>
-      {screen.tab === 'today' ? (
-        <main className="today">
-          <Today garden={garden} photoUrl={photoUrl} />
-        </main>
-      ) : (
-        <GardenPanes
-          garden={garden}
-          id={screen.tab === 'plant' ? screen.id : null}
-          view={screen.tab === 'plant' ? screen.view : { page: 'plant' }}
-          photoUrl={photoUrl}
-        />
-      )}
+      <main className="page">
+        {screen.tab === 'today' && <Today garden={garden} photoUrl={photoUrl} />}
+        {screen.tab === 'garden' && <GardenPage garden={garden} photoUrl={photoUrl} />}
+        {screen.tab === 'plant' && (
+          <PlantDetail garden={garden} id={screen.id} view={screen.view} photoUrl={photoUrl} />
+        )}
+      </main>
     </div>
   );
 }

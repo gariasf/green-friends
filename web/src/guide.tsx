@@ -25,21 +25,22 @@ import {
 } from '../../src/ui/words';
 import { guides } from '../../src/ui/guides';
 import type { Garden } from './garden';
-import { BackCaret, CareIcon, GuideIcon } from './icons';
+import { Breadcrumbs, Section, Toggle } from './frame';
+import { CareIcon, GuideIcon } from './icons';
 
 /**
- * The Care Guide as the phone's (spec #48, #51), read-only: the Plant pane's Care group, the full
- * Care Guide, the Symptoms and one Symptom, each in the detail pane at the plant's address plus
+ * The Care Guide as the phone's (spec #48, #51), read-only: the plant's Care group, the full
+ * Care Guide, the Symptoms and one Symptom, each a page of its own at the plant's address plus
  * `/guide`, `/symptoms` or `/symptom/<id>`. The text is the bundled `assets/care-guides.json`.
  */
 
-/** What the chosen plant's pane shows: the plant, or one of its Care Guide's pages. */
+/** What a plant's page shows: the plant, or one of its Care Guide's pages. */
 export type PlantView =
   { page: 'plant' | 'guide' | 'symptoms' } | { page: 'symptom'; symptomId: string };
 
 type Season = SeasonOn['season'];
 
-/** The Plant pane's Care group, under its care summary; without a profile, the nudge. */
+/** The plant's Care group, under its care summary; without a profile, the nudge. */
 export function CareRows({
   id,
   guide,
@@ -54,8 +55,7 @@ export function CareRows({
   const profile = guide?.profile;
   const now = season.season;
   return (
-    <>
-      <h2>Care Guide · {seasonLine(season, today)}</h2>
+    <Section title="Care Guide" note={seasonLine(season, today)}>
       <ul className="group guide-rows">
         {profile ? (
           <>
@@ -100,7 +100,7 @@ export function CareRows({
         )}
         <SomethingWrong id={id} />
       </ul>
-    </>
+    </Section>
   );
 }
 
@@ -160,23 +160,24 @@ export function GuideView({
   const npk = npkNote(profile.fertilizer.type);
   return (
     <>
-      <BackToPlant id={id} name={name} />
-      <h1 tabIndex={-1}>Care Guide</h1>
-      <p className="quiet">
-        {profile.name} · {seasonLine(guide.season, today)}
-      </p>
-      <div className="switch" role="group" aria-label="Season">
-        {(['growing', 'dormant'] as const).map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={season === option}
-            onClick={() => setSeason(option)}
-          >
-            {option === 'growing' ? 'Growing' : 'Dormant'}
-          </button>
-        ))}
-      </div>
+      <Breadcrumbs trail={[['Garden', '#/garden'], [name, `#/plant/${id}`], ['Care Guide']]} />
+      <header className="page-head guide-head">
+        <div>
+          <h1 tabIndex={-1}>Care Guide</h1>
+          <p className="quiet">
+            {profile.name} · {seasonLine(guide.season, today)}
+          </p>
+        </div>
+        <Toggle
+          label="Season"
+          options={[
+            ['growing', 'Growing'],
+            ['dormant', 'Dormant'],
+          ]}
+          value={season}
+          onChange={setSeason}
+        />
+      </header>
 
       <section className="guide-card">
         <h2>
@@ -252,11 +253,12 @@ export function GuideView({
 export function SymptomsView({ id, name }: { id: string; name: string }) {
   return (
     <>
-      <BackToPlant id={id} name={name} />
-      <h1 tabIndex={-1}>{SYMPTOMS_TITLE}</h1>
+      <Breadcrumbs trail={[['Garden', '#/garden'], [name, `#/plant/${id}`], [SYMPTOMS_TITLE]]} />
+      <header className="page-head">
+        <h1 tabIndex={-1}>{SYMPTOMS_TITLE}</h1>
+      </header>
       {SYMPTOM_GROUPS.map(({ kind, title }) => (
-        <section key={kind}>
-          <h2>{title}</h2>
+        <Section key={kind} title={title}>
           <ul className="group guide-rows">
             {guides.symptoms
               .filter((symptom) => symptom.kind === kind)
@@ -270,7 +272,7 @@ export function SymptomsView({ id, name }: { id: string; name: string }) {
                 </li>
               ))}
           </ul>
-        </section>
+        </Section>
       ))}
     </>
   );
@@ -299,11 +301,18 @@ export function SymptomView({
   if (!symptom) return <SymptomsView id={id} name={name} />;
   return (
     <>
-      <a className="back-plant" href={`#/plant/${id}/symptoms`}>
-        <BackCaret /> {SYMPTOMS_TITLE}
-      </a>
-      <h1 tabIndex={-1}>{symptom.name}</h1>
-      <p className="quiet">{causesIntro(profile)}</p>
+      <Breadcrumbs
+        trail={[
+          ['Garden', '#/garden'],
+          [name, `#/plant/${id}`],
+          [SYMPTOMS_TITLE, `#/plant/${id}/symptoms`],
+          [symptom.name],
+        ]}
+      />
+      <header className="page-head">
+        <h1 tabIndex={-1}>{symptom.name}</h1>
+        <p className="quiet">{causesIntro(profile)}</p>
+      </header>
       {symptomCauses(symptom, profile).map((causeId) => {
         const cause = guides.causes[causeId];
         return (
@@ -323,14 +332,5 @@ export function SymptomView({
         );
       })}
     </>
-  );
-}
-
-/** Back to the plant, at every width: the Care Guide replaces its pane. */
-function BackToPlant({ id, name }: { id: string; name: string }) {
-  return (
-    <a className="back-plant" href={`#/plant/${id}`}>
-      <BackCaret /> {name}
-    </a>
   );
 }

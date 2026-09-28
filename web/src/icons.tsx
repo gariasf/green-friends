@@ -1,7 +1,6 @@
 import {
   BookOpenIcon,
   BugIcon,
-  CaretLeftIcon,
   CaretRightIcon,
   DropIcon,
   FlaskIcon,
@@ -126,8 +125,3 @@ const GUIDE_ICONS = {
   fact: LightbulbIcon,
   next: CaretRightIcon,
 } satisfies Record<string, PhosphorIcon>;
-
-/** A back link's caret, before its words. */
-export function BackCaret() {
-  return <CaretLeftIcon className="back-caret" size={14} aria-hidden="true" />;
-}

@@ -27,6 +27,20 @@ export function plantsNeedYou(count: number): string {
   return count === 1 ? '1 plant needs you' : `${count} plants need you`;
 }
 
+/** The Web view's Garden, under its title: "8 plants in care". */
+export function plantsInCare(count: number): string {
+  return `${plural(count, 'plant')} in care`;
+}
+
+/** The Web view's Garden's filter for the plants that Need Attention, and its search. */
+export const NEEDS_YOU = 'Needs you';
+export const SEARCH_PLANTS = 'Search plants';
+
+/** A Garden search that finds nothing. */
+export function noPlantCalled(query: string): string {
+  return `No plant called “${query.trim()}”`;
+}
+
 /** A count and its unit: "1 day", "3 days", joined by a no-break space so no line splits them. */
 export function plural(count: number, unit: string): string {
   return `${count}\u00a0${unit}${count === 1 ? '' : 's'}`;
