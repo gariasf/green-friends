@@ -17,11 +17,9 @@ public class PhotoFocusModule: Module {
       let aspect = Double(image.width) / Double(image.height)
 
       // Attention, not objectness: objectness takes a pot for the plant's middle (#62, ADR-0010).
+      // The simulator can't run this model: it throws there ("Could not create inference
+      // context"), or with usesCPUOnly finds the same point in every photo, so it's left to throw.
       let request = VNGenerateAttentionBasedSaliencyImageRequest()
-      #if targetEnvironment(simulator)
-        // The simulator has no Neural Engine or GPU for Vision's model.
-        request.usesCPUOnly = true
-      #endif
       try VNImageRequestHandler(cgImage: image).perform([request])
       guard let heat = request.results?.first?.pixelBuffer,
         let (x, y) = centroid(of: heat)

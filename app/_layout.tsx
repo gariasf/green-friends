@@ -8,6 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
+import { useFindMissingFocus } from '@/src/ui/Photo';
 import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 import { useSync } from '@/src/ui/useSync';
@@ -49,6 +50,7 @@ const TAB_TITLES: Record<string, string> = {
 export default function RootLayout() {
   useDigests();
   useSync();
+  useFindMissingFocus();
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack

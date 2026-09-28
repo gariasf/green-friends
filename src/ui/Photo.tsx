@@ -1,10 +1,18 @@
+import { useEffect } from 'react';
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { ActionSheetIOS, Image, StyleSheet, Text, View, type ImageStyle } from 'react-native';
 
 import { findFocus } from '@/modules/photo-focus';
-import { framePosition, type Focus, type PhotoFiles } from '@/src/core/photos';
+import {
+  framePosition,
+  photosWithoutFocus,
+  setPhotoFocus,
+  type Focus,
+  type PhotoFiles,
+} from '@/src/core/photos';
+import { db } from '@/src/db/client';
 import { alertError, TextButton } from '@/src/ui/Form';
 import { colors, font, radius } from '@/src/ui/theme';
 
@@ -36,6 +44,26 @@ export const photoFiles: PhotoFiles = {
 /** Where a stored photo is on this install; the database keeps only its filename. */
 export function photoUri(filename: string | null): string | null {
   return filename === null ? null : Paths.join(folder, filename);
+}
+
+/**
+ * Finds a Focal point for each live photo without one (spec #67), one at a time: photos from
+ * before Focal points or from an older Export, or whose point Vision couldn't find when they
+ * were added. A photo it fails on keeps none, to be tried again next time.
+ */
+export async function findMissingFocus(): Promise<void> {
+  for (const photo of photosWithoutFocus(db)) {
+    try {
+      setPhotoFocus(db, photo.id, await findFocus(Paths.join(folder, photo.filename)));
+    } catch {
+      // Framed on its centre until the next launch tries again.
+    }
+  }
+}
+
+/** findMissingFocus, once at launch, from the root layout. */
+export function useFindMissingFocus(): void {
+  useEffect(() => void findMissingFocus(), []);
 }
 
 /** The long edge of a stored photo, in pixels (ADR-0001). */

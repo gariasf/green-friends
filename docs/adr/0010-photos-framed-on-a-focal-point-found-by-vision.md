@@ -22,5 +22,5 @@ Every frame used to crop a photo on its centre, at its own ratio: squares in the
 
 - A change to the Swift needs a prebuild and a native build. JS-only changes still load from Metro.
 - Attention finds where the eye goes, not "the plant": a busy background can pull the point off it, and a plant filling one side of a plain photo gets a point short of its middle, since the plain side still holds some heat. The Frame photo step is there to correct it.
-- The simulator's Vision can't run the model: it fails ("Could not create inference context"), or with `usesCPUOnly` returns the same point for every photo. Check Vision on a device, or with a Mac command-line tool over the same request. Check framing on the simulator with points set by hand.
+- The simulator's Vision can't run the model: it fails ("Could not create inference context"), and with `usesCPUOnly` it returns the same point for every photo. So the module lets it fail there, and a simulator's photos keep no point. Check Vision on a device, or with a Mac command-line tool over the same request. Check framing on the simulator with points set by hand.
 - Import checks the point (whole, on the photo, a positive aspect) like any other rule of the mutations (ADR-0002).

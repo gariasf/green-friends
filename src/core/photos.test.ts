@@ -1,8 +1,15 @@
 import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb, noon } from '../test/garden';
 import { photoStore } from '../test/photos';
 import { evaluateCare } from './care';
-import { framePosition, listPhotoRows, setPlantPhoto, type PhotoFiles } from './photos';
-import { createPlant, listPlants } from './plants';
+import {
+  framePosition,
+  listPhotoRows,
+  photosWithoutFocus,
+  setPhotoFocus,
+  setPlantPhoto,
+  type PhotoFiles,
+} from './photos';
+import { createPlant, deletePlant, listPlants } from './plants';
 
 describe('plant photos', () => {
   test('a photo is filed under its row UUID, stamped by the core clock', () => {
@@ -233,5 +240,82 @@ describe('framing a photo on its Focal point', () => {
 
   test("a photo of the frame's own shape has nothing to slide", () => {
     expect(framePosition({ x: 0.1, y: 0.9, aspect: 1.5 }, 1.5)).toEqual({ x: 0.5, y: 0.5 });
+  });
+});
+
+describe('finding a Focal point for photos that have none', () => {
+  const FOCUS = { x: 0.6, y: 0.4, aspect: 0.75 };
+
+  test('lists each live photo without a point, and none with one or replaced', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+    const pothos = createPlant(db, { speciesId: POTHOS }, NOON_SEP_22);
+    const gone = createPlant(db, { speciesId: POTHOS, nickname: 'Gone' }, NOON_SEP_22);
+    setPlantPhoto(db, store.files, monty.id, 'file:///cache/old.jpg');
+    const bare = setPlantPhoto(db, store.files, monty.id, 'file:///cache/new.jpg');
+    setPlantPhoto(db, store.files, pothos.id, 'file:///cache/pothos.jpg', FOCUS);
+    setPlantPhoto(db, store.files, gone.id, 'file:///cache/gone.jpg');
+    deletePlant(db, store.files, gone.id);
+
+    expect(photosWithoutFocus(db)).toEqual([{ id: bare.id, filename: bare.filename }]);
+  });
+
+  test('a point found is set once, stamped, and every frame follows it', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+    const photo = setPlantPhoto(
+      db,
+      store.files,
+      monty.id,
+      'file:///cache/pick.jpg',
+      null,
+      NOON_SEP_22,
+    );
+    const later = noon(2026, 9, 28);
+
+    setPhotoFocus(db, photo.id, FOCUS, later);
+
+    expect(listPhotoRows(db)).toEqual([
+      { ...photo, focusX: 0.6, focusY: 0.4, aspect: 0.75, updatedAt: later.toISOString() },
+    ]);
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Monty', focus: FOCUS }]);
+    expect(photosWithoutFocus(db)).toEqual([]);
+  });
+
+  test('a photo that has its point, or was replaced while it was found, is left as it is', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+    const framed = setPlantPhoto(db, store.files, monty.id, 'file:///cache/a.jpg', FOCUS);
+    const pothos = createPlant(db, { speciesId: POTHOS }, NOON_SEP_22);
+    const replaced = setPlantPhoto(db, store.files, pothos.id, 'file:///cache/b.jpg');
+    setPlantPhoto(db, store.files, pothos.id, 'file:///cache/c.jpg');
+    const before = listPhotoRows(db);
+
+    setPhotoFocus(db, framed.id, { x: 0.1, y: 0.1, aspect: 0.75 });
+    setPhotoFocus(db, replaced.id, FOCUS);
+
+    expect(listPhotoRows(db)).toEqual(before);
+  });
+
+  test('a point off the photo is refused, whoever found it', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+    const photo = setPlantPhoto(db, store.files, monty.id, 'file:///cache/pick.jpg');
+
+    expect(() => setPhotoFocus(db, photo.id, { x: 1.5, y: 0.4, aspect: 0.75 })).toThrow(
+      "A photo's Focal point must be on it, from 0 to 1, not 1.5, 0.4",
+    );
+    expect(() =>
+      setPlantPhoto(db, store.files, monty.id, 'file:///cache/next.jpg', {
+        x: 0.5,
+        y: 0.5,
+        aspect: NaN,
+      }),
+    ).toThrow("A photo's aspect must be a width over a height, not NaN");
+    expect(listPhotoRows(db)).toEqual([photo]);
   });
 });

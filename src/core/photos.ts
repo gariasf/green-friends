@@ -89,6 +89,7 @@ export function setPlantPhoto(
     .where(and(eq(plants.id, plantId), isNull(plants.deletedAt)))
     .get();
   if (!plant) throw new Error(`No plant ${plantId}`);
+  if (focus) validateFocus(focus.x, focus.y, focus.aspect);
   const stamp = now.toISOString();
   const id = crypto.randomUUID();
   const photo: Photo = {
@@ -112,6 +113,32 @@ export function setPlantPhoto(
   });
   removePhotoFiles(files, replaced);
   return photo;
+}
+
+/**
+ * Gives a live photo without a Focal point the one found for it (spec #67), once: a photo that
+ * has one keeps it (no repositioning), and one replaced while its point was being found stays
+ * a tombstone as it was.
+ */
+export function setPhotoFocus(db: Db, photoId: string, focus: Focus, now: Date = new Date()): void {
+  validateFocus(focus.x, focus.y, focus.aspect);
+  db.update(photos)
+    .set({ focusX: focus.x, focusY: focus.y, aspect: focus.aspect, updatedAt: now.toISOString() })
+    .where(and(eq(photos.id, photoId), isNull(photos.deletedAt), isNull(photos.focusX)))
+    .run();
+}
+
+/**
+ * The live photos without a Focal point, for finding one: those from before Focal points, from
+ * an Export made before them, or whose point Vision couldn't find when they were added.
+ */
+export function photosWithoutFocus(db: Db): Pick<Photo, 'id' | 'filename'>[] {
+  return db
+    .select({ id: photos.id, filename: photos.filename })
+    .from(photos)
+    .where(and(isNull(photos.deletedAt), isNull(photos.focusX)))
+    .orderBy(photos.createdAt)
+    .all();
 }
 
 /**
@@ -164,6 +191,11 @@ export function validatePhoto(photo: Photo): void {
   if (x === null || y === null || aspect === null) {
     throw new Error("A photo's Focal point needs its x, y and aspect together");
   }
+  validateFocus(x, y, aspect);
+}
+
+/** A Focal point on its photo, from 0 to 1 each way, with a width over a height for its aspect. */
+function validateFocus(x: number, y: number, aspect: number): void {
   const onIt = (at: unknown) => typeof at === 'number' && at >= 0 && at <= 1;
   if (!onIt(x) || !onIt(y)) {
     throw new Error(`A photo's Focal point must be on it, from 0 to 1, not ${x}, ${y}`);
