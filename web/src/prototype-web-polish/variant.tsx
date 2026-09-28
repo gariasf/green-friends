@@ -5,6 +5,8 @@
  *        with a shadow, serif section headings, less bold, one pill
  *   B    A's Today with the plant status first: the Care card before the photo, intervals once,
  *        no Dormant column when unused, one name for fertilizing (the owner's pick, round 2)
+ *   C    B with one reason per surface: an outline groups, a fill selects, a tint is now; no
+ *        white boxes, no shadows; the Care Guide as a sheet on one label column (round 4)
  * `?variant=` keeps the choice; ← and → cycle it.
  */
 import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
@@ -16,6 +18,7 @@ const VARIANTS = [
   ['now', 'main today'],
   ['A', 'Quiet paper'],
   ['B', "A's Today, status-first plant"],
+  ['C', 'B outlined, the guide as a sheet'],
 ] as const;
 export type Variant = (typeof VARIANTS)[number][0];
 

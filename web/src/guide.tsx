@@ -96,7 +96,7 @@ export function GuideSection({
   }
   // PROTOTYPE (web polish): B names fertilizing once, gives intervals only on the Care card, and
   // drops the Dormant column where the garden has no Dormant season.
-  const b = variant === 'B';
+  const b = variant === 'B' || variant === 'C';
   const seasons = b && months.growing === ALL_YEAR ? SEASONS.slice(0, 1) : SEASONS;
   const { profile, schedule } = guide;
   const now = guide.season.season;

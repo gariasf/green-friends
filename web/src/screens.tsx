@@ -399,7 +399,7 @@ export function PlantDetail({
           </span>
         )}
       </header>
-      {variant === 'B' ? (
+      {variant === 'B' || variant === 'C' ? (
         // PROTOTYPE (web polish): B puts the plant's status first, its photo in the rail.
         <div className="plant-b">
           <aside className="care-card" aria-labelledby="care-heading">
