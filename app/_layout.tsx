@@ -25,7 +25,8 @@ seedSpecies(db, bundledSpecies);
 
 /**
  * A native bottom sheet as tall as what it holds, with a grabber, for logging care and editing a
- * Care Event. Opaque: the iOS 26 glass default turns dark over the dimmed screen.
+ * Care Event. Opaque, on the warm raised surface: the iOS 26 glass default turns dark over the
+ * dimmed screen.
  */
 const SHEET = {
   presentation: 'formSheet',
@@ -62,6 +63,9 @@ export default function RootLayout() {
           ...headerFonts,
           contentStyle: { backgroundColor: colors.background },
           headerBackButtonDisplayMode: 'minimal',
+          // Pushed screens' bars on the ground, without iOS's hairline under them (spec #84).
+          headerStyle: { backgroundColor: colors.background },
+          headerShadowVisible: false,
         }}
       >
         <Stack.Screen

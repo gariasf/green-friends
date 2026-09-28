@@ -372,13 +372,14 @@ export function PlantPhoto({
 
 /**
  * What stands in for a missing photo (#55, variant D on prototype/quiet-icons): the first letter
- * of the plant's name in Young Serif, in the tint; nothing while it has no name yet.
+ * of the plant's name in Young Serif, in the tint, at 30% of the tile on a paler Ecru so photos
+ * lead the Garden (spec #84); nothing while it has no name yet.
  */
 export function Initial({ name, size }: { name: string; size: number }) {
   return (
     <Text
       allowFontScaling={false}
-      style={[font.title, { fontSize: size * 0.46, color: colors.tint }]}
+      style={[font.title, { fontSize: size * 0.3, color: colors.tint }]}
     >
       {name.trim().charAt(0).toUpperCase()}
     </Text>
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
   photo: {
     borderRadius: radius.inner,
     borderCurve: 'continuous',
-    backgroundColor: colors.tintSoft,
+    backgroundColor: colors.photoPlaceholder,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

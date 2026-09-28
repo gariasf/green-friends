@@ -110,24 +110,44 @@ export function dateLabel(day: string, today: string, weekday?: 'short'): string
 }
 
 /**
- * A care type's status in a Plant screen tile's short value ("5d", "17mo", "Today", "Paused", "—";
- * Overdue care's days, which the tile follows with "overdue"), and the same in words.
+ * A care type's status as a Plant screen tile shows it, saying which way it counts (spec #84): the
+ * value, with any words before and after it that the tile sets small ("in 3 d", "in 17 mo", "5 d
+ * overdue", "Today", "Paused", "—"); and the same in words, for VoiceOver.
  */
-export function tileValue(status: CareStatus, today: string): [short: string, spoken: string] {
+export function tileValue(
+  status: CareStatus,
+  today: string,
+): [short: { before?: string; value: string; after?: string }, spoken: string] {
   switch (status.state) {
     case 'unscheduled':
-      return ['—', 'no schedule'];
+      return [{ value: '—' }, 'no schedule'];
     case 'paused':
-      return ['Paused', 'paused for the Dormant season'];
+      return [{ value: 'Paused' }, 'paused for the Dormant season'];
     case 'due':
       return status.daysOverdue === 0
-        ? ['Today', 'due today']
-        : [`${status.daysOverdue}d`, `${plural(status.daysOverdue, 'day')} overdue`];
+        ? [{ value: 'Today' }, 'due today']
+        : [
+            { value: String(status.daysOverdue), after: 'd overdue' },
+            `${plural(status.daysOverdue, 'day')} overdue`,
+          ];
     case 'upcoming': {
       const [count, unit] = daysOrMonths(daysBetween(today, status.dueOn));
-      return [`${count}${unit === 'day' ? 'd' : 'mo'}`, `due in ${plural(count, unit)}`];
+      return [
+        { before: 'in', value: String(count), after: unit === 'day' ? 'd' : 'mo' },
+        `due in ${plural(count, unit)}`,
+      ];
     }
   }
+}
+
+/**
+ * A tile's second line: the day it's next Due while upcoming ("Tue, Sep 29", "Mar 7, 2028"),
+ * otherwise when it was last done, which explains a lateness.
+ */
+export function tileLine(status: CareStatus, lastDone: string | undefined, today: string): string {
+  if (status.state !== 'upcoming') return lastLine(lastDone, today);
+  const thisYear = status.dueOn.slice(0, 4) === today.slice(0, 4);
+  return dateLabel(status.dueOn, today, thisYear ? 'short' : undefined);
 }
 
 /** When a care type was last done, in the few words a tile has room for: "Last Sep 22". */

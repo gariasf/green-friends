@@ -34,8 +34,8 @@ export const colors = {
   surface: DynamicColorIOS(SURFACE),
   /** What you act on, raised off the background (`useRaised`): Today's cards, the tiles. */
   raised: DynamicColorIOS(RAISED),
-  /** Behind a sheet's content: opaque, and lifted in dark mode. */
-  sheet: Color.ios.systemBackground,
+  /** Behind a sheet's content: the raised surface, opaque and warm (spec #84), not iOS white. */
+  sheet: DynamicColorIOS(RAISED),
   /** Something floating above the screen, such as the undo toast. */
   floating: Color.ios.tertiarySystemBackground,
   /** Warm ink: cream rather than white in dark mode; Increase Contrast takes iOS's black and white. */
@@ -75,6 +75,11 @@ export const colors = {
    * as the app icon.
    */
   tintSoft: DynamicColorIOS(ECRU),
+  /**
+   * Behind a plant without a photo (spec #84): Ecru paled, so photos lead the Garden. The initial's
+   * tint reads 3.8:1 on it in light mode, 6.8:1 in dark; it's decorative, beside the plant's name.
+   */
+  photoPlaceholder: DynamicColorIOS({ light: '#e6dfcd', dark: '#2a261d' }),
   /**
    * Destructive actions: iOS's systemRed, in light mode its Increase Contrast shade, since the
    * default reads about 3.5:1 on a card (ticket #30).
@@ -131,6 +136,8 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
       ...base.colors,
       primary: dark ? MEDICI.dark : MEDICI.light,
       background: dark ? GROUND.dark : GROUND.light,
+      // Pushed screens' bars on the ground rather than iOS white (spec #84).
+      card: dark ? GROUND.dark : GROUND.light,
     },
   };
 }
@@ -189,9 +196,10 @@ export const font = {
  *   large title  34    Young Serif  a tab's navigation bar (Today, Garden, Settings)
  *   nav title    17    Nunito 600   a pushed screen's or a sheet's navigation bar
  *   title1       28    Young Serif  a plant's name on its screen
- *   title2       22    Young Serif  a sheet's title, a Care Guide card's heading, a cause's name,
- *                                   an empty state; a tile's value in Nunito 700 (font.bold)
- *   headline     17    Nunito 600   plant names in a card, section headings, a button's label
+ *   title2       22    Young Serif  a section's heading, a sheet's title, a Care Guide card's
+ *                                   heading, a cause's name, an empty state; a tile's value in
+ *                                   Nunito 700 (font.bold)
+ *   headline     17    Nunito 600   plant names in a card, form headings, a button's label
  *   body         17    Nunito 400   everything else
  *   subheadline  15    Nunito 400   second lines; 600 (font.semibold) for a care row's label
  *   footnote     13    Nunito 400   statuses, badges and "Last …" lines; 600 where they stand out
@@ -251,6 +259,11 @@ export const group = StyleSheet.create({
   },
   /** The hairline above every row of a group but its first. */
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.separator },
-  /** A section's heading, in sentence case, placed by its screen in line with what it heads. */
+  /** A form's heading (New plant, Edit plant), in sentence case, above the fields it heads. */
   header: { ...text.headline, color: colors.secondaryLabel },
+  /**
+   * A screen's section heading (Care, Care Log, Everything else, Symptoms), as the Web view's h2:
+   * Young Serif at title2 in label (spec #84). Placed by its screen in line with what it heads.
+   */
+  section: text.title2,
 });

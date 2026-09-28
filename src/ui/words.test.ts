@@ -10,7 +10,43 @@ import {
   plural,
   scheduleLine,
   seasonLine,
+  tileLine,
+  tileValue,
 } from './words';
+
+describe('Plant screen tiles', () => {
+  const today = '2026-09-28';
+  it('say which way they count, the unit apart from the number', () => {
+    expect(tileValue({ state: 'upcoming', dueOn: '2026-09-29' }, today)).toEqual([
+      { before: 'in', value: '1', after: 'd' },
+      'due in 1\u00a0day',
+    ]);
+    expect(tileValue({ state: 'upcoming', dueOn: '2028-03-07' }, today)[0]).toEqual({
+      before: 'in',
+      value: '17',
+      after: 'mo',
+    });
+    expect(tileValue({ state: 'due', dueOn: '2026-09-23', daysOverdue: 5 }, today)).toEqual([
+      { value: '5', after: 'd overdue' },
+      '5\u00a0days overdue',
+    ]);
+    expect(tileValue({ state: 'due', dueOn: today, daysOverdue: 0 }, today)[0]).toEqual({
+      value: 'Today',
+    });
+  });
+
+  it('say the next day while upcoming, the last one once Due', () => {
+    expect(tileLine({ state: 'upcoming', dueOn: '2026-09-29' }, '2026-09-22', today)).toMatch(
+      /^Tue, Sep 29$/,
+    );
+    expect(tileLine({ state: 'upcoming', dueOn: '2028-03-07' }, undefined, today)).toBe(
+      'Mar 7, 2028',
+    );
+    expect(
+      tileLine({ state: 'due', dueOn: '2026-09-23', daysOverdue: 5 }, '2026-08-24', today),
+    ).toBe('Last Aug 24');
+  });
+});
 
 describe('dueLine', () => {
   it('says what is Overdue, then what is Due today', () => {

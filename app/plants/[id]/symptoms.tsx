@@ -21,7 +21,7 @@ export default function SymptomsScreen() {
       <Stack.Screen options={{ title: SYMPTOMS_TITLE }} />
       {SYMPTOM_GROUPS.map(({ kind, title }) => (
         <View key={kind}>
-          <Text accessibilityRole="header" style={[group.header, styles.head]}>
+          <Text accessibilityRole="header" style={[group.section, styles.head]}>
             {title}
           </Text>
           <View style={group.box}>

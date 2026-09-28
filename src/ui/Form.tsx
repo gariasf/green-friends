@@ -8,7 +8,7 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import {
   Alert,
   InputAccessoryView,
@@ -17,8 +17,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
+  type ColorValue,
   type StyleProp,
   type TextInputProps,
   type ViewStyle,
@@ -27,15 +27,7 @@ import {
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
 import { Icon } from '@/src/ui/Icon';
-import {
-  accessibilitySize,
-  colors,
-  pressedStyle,
-  radius,
-  space,
-  target,
-  text,
-} from '@/src/ui/theme';
+import { colors, pressedStyle, radius, space, target, text } from '@/src/ui/theme';
 
 const NUMBER_PADS: TextInputProps['keyboardType'][] = ['number-pad', 'decimal-pad', 'numeric'];
 
@@ -86,8 +78,10 @@ export function Field({
 
 /**
  * When care happened, as a local calendar day (ADR-0005), labelled above like a Field: Today and
- * Yesterday in one tap, any earlier day from iOS's compact date picker, which always shows the day
- * chosen and never offers a future one. `optional` adds "Not sure", which picks null.
+ * Yesterday in one tap, and Earlier… for iOS's compact date picker, which always shows the day
+ * chosen and never offers a future one. `optional` adds "Not sure", which picks null. The picker
+ * waits behind Earlier… (spec #84), shown too while the day is neither chip's: it writes its date
+ * in the device region's format ("28 Sep 2026"), which the app's ("Sep 28") can't set.
  */
 export function WhenPicker({
   label,
@@ -96,7 +90,7 @@ export function WhenPicker({
   | { optional?: false; value: string; onChange: (day: string) => void }
   | { optional: true; value: string | null; onChange: (day: string | null) => void }
 )) {
-  const { fontScale } = useWindowDimensions();
+  const [earlier, setEarlier] = useState(false);
   const today = localDay(new Date());
   const quick = [
     ...(props.optional ? [{ label: 'Not sure', value: null }] : []),
@@ -107,51 +101,44 @@ export function WhenPicker({
     if (day !== null) props.onChange(day);
     else if (props.optional) props.onChange(null);
   };
-  const chips = <ChipGroup options={quick} value={props.value} onChange={pick} />;
-  // Sized by its SwiftUI content both ways (the community datetime-picker drop-in only matches it
-  // vertically, and collapses in a row). A Host inside a row that wraps loses its place (@expo/ui
-  // 57), so it sits beside what may wrap, never within it. Left to SwiftUI's safe areas, its content
-  // rides up by the keyboard's inset while a sheet's keyboard is up. With "Not sure" it shows today,
-  // dimmed; picking today there changes nothing, so it fires nothing: the Today chip does that.
-  const picker = (
-    <Host
-      matchContents
-      ignoreSafeArea="all"
-      seedColor={colors.tint}
-      style={props.value === null && styles.unset}
-    >
-      <DatePicker
-        selection={localNoon(props.value ?? today)}
-        range={{ end: localNoon(today) }}
-        onDateChange={(date) => pick(localDay(date))}
-        modifiers={[datePickerStyle('compact'), labelsHidden()]}
-      />
-    </Host>
-  );
+  const picking = earlier || !quick.some((option) => option.value === props.value);
   return (
     <View style={styles.fieldBlock}>
       <Text style={styles.label}>{label}</Text>
-      {/* Beside the chips, the pill would squeeze them until words break at accessibility text
-          sizes, so there it takes a line of its own, as it always does beside "Not sure".
-          ponytail: a font-scale threshold, not a measurement; measure the chips with onLayout if a
-          longer date ever squeezes them. */}
-      {props.optional || accessibilitySize(fontScale) ? (
-        <View style={styles.whenStack}>
-          {chips}
+      <View style={styles.whenStack}>
+        <ChipGroup
+          options={[...quick, { label: 'Earlier…', value: EARLIER }]}
+          value={picking ? EARLIER : props.value}
+          onChange={(value) => {
+            setEarlier(value === EARLIER);
+            if (value !== EARLIER) pick(value);
+          }}
+        />
+        {picking && (
           <View style={styles.pickerRow}>
-            <Text style={[text.subheadline, styles.grow]}>Or pick a day</Text>
-            {picker}
+            <Text style={[text.subheadline, styles.grow]}>Pick a day</Text>
+            {/* Sized by its SwiftUI content both ways (the community datetime-picker drop-in only
+                matches it vertically, and collapses in a row). A Host inside a row that wraps loses
+                its place (@expo/ui 57), so it sits beside what may wrap, never within it. Left to
+                SwiftUI's safe areas, its content rides up by the keyboard's inset while a sheet's
+                keyboard is up. */}
+            <Host matchContents ignoreSafeArea="all" seedColor={colors.tint}>
+              <DatePicker
+                selection={localNoon(props.value ?? today)}
+                range={{ end: localNoon(today) }}
+                onDateChange={(date) => pick(localDay(date))}
+                modifiers={[datePickerStyle('compact'), labelsHidden()]}
+              />
+            </Host>
           </View>
-        </View>
-      ) : (
-        <View style={styles.pickerRow}>
-          <View style={styles.grow}>{chips}</View>
-          {picker}
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
+
+/** The Earlier… chip's value: no day of its own, it shows the picker. */
+const EARLIER = 'earlier';
 
 /**
  * iOS's segmented control, picking one of `options` by index with a selection haptic. At its
@@ -245,11 +232,14 @@ export function TextButton({
   accessibilityHint,
   onPress,
   style,
+  color,
 }: {
   label: string;
   destructive?: boolean;
   disabled?: boolean;
   header?: boolean;
+  /** The label's colour where the tint won't read, such as white over the Plant screen's photo. */
+  color?: ColorValue;
   accessibilityLabel?: string;
   accessibilityHint?: string;
   onPress: () => void;
@@ -274,6 +264,7 @@ export function TextButton({
           styles.textButton,
           destructive && styles.destructive,
           disabled && styles.buttonLabelDisabled,
+          color !== undefined && { color },
         ]}
       >
         {label}
@@ -301,7 +292,6 @@ const styles = StyleSheet.create({
   grow: { flex: 1 },
   whenStack: { gap: space.s },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: space.s },
-  unset: { opacity: 0.45 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',

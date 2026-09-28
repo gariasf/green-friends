@@ -64,7 +64,14 @@ export function Row({
 }) {
   const content = (
     <>
-      <Icon name={symbol} size={20} color={tint} />
+      {/* An icon that isn't a care type's filled one draws bold, so its ink matches theirs in the
+          same column (spec #84). */}
+      <Icon
+        name={symbol}
+        size={20}
+        color={tint}
+        weight={tint !== WATER.hue && tint !== FEED.hue ? 'bold' : undefined}
+      />
       <View style={styles.rowText}>
         <Text style={text.headline}>{title}</Text>
         {body ? <Text style={text.subheadline}>{body}</Text> : null}
@@ -145,7 +152,7 @@ export function CareGroup({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHead}>
-        <Text accessibilityRole="header" style={group.header}>
+        <Text accessibilityRole="header" style={group.section}>
           Care
         </Text>
         <Text style={[text.footnote, styles.grow, styles.end]}>{seasonLine(season, today)}</Text>
@@ -273,7 +280,7 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
   );
 }
 
-/** A card on the background: an icon and a heading, then what it holds. */
+/** A card on the background, outlined as a group (spec #84): an icon and a heading, then what it holds. */
 function Card({
   symbol,
   tint,
@@ -391,6 +398,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.surface,
     borderCurve: 'continuous',
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.outline,
   },
   line: { flexDirection: 'row', alignItems: 'center', gap: space.s },
   body: { gap: space.l, paddingTop: space.l, paddingBottom: space.xxl },
