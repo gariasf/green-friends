@@ -1,126 +1,199 @@
-import { useState } from 'react';
-
-import type { SeasonOn } from '../../src/core/care';
+import { seasonOn, type SeasonOn } from '../../src/core/care';
 import {
   CARE_GUIDES_LIGHT,
   causeFact,
   symptomCauses,
   type CareGuide,
   type CareProfile,
+  type SeasonalSchedule,
 } from '../../src/core/careGuide';
+import type { Settings } from '../../src/core/settings';
 import {
+  ALL_YEAR,
+  CAUSE_COLUMNS,
   causeFactLine,
   causesIntro,
-  feedLine,
+  everyLine,
+  HOW_TO_WATER,
   lightLabel,
   lightWords,
   NO_CARE_GUIDE,
+  NO_SCHEDULE_LINE,
+  NOT_IN_YOUR_GARDEN,
   npkNote,
+  PAUSED,
   PET_WARNING,
-  seasonLine,
-  SOMETHING_WRONG,
   SYMPTOM_GROUPS,
   SYMPTOMS_TITLE,
-  yourSchedule,
 } from '../../src/ui/words';
 import { guides } from '../../src/ui/guides';
 import type { Garden } from './garden';
-import { Breadcrumbs, Section, Toggle } from './frame';
+import { Breadcrumbs, Section } from './frame';
 import { CareIcon, GuideIcon } from './icons';
 
 /**
- * The Care Guide as the phone's (spec #48, #51), read-only: the plant's Care group, the full
- * Care Guide, the Symptoms and one Symptom, each a page of its own at the plant's address plus
- * `/guide`, `/symptoms` or `/symptom/<id>`. The text is the bundled `assets/care-guides.json`.
+ * The Care Guide in the Web view (spec #48, #72), read-only: its section on the plant's page, the
+ * Symptoms and one Symptom, each at the plant's address plus `/symptoms` or `/symptom/<id>`. The
+ * text is the bundled `assets/care-guides.json`.
  */
 
-/** What a plant's page shows: the plant, or one of its Care Guide's pages. */
+/** What a plant's page shows: the plant (`guide` scrolled to its Care Guide), or its Symptoms. */
 export type PlantView =
   { page: 'plant' | 'guide' | 'symptoms' } | { page: 'symptom'; symptomId: string };
 
 type Season = SeasonOn['season'];
 
-/** The plant's Care group, under its care summary; without a profile, the nudge. */
-export function CareRows({
-  id,
+/** The months each Season runs in a garden, "Mar – Oct" / "Nov – Feb", or all year and never. */
+export function seasonMonths(
+  settings: Pick<Settings, 'growingStartMonth' | 'growingEndMonth'>,
+  restsInSummer: boolean,
+): Record<Season, string> {
+  const growing = Array.from(
+    { length: 12 },
+    (_, month) =>
+      seasonOn(`2026-${String(month + 1).padStart(2, '0')}-15`, settings, restsInSummer).season ===
+      'growing',
+  );
+  if (growing.every(Boolean)) return { growing: ALL_YEAR, dormant: NOT_IN_YOUR_GARDEN };
+  const name = (month: number) =>
+    new Date(2026, month, 15).toLocaleDateString(undefined, { month: 'short' });
+  const first = growing.findIndex((on, month) => on && !growing[(month + 11) % 12]);
+  const last = growing.findIndex((on, month) => on && !growing[(month + 1) % 12]);
+  return {
+    growing: `${name(first)} – ${name(last)}`,
+    dormant: `${name((last + 1) % 12)} – ${name((first + 11) % 12)}`,
+  };
+}
+
+const SEASONS = [
+  ['growing', 'Growing'],
+  ['dormant', 'Dormant'],
+] as const;
+
+/**
+ * The plant's Care Guide, with nothing to switch: Water and Feed by Season in two columns, each with
+ * the plant's interval and today's marked Now, then the rest in a fixed grid. Without a profile,
+ * the nudge.
+ */
+export function GuideSection({
   guide,
-  season,
-  today,
+  months,
 }: {
-  id: string;
   guide: CareGuide | null;
-  season: SeasonOn;
-  today: string;
+  months: Record<Season, string>;
 }) {
-  const profile = guide?.profile;
-  const now = season.season;
+  if (!guide) {
+    return (
+      <Section id="care-guide" title="Care Guide">
+        <p>
+          <strong>{NO_CARE_GUIDE.title}</strong>
+        </p>
+        <p className="quiet">{NO_CARE_GUIDE.line}</p>
+      </Section>
+    );
+  }
+  const { profile, schedule } = guide;
+  const now = guide.season.season;
+  const npk = npkNote(profile.fertilizer.type);
+  const rows = [
+    ['water', 'Water', profile.watering, schedule.water],
+    ['fertilize', 'Feed', profile.fertilizer, schedule.fertilize],
+  ] as const;
   return (
-    <Section title="Care Guide" note={seasonLine(season, today)}>
-      <ul className="group guide-rows">
-        {profile ? (
-          <>
-            <li>
-              <CareIcon type="water" />
-              <span className="grow">
-                <strong>Water</strong>
-                <span className="quiet">{profile.watering[now]}</span>
-              </span>
-            </li>
-            <li>
-              <CareIcon type="fertilize" />
-              <span className="grow">
-                <strong>Feed</strong>
-                <span className="quiet">{feedLine(profile, now)}</span>
-              </span>
-            </li>
-            <li>
-              <GuideIcon name="light" />
-              <span className="grow">
-                {/* The scale's label starts "Light:", so a screen reader hears it once. */}
-                <strong aria-hidden="true">Light</strong>
-                <LightScale light={profile.light} />
-              </span>
-            </li>
-            <li>
-              <a href={`#/plant/${id}/guide`}>
-                <GuideIcon name="guide" />
-                <strong className="grow">Full Care Guide</strong>
-                <Chevron />
-              </a>
-            </li>
-          </>
-        ) : (
-          <li>
-            <GuideIcon name="leaf" />
-            <span className="grow">
-              <strong>{NO_CARE_GUIDE.title}</strong>
-              <span className="quiet">{NO_CARE_GUIDE.line}</span>
-            </span>
-          </li>
+    <Section id="care-guide" title="Care Guide" note={profile.name}>
+      <table className="seasons">
+        <thead>
+          <tr>
+            <td />
+            {SEASONS.map(([season, label]) => (
+              <th key={season} scope="col" className={season === now ? 'now' : undefined}>
+                <strong>{label}</strong>
+                <span className="quiet">{months[season]}</span>
+                {season === now && <span className="now-pill">Now</span>}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([type, label, advice, interval]) => (
+            <tr key={type}>
+              <th scope="row">
+                <CareIcon type={type} />
+                {label}
+              </th>
+              {SEASONS.map(([season]) => (
+                <td key={season} className={season === now ? 'now' : undefined}>
+                  {advice[season]}
+                  <strong className="every">{seasonInterval(interval, season)}</strong>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="guide-grid">
+        <section>
+          <h3>
+            <CareIcon type="water" />
+            {HOW_TO_WATER}
+          </h3>
+          <p>{profile.watering.how}</p>
+        </section>
+        <section>
+          <h3>
+            <CareIcon type="fertilize" />
+            Fertiliser
+          </h3>
+          <p>{profile.fertilizer.type}</p>
+          {npk && <p className="quiet">{npk}</p>}
+        </section>
+        <section>
+          <h3>
+            <GuideIcon name="light" />
+            Light and warmth
+          </h3>
+          <LightScale light={profile.light} />
+          <p>{profile.light.text}</p>
+        </section>
+        <section>
+          <h3>
+            <GuideIcon name="soil" />
+            Soil
+          </h3>
+          <p>{profile.soil}</p>
+        </section>
+        {guide.careNotes && (
+          <section className="wide">
+            <h3>
+              <GuideIcon name="leaf" />
+              This plant
+            </h3>
+            <p>{guide.careNotes}</p>
+          </section>
         )}
-        <SomethingWrong id={id} />
-      </ul>
+        <section className="wide fact">
+          <h3>
+            <GuideIcon name="fact" />
+            Fun fact
+          </h3>
+          <p>
+            {guide.funFact.text}{' '}
+            <a className="link" href={guide.funFact.source} target="_blank" rel="noreferrer">
+              More on Wikipedia
+            </a>
+          </p>
+        </section>
+      </div>
     </Section>
   );
 }
 
-function SomethingWrong({ id }: { id: string }) {
-  return (
-    <li>
-      <a href={`#/plant/${id}/symptoms`}>
-        <GuideIcon name="symptom" />
-        <span className="grow">
-          <strong>Something wrong?</strong>
-          <span className="quiet">{SOMETHING_WRONG}</span>
-        </span>
-        <Chevron />
-      </a>
-    </li>
-  );
-}
-
-function Chevron() {
-  return <GuideIcon name="next" size={14} />;
+/** A seasonal interval in one Season: "Every 14 days", Paused, or no schedule at all. */
+export function seasonInterval(interval: SeasonalSchedule, season: Season): string {
+  if (interval.growing === null) return NO_SCHEDULE_LINE;
+  const days = interval[season];
+  return days === null ? PAUSED : everyLine(days, 'day');
 }
 
 /** The shared light scale with this profile's step filled in, and its step and direct sun in words. */
@@ -139,117 +212,7 @@ function LightScale({ light }: { light: CareProfile['light'] }) {
   );
 }
 
-/**
- * The full Care Guide: the profile and today's Season, a Growing | Dormant switch opening on
- * today's, then watering and fertiliser with the plant's real schedule, light and warmth, soil,
- * its care notes, Something wrong? and its Fun fact.
- */
-export function GuideView({
-  id,
-  name,
-  guide,
-  today,
-}: {
-  id: string;
-  name: string;
-  guide: CareGuide;
-  today: string;
-}) {
-  const [season, setSeason] = useState<Season>(guide.season.season);
-  const { profile, schedule } = guide;
-  const npk = npkNote(profile.fertilizer.type);
-  return (
-    <>
-      <Breadcrumbs trail={[['Garden', '#/garden'], [name, `#/plant/${id}`], ['Care Guide']]} />
-      <header className="page-head guide-head">
-        <div>
-          <h1 tabIndex={-1}>Care Guide</h1>
-          <p className="quiet">
-            {profile.name} · {seasonLine(guide.season, today)}
-          </p>
-        </div>
-        <Toggle
-          label="Season"
-          options={[
-            ['growing', 'Growing'],
-            ['dormant', 'Dormant'],
-          ]}
-          value={season}
-          onChange={setSeason}
-        />
-      </header>
-
-      <section className="guide-card">
-        <h2>
-          <CareIcon type="water" />
-          Watering
-        </h2>
-        <p>{profile.watering[season]}</p>
-        <p>{profile.watering.how}</p>
-        <p className="quiet">{yourSchedule(schedule.water)}</p>
-      </section>
-
-      <section className="guide-card">
-        <h2>
-          <CareIcon type="fertilize" />
-          Fertiliser
-        </h2>
-        <p>
-          <strong>{profile.fertilizer.type}</strong>
-        </p>
-        {npk && <p className="quiet">{npk}</p>}
-        <p>{profile.fertilizer[season]}</p>
-        <p className="quiet">{yourSchedule(schedule.fertilize)}</p>
-      </section>
-
-      <section className="guide-card">
-        <h2>
-          <GuideIcon name="light" />
-          Light and warmth
-        </h2>
-        <LightScale light={profile.light} />
-        <p>{profile.light.text}</p>
-      </section>
-
-      <section className="guide-card">
-        <h2>
-          <GuideIcon name="soil" />
-          Soil
-        </h2>
-        <p>{profile.soil}</p>
-      </section>
-
-      {guide.careNotes && (
-        <section className="guide-card">
-          <h2>
-            <GuideIcon name="leaf" />
-            This plant
-          </h2>
-          <p>{guide.careNotes}</p>
-        </section>
-      )}
-
-      <ul className="group guide-rows">
-        <SomethingWrong id={id} />
-      </ul>
-
-      <section className="guide-card">
-        <h2>
-          <GuideIcon name="fact" />
-          Fun fact
-        </h2>
-        <p>{guide.funFact.text}</p>
-        <p>
-          <a className="link" href={guide.funFact.source} target="_blank" rel="noreferrer">
-            More on Wikipedia
-          </a>
-        </p>
-      </section>
-    </>
-  );
-}
-
-/** What can be seen going wrong: leaves and stems, then pests. */
+/** What can be seen going wrong: leaves and stems beside pests. */
 export function SymptomsView({ id, name }: { id: string; name: string }) {
   return (
     <>
@@ -257,30 +220,32 @@ export function SymptomsView({ id, name }: { id: string; name: string }) {
       <header className="page-head">
         <h1 tabIndex={-1}>{SYMPTOMS_TITLE}</h1>
       </header>
-      {SYMPTOM_GROUPS.map(({ kind, title }) => (
-        <Section key={kind} title={title}>
-          <ul className="group guide-rows">
-            {guides.symptoms
-              .filter((symptom) => symptom.kind === kind)
-              .map((symptom) => (
-                <li key={symptom.id}>
-                  <a href={`#/plant/${id}/symptom/${symptom.id}`}>
-                    <GuideIcon name={kind === 'pest' ? 'pest' : 'leaf'} />
-                    <strong className="grow">{symptom.name}</strong>
-                    <Chevron />
-                  </a>
-                </li>
-              ))}
-          </ul>
-        </Section>
-      ))}
+      <div className="symptom-groups">
+        {SYMPTOM_GROUPS.map(({ kind, title }) => (
+          <Section key={kind} title={title}>
+            <ul className="links">
+              {guides.symptoms
+                .filter((symptom) => symptom.kind === kind)
+                .map((symptom) => (
+                  <li key={symptom.id}>
+                    <a href={`#/plant/${id}/symptom/${symptom.id}`}>
+                      <GuideIcon name={kind === 'pest' ? 'pest' : 'leaf'} />
+                      <span className="grow">{symptom.name}</span>
+                      <GuideIcon name="next" size={14} />
+                    </a>
+                  </li>
+                ))}
+            </ul>
+          </Section>
+        ))}
+      </div>
     </>
   );
 }
 
 /**
- * One Symptom: its causes, the profile's typical ones first, each with what the Care Log says
- * beside it, how to tell and what to do. Read-only, so nothing to log.
+ * One Symptom: its causes, the profile's typical ones first, each a row of what it is (with what
+ * the Care Log says), how to tell and what to do. Read-only, so nothing to log.
  */
 export function SymptomView({
   garden,
@@ -313,24 +278,39 @@ export function SymptomView({
         <h1 tabIndex={-1}>{symptom.name}</h1>
         <p className="quiet">{causesIntro(profile)}</p>
       </header>
-      {symptomCauses(symptom, profile).map((causeId) => {
-        const cause = guides.causes[causeId];
-        return (
-          <section key={causeId} className="guide-card">
-            <h3>{cause.name}</h3>
-            {cause.fact && (
-              <p className="fact quiet">
-                {causeFactLine(causeFact(garden.db, id, cause.fact, today), today)}
-              </p>
-            )}
-            <h4>How to tell</h4>
-            <p>{cause.tell}</p>
-            <h4>What to do</h4>
-            <p>{cause.fix}</p>
-            {cause.petWarning && <p className="pet-warning">{PET_WARNING}</p>}
-          </section>
-        );
-      })}
+      <table className="causes">
+        <thead>
+          <tr>
+            {CAUSE_COLUMNS.map((column) => (
+              <th key={column} scope="col">
+                {column}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {symptomCauses(symptom, profile).map((causeId) => {
+            const cause = guides.causes[causeId];
+            return (
+              <tr key={causeId}>
+                <th scope="row">
+                  <strong>{cause.name}</strong>
+                  {cause.fact && (
+                    <span className="quiet">
+                      {causeFactLine(causeFact(garden.db, id, cause.fact, today), today)}
+                    </span>
+                  )}
+                </th>
+                <td data-column={CAUSE_COLUMNS[1]}>{cause.tell}</td>
+                <td data-column={CAUSE_COLUMNS[2]}>
+                  {cause.fix}
+                  {cause.petWarning && <span className="pet-warning">{PET_WARNING}</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </>
   );
 }

@@ -79,8 +79,9 @@ async function load(): Promise<State> {
 type Route = { tab: 'today' } | { tab: 'garden' } | { tab: 'plant'; id: string; view: PlantView };
 
 /**
- * Where the fragment leads once a Pairing link's key has left it: `#/garden`, `#/plant/<id>`, its
- * Care Guide (`/guide`), Symptoms (`/symptoms`) or one Symptom (`/symptom/<id>`), else Today.
+ * Where the fragment leads once a Pairing link's key has left it: `#/garden`, `#/plant/<id>`, the
+ * same scrolled to its Care Guide (`/guide`), its Symptoms (`/symptoms`) or one Symptom
+ * (`/symptom/<id>`), else Today.
  */
 function route(fragment: string): Route {
   const plant = /^#\/plant\/([\w-]+)(?:\/(guide|symptoms)|\/symptom\/([\w-]+))?$/.exec(fragment);
@@ -158,11 +159,14 @@ function GardenView({
     }),
     [garden, today],
   );
-  // A new screen starts at its top, and a screen reader starts at its heading: the chosen plant's,
-  // else the screen's.
+  // A new screen starts at its top, or a plant's `/guide` at its Care Guide, and a screen reader
+  // starts at the screen's heading.
   useEffect(() => {
-    scrollTo(0, 0);
-    (document.querySelector<HTMLElement>('main h1') ?? document.querySelector('h1'))?.focus();
+    document.querySelector<HTMLElement>('main h1')?.focus({ preventScroll: true });
+    const guide = screen.tab === 'plant' && screen.view.page === 'guide';
+    const section = guide ? document.getElementById('care-guide') : null;
+    if (section) section.scrollIntoView();
+    else scrollTo(0, 0);
   }, [screen]);
 
   return (

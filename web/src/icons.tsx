@@ -1,5 +1,4 @@
 import {
-  BookOpenIcon,
   BugIcon,
   CaretRightIcon,
   DropIcon,
@@ -45,7 +44,7 @@ export function objectPosition(focus: Focus | null, frameAspect: number): string
 /**
  * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the phone's
  * placeholder while it has none: the name's initial in Young Serif, tinted, on Ecru. `size` is its
- * class: 40, 64 or 88 px, or `cell`, a Garden grid cell's width.
+ * class: 20, 40 or 64 px, or `cell`, a Garden grid cell's width.
  */
 export function Thumb({
   src,
@@ -57,7 +56,7 @@ export function Thumb({
   src: string | undefined;
   focus?: Focus | null;
   name: string;
-  size?: 'md' | 'lg' | 'xl' | 'cell';
+  size?: 'xs' | 'md' | 'lg' | 'cell';
   alt?: string;
 }) {
   if (src) {
@@ -118,7 +117,6 @@ export function GuideIcon({ name, size = 18 }: { name: keyof typeof GUIDE_ICONS;
 const GUIDE_ICONS = {
   light: SunIcon,
   soil: StackIcon,
-  guide: BookOpenIcon,
   symptom: StethoscopeIcon,
   leaf: LeafIcon,
   pest: BugIcon,

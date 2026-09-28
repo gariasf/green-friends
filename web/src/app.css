@@ -151,6 +151,11 @@ a {
   margin-top: 2.5rem;
 }
 
+/* Where `/guide` lands, with room above its heading. */
+#care-guide {
+  scroll-margin-top: 1.5rem;
+}
+
 .page-head + .section {
   margin-top: 0;
 }
@@ -414,9 +419,10 @@ a {
   height: 64px;
 }
 
-.thumb.xl {
-  width: 88px;
-  height: 88px;
+.thumb.xs {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
 }
 
 /* Decorative and hidden from screen readers, so tint on Ecru's 2.46:1 is allowed, as on the phone. */
@@ -434,8 +440,8 @@ a {
   font-size: 1.75rem;
 }
 
-.initial.xl {
-  font-size: 2.5rem;
+.initial.xs {
+  font-size: 0.7rem;
 }
 
 .app-mark {
@@ -628,40 +634,22 @@ kbd {
   background: var(--due-today);
 }
 
-/* Rows grouped on the background, and Today's cards in a grid. */
-.group,
+/* Today's cards in a grid, each a plant that Needs Attention with a line per care Due. */
 .cards,
-.due {
+.due,
+.links,
+.care-rows,
+.items,
+.calendar-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.group {
-  border-radius: var(--radius-surface);
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.group > * + * {
-  border-top: 1px solid var(--separator);
-}
-
-.group a {
-  display: block;
-  padding: 0.625rem 1rem;
-}
-
-.group a:hover,
-.card:hover {
-  background: var(--fill);
-}
-
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
   gap: 1rem;
-  margin-top: 1.25rem;
 }
 
 .card {
@@ -669,9 +657,13 @@ kbd {
   gap: 1rem;
   height: 100%;
   box-sizing: border-box;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   border-radius: var(--radius-surface);
   background: var(--raised);
+}
+
+.card:hover {
+  background: var(--fill);
 }
 
 .card-body {
@@ -683,33 +675,12 @@ kbd {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--separator);
+  margin-top: 0.375rem;
+  font-size: var(--text-sm);
 }
 
 .due li > :last-child {
   margin-left: auto;
-}
-
-/* Everything else: a plant a row, with its next care on the right. */
-.rows a {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-}
-
-.rows .name {
-  flex: 1;
-  min-width: 0;
-}
-
-.next {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  text-align: right;
 }
 
 .empty {
@@ -722,77 +693,10 @@ kbd {
   font-family: var(--font-title);
   font-size: var(--text-lg);
   font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-/* A plant's page, at the Plant pane's width until spec #72's columns: its photo beside its names. */
-.plant {
-  max-width: 44rem;
-}
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-.head h1 {
-  margin: 0;
-}
-
-/* The Plant pane's hero, as the phone's: the photo across the pane at 3:2, the names over its foot
-   on theme.ts's scrim, the badge over its top-left corner. */
-.hero {
-  position: relative;
-  margin-bottom: 0.5rem;
-}
-
-.hero img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  border-radius: var(--radius-surface);
-  object-fit: cover;
-}
-
-.hero-names {
-  position: absolute;
-  inset: auto 0 0;
-  padding: 6rem 1.5rem 1.25rem;
-  border-radius: 0 0 var(--radius-surface) var(--radius-surface);
-  background: linear-gradient(
-    to bottom,
-    rgb(0 0 0 / 0) 0%,
-    rgb(0 0 0 / 0.35) 45%,
-    rgb(0 0 0 / 0.7) 100%
-  );
-  color: #ffffff;
-}
-
-.hero-names h1 {
-  margin: 0 0 0.25rem;
-}
-
-.hero .scientific {
-  color: rgb(255 255 255 / 0.85);
-}
-
-.hero .badge {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  margin: 0;
-}
-
-/* The fill is translucent; over a photo it takes the surface. */
-.hero .badge:not(.toxic) {
-  background: var(--surface);
 }
 
 .badge {
   display: inline-block;
-  margin-top: 0.5rem;
   padding: 0.25rem 0.625rem;
   border-radius: var(--radius-pill);
   background: var(--fill);
@@ -805,15 +709,11 @@ kbd {
   color: var(--caution);
 }
 
-.care {
-  margin: 0 0 0.5rem;
-  background: var(--raised);
-}
-
 /* Raised off the ground, as the phone's useRaised: a warm two-part shadow in light mode; in dark
    mode the lighter surface does the lifting. */
 .card,
-.care {
+.care-card,
+.calendar td.today {
   box-shadow:
     0 1px 2px rgb(70 56 24 / 0.08),
     0 6px 18px rgb(70 56 24 / 0.09);
@@ -821,62 +721,149 @@ kbd {
 
 @media (prefers-color-scheme: dark) {
   .card,
-  .care {
+  .care-card,
+  .calendar td.today {
     box-shadow: none;
   }
 }
 
-.care > div {
+/*
+ * A plant's page (spec #72): its names in a row, then from 56rem two columns, the photo with the
+ * Care Guide and the Care Log under it, and the Care card beside it, sticky; below, one column with
+ * the Care card first.
+ */
+.plant-head {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  align-items: baseline;
   gap: 0.25rem 1rem;
-  padding: 0.625rem 1rem;
 }
 
-.care dt {
+.plant-head .badge {
+  align-self: center;
+}
+
+.plant-columns {
+  display: grid;
+  gap: 2rem 3rem;
+}
+
+@container (min-width: 56rem) {
+  .plant-columns {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+  }
+
+  .care-card {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+@container (max-width: calc(56rem - 1px)) {
+  .care-card {
+    order: -1;
+  }
+}
+
+.plant-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 30rem;
+  border-radius: var(--radius-surface);
+  object-fit: cover;
+}
+
+.plant-photo.band {
+  aspect-ratio: 3 / 1;
+  font-size: 4rem;
+}
+
+.care-card {
+  align-self: start;
+  padding: 1.25rem 1.5rem 1rem;
+  border-radius: var(--radius-surface);
+  background: var(--raised);
+}
+
+.care-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--separator);
+}
+
+.care-rows li {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-}
-
-.care dd {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  margin: 0;
-  text-align: right;
-}
-
-/* The Care Log: a Care Event a row, its symbol, what was done and its details, its day on the right. */
-.log li {
-  display: flex;
-  align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--separator);
 }
 
-.log .care-icon {
-  margin-top: 0.15rem;
-}
-
-.log strong,
-.log .grow .quiet {
+.care-rows .grow > *,
+.care-rows .status > * {
   display: block;
 }
 
-.log time {
+.care-rows .quiet {
   font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
-/* The Care Guide (spec #48): the Plant pane's Care group, the full guide and the Symptoms. */
+.care-rows .status {
+  text-align: right;
+}
+
+.facts {
+  margin: 0 0 0.5rem;
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--separator);
+  font-size: var(--text-sm);
+}
+
+.facts dt {
+  color: var(--secondary-label);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.wrong,
+.links a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: var(--radius-inner);
+}
+
+.wrong {
+  margin: 0 -0.5rem;
+}
+
+.wrong .grow > * {
+  display: block;
+}
+
+.wrong:hover,
+.links a:hover {
+  background: var(--fill);
+}
+
+/* The Care Guide (spec #48, #72): its icons' hues, the Season table and the fixed grid. */
 .guide-light {
   --hue: var(--sun);
 }
 
-.guide-guide,
 .guide-leaf,
 .guide-fact {
   --hue: var(--tint);
@@ -889,31 +876,144 @@ kbd {
   --hue: var(--secondary-label);
 }
 
-.guide-rows > li,
-.guide-rows a {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.625rem 1rem;
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.guide-rows > li:has(> a) {
-  padding: 0;
+th {
+  text-align: left;
 }
 
-.guide-rows a {
-  flex: 1;
-  align-items: center;
+/* Water and Feed by Season: today's column on the surface under a Now pill, the other quiet. */
+.seasons {
+  table-layout: fixed;
 }
 
-.guide-rows .care-icon {
-  flex: none;
-  margin-top: 0.15rem;
+.seasons :is(th, td) {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--separator);
+  vertical-align: top;
 }
 
-.guide-rows strong,
-.guide-rows .grow > .quiet {
+.seasons :is(thead td, tbody th) {
+  width: 7.5rem;
+  padding-left: 0;
+}
+
+.seasons thead th {
+  vertical-align: middle;
+  font-weight: 400;
+}
+
+.seasons thead th > * {
+  margin-right: 0.375rem;
+}
+
+.seasons tbody th {
+  font-weight: 600;
+}
+
+.seasons tbody th .care-icon {
+  margin-right: 0.5rem;
+  vertical-align: -0.15em;
+}
+
+.seasons .now {
+  background: var(--surface);
+}
+
+.seasons thead .now {
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+}
+
+.seasons tr:last-child .now {
+  border-radius: 0 0 var(--radius-inner) var(--radius-inner);
+}
+
+.seasons td:not(.now) {
+  color: var(--secondary-label);
+}
+
+.now-pill {
+  float: right;
+  padding: 0 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--tint);
+  color: var(--surface);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.every {
   display: block;
+  margin-top: 0.375rem;
+  font-size: var(--text-sm);
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 2.5rem;
+  margin-top: 1.5rem;
+}
+
+@container (max-width: 44rem) {
+  .guide-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seasons :is(th, td) {
+    padding: 0.75rem 0.625rem;
+  }
+
+  .seasons :is(thead td, tbody th) {
+    width: 4.5rem;
+  }
+
+  .seasons tbody th .care-icon {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .seasons thead th .quiet {
+    display: block;
+  }
+}
+
+.guide-grid > section {
+  padding: 1rem 0 1.25rem;
+  border-top: 1px solid var(--separator);
+}
+
+.guide-grid > .wide {
+  grid-column: 1 / -1;
+}
+
+.guide-grid h3,
+.causes tbody th strong {
+  margin: 0 0 0.375rem;
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.guide-grid h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.guide-grid p + p {
+  margin-top: 0.375rem;
+}
+
+.guide-grid > .fact {
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 0;
+  border-radius: var(--radius-inner);
+  background: var(--fill);
 }
 
 .scale {
@@ -939,62 +1039,121 @@ kbd {
   background: var(--sun);
 }
 
-.guide-head {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 1rem;
+/* The Care Log: a Care Event a row, its day, what was done, its details and how long ago. */
+.log td {
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--separator);
+  vertical-align: baseline;
 }
 
-.guide-card {
-  margin: 1rem 0;
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius-surface);
-  background: var(--surface);
+.log .day {
+  width: 8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.guide-card h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.5rem;
-  color: var(--label);
-  font-family: var(--font-title);
-  font-size: var(--text-lg);
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
+.log .what {
+  width: 10rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.guide-card h3 {
-  margin: 0 0 0.5rem;
-  font-family: var(--font-title);
-  font-size: var(--text-lg);
-  font-weight: 400;
+.log .what .care-icon {
+  margin-right: 0.375rem;
+  vertical-align: -0.15em;
 }
 
-.guide-card h4 {
-  margin: 0.75rem 0 0.125rem;
-  font-size: var(--text-base);
+.log .ago {
+  padding-right: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* The Symptoms, leaves and stems beside pests; a Symptom's causes as Cause | How to tell | What to do. */
+.symptom-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 3rem;
+  max-width: 64rem;
+}
+
+.symptom-groups .section {
+  margin-top: 0;
+}
+
+.links li + li {
+  border-top: 1px solid var(--separator);
+}
+
+.causes :is(th, td) {
+  padding: 1.25rem 2rem 1.25rem 0;
+  border-bottom: 1px solid var(--separator);
+  vertical-align: top;
+}
+
+.causes :is(th, td):last-child {
+  padding-right: 0;
+}
+
+.causes thead th {
+  padding-block: 0.5rem;
+  color: var(--secondary-label);
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
-.guide-card p + p {
-  margin-top: 0.5rem;
+.causes thead th:first-child {
+  width: 16rem;
 }
 
-.guide-card .fact {
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-inner);
-  background: var(--fill);
+.causes tbody th {
+  font-weight: 400;
+}
+
+.causes tbody th > * {
+  display: block;
+}
+
+.causes tbody th .quiet {
+  margin-top: 0.375rem;
+  font-size: var(--text-xs);
+}
+
+@container (max-width: 44rem) {
+  .symptom-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .symptom-groups .section + .section {
+    margin-top: 2.5rem;
+  }
+
+  .causes thead {
+    display: none;
+  }
+
+  .causes :is(tr, th, td) {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .causes tr {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--separator);
+  }
+
+  .causes td::before {
+    content: attr(data-column);
+    display: block;
+    margin-top: 0.75rem;
+    font-weight: 600;
+  }
 }
 
 .pet-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  display: block;
+  margin-top: 0.5rem;
   color: var(--caution);
   font-size: var(--text-sm);
 }
@@ -1002,6 +1161,167 @@ kbd {
 .link {
   color: var(--tint);
   font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/*
+ * Coming up: two weeks from Monday on the surface, past days on the ground, today raised with its
+ * number in a tint circle; below 40rem, the days that hold something as a list.
+ */
+.calendar {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+}
+
+.calendar th {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--separator);
+  color: var(--secondary-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.calendar td {
+  height: 9rem;
+  padding: 0.5rem 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.calendar td + td {
+  border-left: 1px solid var(--separator);
+}
+
+.calendar tr + tr td {
+  border-top: 1px solid var(--separator);
+}
+
+.calendar td.past {
+  background: var(--background);
+}
+
+.calendar td.today {
+  position: relative;
+  background: var(--raised);
+}
+
+.calendar .date {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.375rem;
+  font-size: var(--text-sm);
+}
+
+.calendar .num {
+  display: grid;
+  place-items: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar .past .num {
+  color: var(--secondary-label);
+}
+
+.calendar .today .num {
+  background: var(--tint);
+  color: var(--surface);
+}
+
+.today-label {
+  color: var(--tint);
+  font-weight: 700;
+}
+
+.items a {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.375rem;
+  border-radius: 8px;
+  font-size: var(--text-xs);
+}
+
+.items a:hover {
+  background: var(--fill);
+}
+
+.item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.items .done {
+  color: var(--secondary-label);
+}
+
+.items .done .thumb {
+  opacity: 0.6;
+}
+
+.check {
+  flex: none;
+  color: var(--tint);
+}
+
+.calendar-list {
+  display: none;
+}
+
+.calendar-list > li + li {
+  margin-top: 1rem;
+}
+
+.calendar-list h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.calendar-list .past h3 {
+  color: var(--secondary-label);
+}
+
+@container (max-width: 40rem) {
+  .calendar {
+    display: none;
+  }
+
+  .calendar-list {
+    display: block;
+  }
+
+  .calendar-list .items a {
+    padding-block: 0.375rem;
+    font-size: var(--text-sm);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: var(--text-xs);
+}
+
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .message {

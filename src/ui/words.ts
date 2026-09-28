@@ -4,7 +4,7 @@ import type { CareStatus, DueCare, NextCare, SeasonOn } from '../core/care';
 import type { CareProfile, CauseFact, SeasonalSchedule, Symptom } from '../core/careGuide';
 import type { CareEventType } from '../core/careLog';
 import { daysBetween, localNoon } from '../core/dates';
-import { CARE_TYPES, hasOverride, type Plant } from '../core/plants';
+import { CARE_TYPES, hasOverride, type CareType, type Plant } from '../core/plants';
 
 /** How each kind of Care Event reads, as a checklist row or a choice (label), and once logged (done). */
 export const CARE_WORDS: Record<CareEventType, { label: string; done: string }> = {
@@ -187,7 +187,7 @@ export function causeFactLine(fact: CauseFact, today: string): string {
 }
 
 /** How long ago a day was: "today", "yesterday", "6 days ago", "12 months ago". */
-function agoLine(day: string, today: string): string {
+export function agoLine(day: string, today: string): string {
   const ago = daysBetween(day, today);
   if (ago === 0) return 'today';
   if (ago === 1) return 'yesterday';
@@ -289,4 +289,56 @@ export function causesIntro(profile: CareProfile | null): string {
   return profile
     ? `The causes most likely for a ${profile.name.toLowerCase()} come first.`
     : 'The most common causes come first.';
+}
+
+/** A care type's interval, as the Web view's Care card and Season table show it: "Every 7 days". */
+export function everyLine(count: number, unit: 'day' | 'month'): string {
+  return `Every ${plural(count, unit)}`;
+}
+
+/** In place of an interval: none in this Season (Paused), or none at all. */
+export const PAUSED = 'Paused';
+export const NO_SCHEDULE_LINE = 'No schedule';
+
+/** The Web view's Season table, for a garden that grows all year: under Growing, and under Dormant. */
+export const ALL_YEAR = 'all year';
+export const NOT_IN_YOUR_GARDEN = 'not in your garden';
+
+/** The Care Guide's fixed grid's first heading. */
+export const HOW_TO_WATER = 'How to water';
+
+/** A Symptom's table's columns in the Web view. */
+export const CAUSE_COLUMNS = ['Cause', 'How to tell', 'What to do'] as const;
+
+/** The Care Log's count: "1 entry", "4 entries". */
+export function entries(count: number): string {
+  return `${count}\u00a0${count === 1 ? 'entry' : 'entries'}`;
+}
+
+/** Today's two-week calendar in the Web view, and how much of this week is still Due: "9 Due this week". */
+export const COMING_UP = 'Coming up';
+export function dueThisWeek(count: number): string {
+  return `${count} Due this week`;
+}
+
+/** Under Coming up, after a check and after a care icon. */
+export const CALENDAR_LEGEND = {
+  done: 'done',
+  coming: 'from each Care Schedule, as if each care is done on its day',
+};
+
+/**
+ * One care on Coming up's calendar, in full words for its title and a screen reader: "Watered:
+ * Monsti" (done), "Fertilize Monsti, 5 days overdue", "Water Monsti, due today", "Water Monsti".
+ */
+export function calendarItemWords(
+  kind: 'done' | 'due' | 'coming',
+  type: CareType,
+  name: string,
+  daysOverdue: number,
+): string {
+  if (kind === 'done') return `${CARE_WORDS[type].done}: ${name}`;
+  const what = `${CARE_WORDS[type].label} ${name}`;
+  if (kind === 'coming') return what;
+  return daysOverdue > 0 ? `${what}, ${plural(daysOverdue, 'day')} overdue` : `${what}, due today`;
 }

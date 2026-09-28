@@ -21,16 +21,18 @@ export function Breadcrumbs({ trail }: { trail: [label: string, href?: string][]
 
 /** A section: its heading, what it counts or says on the right, and a rule beneath both. */
 export function Section({
+  id,
   title,
   note,
   children,
 }: {
+  id?: string;
   title: string;
   note?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="section">
+    <section className="section" id={id}>
       <header className="section-head">
         <h2>{title}</h2>
         {note && <span className="quiet">{note}</span>}
