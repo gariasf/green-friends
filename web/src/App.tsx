@@ -17,6 +17,7 @@ import { loadSnapshot, storeKey, storedKey } from './snapshot';
 import { initialVariant, Switcher, type Variant } from './prototype-web-refine/shared';
 import { VariantA } from './prototype-web-refine/VariantA';
 import { VariantB } from './prototype-web-refine/VariantB';
+import { VariantB2 } from './prototype-web-refine/VariantB2';
 import { VariantC } from './prototype-web-refine/VariantC';
 import './prototype-web-refine/variants.css';
 
@@ -167,7 +168,7 @@ function Prototype({
     if (variant !== 'C') scrollTo(0, 0);
     document.querySelector<HTMLElement>('main h1, aside h1')?.focus({ preventScroll: true });
   }, [props.screen, variant]);
-  const Shell = { A: VariantA, B: VariantB, C: VariantC }[variant];
+  const Shell = { A: VariantA, B: VariantB, B2: VariantB2, C: VariantC }[variant];
   return <Shell {...props} photoUrl={photoUrl} />;
 }
 

@@ -267,13 +267,14 @@ export const VARIANTS = [
   ['now', 'main today'],
   ['A', 'Reading page'],
   ['B', 'Library'],
+  ['B2', 'Library, refined'],
   ['C', 'Table + inspector'],
 ] as const;
 export type Variant = (typeof VARIANTS)[number][0];
 
 export function initialVariant(): Variant {
   const asked = new URLSearchParams(location.search).get('variant');
-  return VARIANTS.find(([key]) => key === asked)?.[0] ?? 'A';
+  return VARIANTS.find(([key]) => key === asked)?.[0] ?? 'B2';
 }
 
 /** The floating bar: ← variant → , also on the ← and → keys. Dev builds only. */

@@ -1180,3 +1180,574 @@ main.a-today {
     box-shadow: none;
   }
 }
+
+/* ---------- B2: Library, refined ---------- */
+.b2-main {
+  min-width: 0;
+  padding: 2.25rem 3rem 6rem;
+  container-type: inline-size;
+}
+
+.b2-page {
+  max-width: 80rem;
+}
+
+.b2-head {
+  margin-bottom: 1.75rem;
+}
+
+.b2-head h1 {
+  margin: 0;
+}
+
+.b2-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.b2-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.b2-tools .p-search {
+  width: 16rem;
+}
+
+.b2-section {
+  margin-top: 2.5rem;
+}
+
+.b2-head + .b2-section {
+  margin-top: 0;
+}
+
+.b2-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--separator);
+}
+
+.vB2 .b2-section-head h2 {
+  margin: 0;
+}
+
+/* Today: Needs you, then the plan. */
+.b2-need {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.b2-need a {
+  display: flex;
+  gap: 1rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-surface);
+  background: var(--raised);
+  box-shadow:
+    0 1px 2px rgb(70 56 24 / 0.08),
+    0 6px 18px rgb(70 56 24 / 0.09);
+}
+
+.b2-need a:hover {
+  box-shadow:
+    0 1px 2px rgb(70 56 24 / 0.1),
+    0 10px 24px rgb(70 56 24 / 0.14);
+}
+
+.b2-due {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+  font-size: var(--text-sm);
+}
+
+.b2-cal {
+  overflow: hidden;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+}
+
+.b2-cal-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.b2-cal-days span {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--separator);
+  color: var(--secondary-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.b2-cal-row + .b2-cal-row:not(:nth-child(2)) .b2-cell {
+  border-top: 1px solid var(--separator);
+}
+
+.b2-cell {
+  min-width: 0;
+  min-height: 9rem;
+  padding: 0.5rem 0.5rem 0.75rem;
+}
+
+.b2-cell + .b2-cell {
+  border-left: 1px solid var(--separator);
+}
+
+.b2-cell.past {
+  background: var(--background);
+}
+
+.b2-cell.today {
+  background: var(--raised);
+}
+
+.b2-date {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.375rem;
+  font-size: var(--text-sm);
+}
+
+.b2-num {
+  display: grid;
+  place-items: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.past .b2-num {
+  color: var(--secondary-label);
+}
+
+.today .b2-num {
+  background: var(--tint);
+  color: var(--surface);
+}
+
+.b2-today {
+  color: var(--tint);
+  font-weight: 700;
+}
+
+.b2-cell ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.b2-item a {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.375rem;
+  border-radius: 8px;
+  font-size: var(--text-xs);
+}
+
+.b2-item a:hover {
+  background: var(--fill);
+}
+
+.b2-item .thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 0.7rem;
+}
+
+.b2-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.b2-item.overdue .b2-item-name {
+  color: var(--caution);
+  font-weight: 600;
+}
+
+.b2-item.due .b2-item-name {
+  color: var(--due-today);
+  font-weight: 600;
+}
+
+.b2-item.done {
+  color: var(--secondary-label);
+}
+
+.b2-item.done .thumb {
+  opacity: 0.6;
+}
+
+.b2-check {
+  flex: none;
+  color: var(--tint);
+}
+
+.b2-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: var(--text-xs) !important;
+}
+
+.b2-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.b2-legend svg {
+  color: var(--tint);
+}
+
+.b2-legend .care-icon {
+  color: var(--hue);
+}
+
+/* The plant: the Care card beside the photo, the reading beneath the photo. */
+.b2-cols {
+  display: grid;
+  gap: 0 3rem;
+}
+
+@container (min-width: 56rem) {
+  .b2-cols {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+  }
+}
+
+@container (max-width: 55.99rem) {
+  .b2-card {
+    order: -1;
+    position: static !important;
+    margin-bottom: 2rem;
+  }
+}
+
+.b2-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 30rem;
+  margin-bottom: 2.5rem;
+  border-radius: var(--radius-surface);
+  object-fit: cover;
+}
+
+.b2-nophoto {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 1;
+  background: var(--tint-soft);
+}
+
+.b2-card {
+  position: sticky;
+  top: 1.5rem;
+  align-self: start;
+  padding: 1.25rem 1.5rem 1rem;
+  border-radius: var(--radius-surface);
+  background: var(--raised);
+  box-shadow:
+    0 1px 2px rgb(70 56 24 / 0.08),
+    0 6px 18px rgb(70 56 24 / 0.09);
+}
+
+.b2-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--separator);
+}
+
+.vB2 .b2-card-head h2 {
+  margin: 0;
+}
+
+.b2-care {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.b2-care-label > *,
+.b2-care-status > * {
+  display: block;
+}
+
+.b2-care .quiet {
+  font-size: var(--text-xs);
+}
+
+.b2-care-status {
+  text-align: right;
+}
+
+.b2-facts {
+  margin: 0 0 0.5rem;
+}
+
+.b2-facts div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--separator);
+  font-size: var(--text-sm);
+}
+
+.b2-facts dt {
+  color: var(--secondary-label);
+}
+
+.b2-facts dd {
+  margin: 0;
+}
+
+/* The Care Guide: the Seasons as columns, then a fixed grid. */
+.b2-seasons > div {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) minmax(0, 1fr);
+  border-bottom: 1px solid var(--separator);
+}
+
+.b2-seasons > div > span {
+  padding: 0.875rem 1rem;
+}
+
+.b2-seasons [role='rowheader'] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding-left: 0;
+  font-weight: 600;
+}
+
+.b2-seasons [role='rowheader'] .care-icon {
+  margin-top: 0.2rem;
+}
+
+.b2-seasons .now {
+  background: var(--surface);
+}
+
+.b2-seasons-head .now {
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+}
+
+.b2-seasons > div:last-child .now {
+  border-radius: 0 0 var(--radius-inner) var(--radius-inner);
+}
+
+.b2-seasons [role='cell']:not(.now) {
+  color: var(--secondary-label);
+}
+
+.b2-seasons-head {
+  align-items: center;
+}
+
+.b2-seasons-head > span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.b2-now {
+  margin-left: auto;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--surface);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.b2-every {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.b2-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 2.5rem;
+  margin-top: 1.5rem;
+}
+
+@container (max-width: 44rem) {
+  .b2-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.b2-guide-grid > section {
+  padding: 1rem 0 1.25rem;
+  border-top: 1px solid var(--separator);
+}
+
+.b2-guide-grid > .wide {
+  grid-column: 1 / -1;
+}
+
+.b2-guide-grid h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.375rem;
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.b2-guide-grid p {
+  max-width: 65ch;
+}
+
+.b2-guide-grid p + p {
+  margin-top: 0.375rem;
+}
+
+.b2-guide-grid > .b2-fact {
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 0;
+  border-radius: var(--radius-inner);
+  background: var(--fill);
+}
+
+.b2-log {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.b2-log td {
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--separator);
+  vertical-align: baseline;
+}
+
+.b2-log-day {
+  width: 8rem;
+  white-space: nowrap;
+}
+
+.b2-log-what {
+  width: 10rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.b2-log-what .care-icon {
+  margin-right: 0.25rem;
+  vertical-align: -0.15em;
+}
+
+.b2-log-ago {
+  padding-right: 0 !important;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* The Symptoms in columns; a Symptom's causes as a table. */
+.b2-symptom-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3rem;
+  max-width: 64rem;
+}
+
+.b2-symptom-cols .b2-section {
+  margin-top: 0;
+}
+
+.b2-links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.b2-links li + li {
+  border-top: 1px solid var(--separator);
+}
+
+.b2-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: var(--radius-inner);
+}
+
+.b2-links a:hover {
+  background: var(--fill);
+}
+
+.b2-causes > div {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.b2-causes-head {
+  padding: 0.5rem 0 !important;
+  color: var(--secondary-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.b2-causes [role='rowheader'] strong {
+  display: block;
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.b2-causes [role='rowheader'] .quiet {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: var(--text-xs);
+}
+
+.b2-causes .pet-warning {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .b2-need a,
+  .b2-need a:hover,
+  .b2-card {
+    box-shadow: none;
+  }
+}
