@@ -11,20 +11,21 @@ const ECRU = { light: '#c0b490', dark: '#3a3526' };
 const OLIVE = '#d1bd1a';
 
 /**
- * The warm ground and its surfaces (spec #61), from Ecru's hue. The light ground is as pale as the
- * tint's 4.5:1 on it allows (4.54:1); dark mode's is a warm near-black, and its raised surface a
- * step lighter, as light as caution's 4.5:1 on it allows (4.62:1). `navigationTheme` repeats the
- * ground.
+ * The warm ground and its surfaces (spec #61), from Ecru's hue, with the Web view's warm neutrals
+ * (spec #76, ticket #80). The light ground is as pale as the tint's 4.5:1 on it allows (4.54:1), and
+ * a surface a tinted step above it (tint 4.75:1). Dark mode's ground is a warm near-black, and its
+ * raised surface two steps lighter, as light as caution's 4.5:1 on it allows (4.55:1).
+ * `navigationTheme` repeats the ground.
  */
-const GROUND = { light: '#f5f2e9', dark: '#15130f' };
-const SURFACE = { light: '#fffdf8', dark: '#211e19' };
-const RAISED = { light: '#fffdf8', dark: '#29251f' };
+const GROUND = { light: '#f5f2e9', dark: '#1a1713' };
+const SURFACE = { light: '#faf7ef', dark: '#221e19' };
+const RAISED = { light: '#fffdf8', dark: '#2b2620' };
 
 /**
- * The app's colours, the only ones it uses: the warm ground and surfaces above, iOS semantic
- * colours, which follow light and dark mode and Increase Contrast by themselves, the palette, and
- * the status colours. React Native draws text black unless told otherwise, so every Text takes its colour
- * from here, through `text`.
+ * The app's colours, the only ones it uses: the warm ground and surfaces above, warm ink and
+ * neutrals (spec #76), iOS semantic colours, which follow light and dark mode and Increase Contrast
+ * by themselves, the palette, and the status colours; `web/src/app.css` mirrors them. React Native
+ * draws text black unless told otherwise, so every Text takes its colour from here, through `text`.
  */
 export const colors = {
   /** Behind a screen's content. */
@@ -37,29 +38,39 @@ export const colors = {
   sheet: Color.ios.systemBackground,
   /** Something floating above the screen, such as the undo toast. */
   floating: Color.ios.tertiarySystemBackground,
-  label: Color.ios.label,
+  /** Warm ink: cream rather than white in dark mode; Increase Contrast takes iOS's black and white. */
+  label: DynamicColorIOS({
+    light: '#1f1c16',
+    dark: '#efe9dc',
+    highContrastLight: '#000000',
+    highContrastDark: '#ffffff',
+  }),
   /**
-   * Every second line. iOS's reads 3.3:1 on a light ground, so light mode takes a warm grey, 5.1:1
-   * on the ground and 5.6:1 on a surface; dark mode keeps iOS's, 5.5:1 or better, and its
-   * Increase Contrast shade.
+   * Every second line: a warm grey, 5.6:1 on the ground and 5.0:1 on a fill in light mode, and the
+   * cream at 64%, 6.0:1 or better on dark's surfaces, with an Increase Contrast shade.
    */
   secondaryLabel: DynamicColorIOS({
-    light: '#6b665c',
-    dark: 'rgba(235, 235, 245, 0.6)',
-    highContrastDark: 'rgba(235, 235, 245, 0.7)',
+    light: '#675f51',
+    dark: 'rgba(239, 233, 220, 0.64)',
+    highContrastDark: 'rgba(239, 233, 220, 0.74)',
   }),
   tertiaryLabel: Color.ios.tertiaryLabel,
   placeholder: Color.ios.placeholderText,
-  separator: Color.ios.separator,
-  /** Behind a chip, a field, or a pressed row. */
-  fill: Color.ios.tertiarySystemFill,
+  /** Warm hairlines, between rows. */
+  separator: DynamicColorIOS({
+    light: 'rgba(70, 56, 24, 0.12)',
+    dark: 'rgba(255, 240, 210, 0.10)',
+  }),
+  /** Behind a chip, a field, or a pressed row: warm, as the separator. */
+  fill: DynamicColorIOS({ light: 'rgba(120, 100, 60, 0.09)', dark: 'rgba(255, 240, 210, 0.07)' }),
   tint: DynamicColorIOS(MEDICI),
   /** Text on a tint fill: 5.08:1 in light mode, 7.14:1 in dark. */
   onTint: DynamicColorIOS({ light: '#ffffff', dark: '#0e2626' }),
   /**
-   * A warm ground behind a photo placeholder. Label reads 10.2:1 on it and secondaryLabel about
-   * 5.3:1, but tint only 2.46:1 in light mode, so never tinted text. The placeholder's tinted initial
-   * is decorative, beside the plant's name and hidden from VoiceOver, the same pair as the app icon.
+   * A warm ground behind a photo placeholder. Label reads 8.2:1 or better on it, but secondaryLabel
+   * only 3.0:1 and tint 2.46:1 in light mode, so never quiet or tinted text. The placeholder's
+   * tinted initial is decorative, beside the plant's name and hidden from VoiceOver, the same pair
+   * as the app icon.
    */
   tintSoft: DynamicColorIOS(ECRU),
   /**

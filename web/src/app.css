@@ -1,8 +1,6 @@
 /*
  * The app's colours, mirrored from src/ui/theme.ts, which stays their source: change one there,
- * then here. Until #80 carries them to the phone, the warm neutrals of spec #76 lead theme.ts:
- * --surface, --label, --secondary-label, --separator and --fill, and in dark mode --background and
- * --raised too. --outline, --hero-*, --now and --pill-* are the Web view's own.
+ * then here. --outline, --hero-*, --now and --pill-* are the Web view's own.
  *
  * One reason per surface (spec #76): an outline groups, a fill selects, a tint is now, and each
  * page's one hero (the Care card, Today's cards, the Garden's search) is raised on a firmer
