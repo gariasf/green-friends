@@ -1,12 +1,13 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deleteCareEvent } from '@/src/core/careLog';
 import { db } from '@/src/db/client';
 import { TextButton } from '@/src/ui/Form';
+import { useToastMotion } from '@/src/ui/motion';
 import { colors, font, radius, space, text } from '@/src/ui/theme';
 
 const UNDO_MS = 4000;
@@ -63,10 +64,11 @@ function useScreenReader(): boolean {
 function UndoToast({ message, onUndo }: { message: string; onUndo: () => void }) {
   // Inside a tab, the bottom inset already clears the tab bar.
   const insets = useSafeAreaInsets();
+  const { entering, exiting } = useToastMotion();
   return (
     <Animated.View
-      entering={FadeInDown}
-      exiting={FadeOutDown}
+      entering={entering}
+      exiting={exiting}
       style={[styles.toast, { bottom: insets.bottom + space.m }]}
     >
       <Text style={styles.toastText}>{message}</Text>
