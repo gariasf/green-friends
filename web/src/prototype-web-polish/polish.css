@@ -639,3 +639,31 @@
     border-bottom: 0;
   }
 }
+
+/*
+ * C: each page's one hero, as Claude's message field: near-white, a firmer outline, a barely-there
+ * shadow. The Care card on a plant's page, the Needs you cards on Today, the search on the Garden.
+ * Everything else stays outlined on the ground.
+ */
+:root[data-variant='C'] {
+  --hero-outline: rgb(70 56 24 / 0.22);
+  --hero-shadow: 0 1px 2px rgb(70 56 24 / 0.05), 0 4px 14px -8px rgb(70 56 24 / 0.14);
+
+  @media (prefers-color-scheme: dark) {
+    --hero-outline: rgb(255 240 210 / 0.22);
+    --hero-shadow: none;
+  }
+
+  .care-card,
+  .card,
+  .search {
+    border: 1px solid var(--hero-outline);
+    background: var(--raised);
+    box-shadow: var(--hero-shadow);
+  }
+
+  .card:hover {
+    background: var(--raised);
+    border-color: color-mix(in srgb, var(--hero-outline), var(--label) 15%);
+  }
+}
