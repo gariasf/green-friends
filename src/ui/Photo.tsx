@@ -1,8 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSheetIOS, Image, StyleSheet, Text, View, type ImageStyle } from 'react-native';
+import {
+  ActionSheetIOS,
+  Image,
+  Modal,
+  PanResponder,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type GestureResponderEvent,
+  type ImageStyle,
+} from 'react-native';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { findFocus } from '@/modules/photo-focus';
 import {
@@ -14,7 +27,7 @@ import {
 } from '@/src/core/photos';
 import { db } from '@/src/db/client';
 import { alertError, TextButton } from '@/src/ui/Form';
-import { colors, font, radius } from '@/src/ui/theme';
+import { colors, font, radius, space, text } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -69,10 +82,10 @@ export function useFindMissingFocus(): void {
 /** The long edge of a stored photo, in pixels (ADR-0001). */
 const LONG_EDGE = 1600;
 
-/** A picked photo, prepared for setPlantPhoto, with the Focal point found in it. */
-export type Picked = { prepared: string; focus: Focus | null };
+/** A picked photo, prepared for setPlantPhoto, with the Focal point it is framed on. */
+export type Picked = { prepared: string; focus: Focus };
 
-/** "Add photo", or "Replace photo" once there is one: choosePhoto as a button. */
+/** "Add photo", or "Replace photo" once there is one: usePhotoPicker as a button. */
 export function PhotoButton({
   hasPhoto,
   onPick,
@@ -80,27 +93,151 @@ export function PhotoButton({
   hasPhoto: boolean;
   onPick: (picked: Picked) => void;
 }) {
+  const picker = usePhotoPicker(onPick);
   return (
-    <TextButton
-      label={hasPhoto ? 'Replace photo' : 'Add photo'}
-      onPress={() => choosePhoto(onPick)}
-    />
+    <>
+      <TextButton label={hasPhoto ? 'Replace photo' : 'Add photo'} onPress={picker.choose} />
+      {picker.framing}
+    </>
   );
 }
 
 /**
- * Asks for a photo, prepares it for setPlantPhoto, finds its Focal point and hands both to
- * `onPick`, telling the user when picking or preparing fails. A point Vision can't find is none,
- * the photo framed on its centre.
+ * Picking a photo: `choose` asks for one, prepares it for setPlantPhoto and finds its Focal
+ * point, then `framing`, which the screen renders, shows Frame photo to correct the point (spec
+ * #67). Use Photo hands the photo and its point to `onPick`; Cancel drops it. There's no
+ * repositioning after that.
  */
-export async function choosePhoto(onPick: (picked: Picked) => void): Promise<void> {
+export function usePhotoPicker(onPick: (picked: Picked) => void): {
+  choose: () => void;
+  framing: ReactNode;
+} {
+  const [found, setFound] = useState<Picked | null>(null);
+  return {
+    choose: () => void choosePhoto(setFound),
+    framing: found && (
+      <FramePhoto
+        key={found.prepared}
+        found={found}
+        onCancel={() => {
+          deleteIfThere(new File(found.prepared));
+          setFound(null);
+        }}
+        onUse={(focus) => {
+          setFound(null);
+          onPick({ prepared: found.prepared, focus });
+        }}
+      />
+    ),
+  };
+}
+
+/**
+ * Asks for a photo, prepares it for setPlantPhoto, finds its Focal point and hands both to
+ * `onFound`, telling the user when picking or preparing fails. Where Vision finds no point (the
+ * simulator never does), the photo's centre.
+ */
+async function choosePhoto(onFound: (picked: Picked) => void): Promise<void> {
   try {
     const prepared = await pickPhoto();
     if (!prepared) return;
-    onPick({ prepared, focus: await findFocus(prepared).catch(() => null) });
+    const focus = await findFocus(prepared).catch(async () => {
+      const { width, height } = await Image.getSize(prepared);
+      return { x: 0.5, y: 0.5, aspect: width / height };
+    });
+    onFound({ prepared, focus });
   } catch (error) {
     alertError('Could not add the photo', error);
   }
+}
+
+/** The tallest the whole photo stands in Frame photo, as a share of the screen's height. */
+const FRAME_HEIGHT = 0.45;
+
+/**
+ * Frame photo (spec #67): the whole photo with a marker on its Focal point, which a drag or a
+ * tap moves, and beneath it how the Garden's square and the Plant screen's hero frame it.
+ */
+function FramePhoto({
+  found,
+  onCancel,
+  onUse,
+}: {
+  found: Picked;
+  onCancel: () => void;
+  onUse: (focus: Focus) => void;
+}) {
+  const [focus, setFocus] = useState(found.focus);
+  const window = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // The whole photo, as wide as the sheet allows, no taller than FRAME_HEIGHT of the screen.
+  const width = Math.min(window.width - 2 * space.l, window.height * FRAME_HEIGHT * focus.aspect);
+  const height = width / focus.aspect;
+  // A new responder when the photo's size changes, so a drag reads the size it's drawn at.
+  const pan = useMemo(() => {
+    const on = (at: number, length: number) => Math.min(1, Math.max(0, at / length));
+    const move = ({ nativeEvent }: GestureResponderEvent) =>
+      setFocus((point) => ({
+        ...point,
+        x: on(nativeEvent.locationX, width),
+        y: on(nativeEvent.locationY, height),
+      }));
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: move,
+      onPanResponderMove: move,
+      onPanResponderTerminationRequest: () => false,
+    });
+  }, [width, height]);
+  const heroWidth = 132;
+  const heroHeight = heroWidth * 0.92;
+  const square = heroHeight;
+
+  return (
+    // Full screen, as iOS's own crop is: a sheet's pan takes the drag away from the marker.
+    <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={onCancel}>
+      <View style={[styles.sheet, { paddingTop: insets.top }]}>
+        <View style={styles.bar}>
+          <TextButton label="Cancel" header onPress={onCancel} />
+          <Text accessibilityRole="header" style={text.headline}>
+            Frame photo
+          </Text>
+          <TextButton label="Use Photo" header onPress={() => onUse(focus)} />
+        </View>
+        <Text style={[text.subheadline, styles.hint]}>
+          Drag to the part of the plant to keep in view.
+        </Text>
+        <View
+          {...pan.panHandlers}
+          accessible
+          accessibilityLabel="Photo, framed where the plant was found"
+          style={[styles.whole, { width, height }]}
+        >
+          <Image source={{ uri: found.prepared }} style={StyleSheet.absoluteFill} />
+          <View
+            pointerEvents="none"
+            style={[styles.marker, { left: focus.x * width - 14, top: focus.y * height - 14 }]}
+          />
+        </View>
+        <View accessibilityElementsHidden style={styles.previews}>
+          <View style={styles.preview}>
+            <PlantPhoto uri={found.prepared} focus={focus} size={square} name="" />
+            <Text style={text.footnote}>In the Garden</Text>
+          </View>
+          <View style={styles.preview}>
+            <View style={[styles.hero, { width: heroWidth, height: heroHeight }]}>
+              <Image
+                source={{ uri: found.prepared }}
+                style={coverStyle(focus, heroWidth, heroHeight)}
+              />
+            </View>
+            <Text style={text.footnote}>On its page</Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 /**
@@ -228,6 +365,29 @@ export function Initial({ name, size }: { name: string; size: number }) {
 }
 
 const styles = StyleSheet.create({
+  sheet: { flex: 1, backgroundColor: colors.background, alignItems: 'center' },
+  bar: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: space.l,
+    paddingTop: space.s,
+  },
+  hint: { marginTop: space.s, marginBottom: space.l, marginHorizontal: space.l },
+  whole: { borderRadius: radius.inner, borderCurve: 'continuous', overflow: 'hidden' },
+  marker: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    borderWidth: 3,
+    borderColor: colors.onPhoto,
+    boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.4)',
+  },
+  previews: { flexDirection: 'row', gap: space.xxl, marginTop: space.xxl },
+  preview: { alignItems: 'center', gap: space.s },
+  hero: { borderRadius: radius.inner, borderCurve: 'continuous', overflow: 'hidden' },
   photo: {
     borderRadius: radius.inner,
     borderCurve: 'continuous',

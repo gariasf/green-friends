@@ -37,7 +37,7 @@ import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
 import { heroDrift, heroStretch, tickHaptic, useHeroEntering } from '@/src/ui/motion';
-import { choosePhoto, coverStyle, photoFiles, photoUri, PlantPhoto } from '@/src/ui/Photo';
+import { coverStyle, photoFiles, photoUri, PlantPhoto, usePhotoPicker } from '@/src/ui/Photo';
 import {
   accessibilitySize,
   colors,
@@ -82,6 +82,9 @@ export default function PlantScreen() {
     opacity: interpolate(offset.value, [turn - 48, turn], [0, 1], 'clamp'),
   }));
   const heroEntering = useHeroEntering();
+  const photoPicker = usePhotoPicker(({ prepared, focus }) =>
+    setPlantPhoto(db, photoFiles, id, prepared, focus),
+  );
   if (!plant) return null;
 
   const { care, events, photo, row, today } = plant;
@@ -90,12 +93,12 @@ export default function PlantScreen() {
   const lastDone = (type: CareType) => events.find((event) => event.type === type)?.occurredOn;
   const openLog = (type?: CareEventType) =>
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
-  const pickPhoto = () =>
-    choosePhoto(({ prepared, focus }) => setPlantPhoto(db, photoFiles, id, prepared, focus));
+  const pickPhoto = photoPicker.choose;
   const badge = plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />;
 
   return (
     <>
+      {photoPicker.framing}
       <Animated.ScrollView
         ref={scroll}
         // With a photo, the photo starts at the screen's top edge, under a clear navigation bar.
