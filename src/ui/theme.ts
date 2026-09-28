@@ -141,7 +141,7 @@ export const colors = {
  * Headers and the rest of the navigation chrome, for the device's appearance. Plain hex: parts of
  * the navigation library compute with these colours, which a semantic colour can't do.
  */
-export function navigationTheme(scheme: ColorSchemeName): Theme {
+export function navigationTheme(scheme: ColorSchemeName | null): Theme {
   const dark = scheme === 'dark';
   const base = dark ? DarkTheme : DefaultTheme;
   return {

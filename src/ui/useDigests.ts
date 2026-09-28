@@ -23,7 +23,7 @@ const pending: PendingNotifications = {
     }
   },
   remember(digest) {
-    if (digest) rememberedFile.write(JSON.stringify(digest));
+    if (digest) rememberedFile.writeSync(JSON.stringify(digest));
     else if (rememberedFile.exists) rememberedFile.delete();
   },
 };

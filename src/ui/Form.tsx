@@ -7,9 +7,9 @@ import {
   tag,
 } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
-import { router, useNavigation, type NativeStackHeaderItem } from 'expo-router';
+import { router, type NativeStackHeaderItem } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
-import { useId, useRef, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import {
   Alert,
   InputAccessoryView,
@@ -214,20 +214,27 @@ export function SheetBody({ children }: { children: ReactNode }) {
 /**
  * Asks before a form with changes goes (#90): its ⓧ, Cancel or Back, or a swipe, which iOS then
  * holds back, ask `title` with Discard or Keep editing. Returns `leave`, which closes the form
- * without asking once its work is saved.
+ * without asking once its work is saved. While it prevents, expo-router refuses every removal of
+ * the screen, the blocked action dispatched again included, so both ways out lift it first.
  */
 export function useConfirmDiscard(changed: boolean, title: string): () => void {
-  const navigation = useNavigation();
-  const saved = useRef(false);
-  usePreventRemove(changed, ({ data }) => {
-    if (saved.current) return navigation.dispatch(data.action);
+  const [leaving, setLeaving] = useState(false);
+  const disablePrevention = usePreventRemove(changed && !leaving, ({ repeat }) => {
     Alert.alert(title, undefined, [
       { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: () => {
+          setLeaving(true);
+          repeat();
+        },
+      },
     ]);
   });
   return () => {
-    saved.current = true;
+    setLeaving(true);
+    disablePrevention();
     router.back();
   };
 }

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -98,7 +98,7 @@ export function PressSink({
   children,
 }: {
   onPress: () => void;
-  style: ViewStyle;
+  style: ViewProps['style'];
   children: ReactNode;
 }) {
   const reduced = useReducedMotion();

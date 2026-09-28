@@ -102,7 +102,7 @@ function shareSheet(presenting: () => void): ShareSheet {
       if (folder.exists) folder.delete();
       folder.create();
       const zip = new File(folder, name);
-      zip.write(bytes);
+      await zip.write(bytes);
       presenting();
       await shareAsync(zip.uri);
     },

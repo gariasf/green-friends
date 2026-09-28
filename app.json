@@ -27,7 +27,6 @@
           "microphonePermission": false
         }
       ],
-      "./plugins/withSceneLifecycle",
       [
         "expo-splash-screen",
         {

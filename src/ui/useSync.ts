@@ -153,7 +153,7 @@ export const sync = createSync({
   appVersion: Constants.expoConfig?.version ?? 'unknown',
   status: storedStatus(),
   onStatus(status) {
-    statusFile.write(JSON.stringify(status));
+    statusFile.writeSync(JSON.stringify(status));
     listeners.forEach((listener) => listener());
   },
 });

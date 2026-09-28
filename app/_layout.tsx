@@ -1,4 +1,4 @@
-import { uuid } from 'expo-modules-core';
+import { uuid } from 'expo';
 import { router, Stack, ThemeProvider, type NativeStackNavigationOptions } from 'expo-router';
 import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
 import { useColorScheme, useWindowDimensions } from 'react-native';
