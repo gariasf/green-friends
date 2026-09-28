@@ -719,9 +719,6 @@ function SymptomsB2({ id }: { id: string }) {
     <>
       <header className="b2-head">
         <h1 tabIndex={-1}>{SYMPTOMS_TITLE}</h1>
-        <p className="quiet">
-          Pick what you see; the causes most likely for this plant come first.
-        </p>
       </header>
       <div className="b2-symptom-cols">
         {SYMPTOM_GROUPS.map(({ kind, title }) => (
