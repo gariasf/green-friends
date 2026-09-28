@@ -1,11 +1,10 @@
 import { CheckIcon } from '@phosphor-icons/react';
 
 import { localNoon } from '../../src/core/dates';
-import { CALENDAR_LEGEND, calendarItemWords, dayLabel, plantsNeedYou } from '../../src/ui/words';
+import { CALENDAR_LEGEND, calendarItemWords, dayLabel } from '../../src/ui/words';
 import { CareIcon, Thumb } from './icons';
 import type { PlanDay, PlanItem } from './plan';
 import type { PhotoUrl } from './screens';
-import { useVariant } from './prototype-web-polish/variant';
 
 /**
  * Coming up's calendar (spec #72): two weeks of seven days as a table, past days with what was
@@ -21,7 +20,6 @@ export function Calendar({
   today: string;
   photoUrl: PhotoUrl;
 }) {
-  const variant = useVariant();
   const weeks = [plan.slice(0, 7), plan.slice(7, 14)];
   return (
     <>
@@ -52,18 +50,7 @@ export function Calendar({
                         </span>
                       )}
                     </p>
-                    {/* PROTOTYPE (web polish): B points today at Needs you rather than repeat it. */}
-                    {variant === 'B' && when === 'today' && items.length > 0 ? (
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={() => document.getElementById('needs-you')?.scrollIntoView()}
-                      >
-                        {plantsNeedYou(new Set(items.map(({ plant }) => plant.id)).size)}
-                      </button>
-                    ) : (
-                      <Items items={items} photoUrl={photoUrl} />
-                    )}
+                    <Items items={items} photoUrl={photoUrl} />
                   </td>
                 );
               })}

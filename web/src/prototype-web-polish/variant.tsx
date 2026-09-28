@@ -3,8 +3,8 @@
  *   now  the design on main
  *   A    quiet paper: no rules under headings, warm neutrals, a tinted surface, near-white only
  *        with a shadow, serif section headings, less bold, one pill
- *   B    A, plus status before the photo, intervals once, no Dormant column when unused, one name
- *        for fertilizing, and Today's cell on the calendar not repeating Needs you
+ *   B    A's Today with the plant status first: the Care card before the photo, intervals once,
+ *        no Dormant column when unused, one name for fertilizing (the owner's pick, round 2)
  * `?variant=` keeps the choice; ← and → cycle it.
  */
 import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
@@ -15,7 +15,7 @@ import './polish.css';
 const VARIANTS = [
   ['now', 'main today'],
   ['A', 'Quiet paper'],
-  ['B', 'Quiet paper + status first'],
+  ['B', "A's Today, status-first plant"],
 ] as const;
 export type Variant = (typeof VARIANTS)[number][0];
 
