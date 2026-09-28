@@ -76,6 +76,14 @@ export const colors = {
    */
   tintSoft: DynamicColorIOS(ECRU),
   /**
+   * Behind a picked chip (spec #92): the tint paled, under ink, since tinted words read under 4.5:1
+   * on it. Ink reads 11.8:1 on it in light mode, cream 6.4:1 in dark.
+   */
+  tintFill: DynamicColorIOS({
+    light: 'rgba(65, 119, 119, 0.26)',
+    dark: 'rgba(127, 184, 184, 0.32)',
+  }),
+  /**
    * Behind a plant without a photo (spec #84): Ecru paled, so photos lead the Garden. The initial's
    * tint reads 3.8:1 on it in light mode, 6.8:1 in dark; it's decorative, beside the plant's name.
    */

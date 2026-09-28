@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, font, pressedStyle, radius, space, text } from '@/src/ui/theme';
 
-/** A selectable pill on a fill. */
+/** A selectable pill on a fill; picked, on a pale tint with its label in ink (spec #92). */
 export function Chip({
   label,
   selected,
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.fill,
   },
-  chipSelected: { backgroundColor: colors.tint },
+  chipSelected: { backgroundColor: colors.tintFill },
   label: { ...text.subheadline, color: colors.label },
-  labelSelected: { ...font.semibold, color: colors.onTint },
+  labelSelected: { ...font.semibold, color: colors.label },
 });

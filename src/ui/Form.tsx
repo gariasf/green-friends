@@ -248,7 +248,10 @@ export function CloseButton() {
   );
 }
 
-/** The one filled button that completes a form. */
+/**
+ * The one filled button that completes a form; outlined while it can't yet (spec #92), so it never
+ * reads as one more grey field.
+ */
 export function PrimaryButton({
   label,
   disabled = false,
@@ -400,7 +403,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.tint,
   },
-  buttonDisabled: { backgroundColor: colors.fill },
+  buttonDisabled: {
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: colors.outline,
+  },
   // Centred for when it wraps, at the largest text sizes.
   buttonLabel: { ...text.headline, color: colors.onTint, textAlign: 'center' },
   buttonLabelDisabled: { color: colors.tertiaryLabel },
