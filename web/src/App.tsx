@@ -13,6 +13,12 @@ import type { PlantView } from './guide';
 import { GardenPanes, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
+// PROTOTYPE (#71): the variants on a switch. Never merge.
+import { initialVariant, Switcher, type Variant } from './prototype-web-refine/shared';
+import { VariantA } from './prototype-web-refine/VariantA';
+import { VariantB } from './prototype-web-refine/VariantB';
+import { VariantC } from './prototype-web-refine/VariantC';
+import './prototype-web-refine/variants.css';
 
 type State =
   | { kind: 'loading' }
@@ -97,6 +103,7 @@ function route(fragment: string): Route {
 export function App() {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [screen, setScreen] = useState(() => route(location.hash));
+  const [variant, setVariant] = useState<Variant>(initialVariant);
   useEffect(() => {
     void load().then(setState);
     const onHashChange = () => {
@@ -121,13 +128,47 @@ export function App() {
     );
   }
   return (
-    <GardenView
-      garden={state.garden}
-      takenAt={state.takenAt}
-      pairKey={state.pairKey}
-      screen={screen}
-    />
+    <>
+      {variant === 'now' ? (
+        <GardenView
+          garden={state.garden}
+          takenAt={state.takenAt}
+          pairKey={state.pairKey}
+          screen={screen}
+        />
+      ) : (
+        <Prototype
+          key={variant}
+          variant={variant}
+          garden={state.garden}
+          takenAt={state.takenAt}
+          pairKey={state.pairKey}
+          screen={screen}
+        />
+      )}
+      <Switcher current={variant} onChange={setVariant} />
+    </>
   );
+}
+
+/** PROTOTYPE (#71): a variant's shell, with the photos and the focus a screen change moves. */
+function Prototype({
+  variant,
+  ...props
+}: {
+  variant: Exclude<Variant, 'now'>;
+  garden: Garden;
+  takenAt: Date | null;
+  pairKey: Uint8Array;
+  screen: Route;
+}) {
+  const photoUrl = usePhotoUrls(props.garden);
+  useEffect(() => {
+    if (variant !== 'C') scrollTo(0, 0);
+    document.querySelector<HTMLElement>('main h1, aside h1')?.focus({ preventScroll: true });
+  }, [props.screen, variant]);
+  const Shell = { A: VariantA, B: VariantB, C: VariantC }[variant];
+  return <Shell {...props} photoUrl={photoUrl} />;
 }
 
 const SYNCED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
