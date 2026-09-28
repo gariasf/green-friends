@@ -1,7 +1,7 @@
 import { uuid } from 'expo-modules-core';
 import { router, Stack, ThemeProvider } from 'expo-router';
 import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, useWindowDimensions } from 'react-native';
 
 import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
@@ -51,9 +51,13 @@ export default function RootLayout() {
   useDigests();
   useSync();
   useFindMissingFocus();
+  // React Native never measures text again when the text size changes under a running app, so
+  // cards keep the heights of the old size; drawing every screen anew at the new size fixes it.
+  const { fontScale } = useWindowDimensions();
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack
+        key={fontScale}
         screenOptions={{
           ...headerFonts,
           contentStyle: { backgroundColor: colors.background },
