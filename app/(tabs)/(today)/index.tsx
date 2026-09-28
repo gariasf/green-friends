@@ -108,14 +108,12 @@ export default function TodayScreen() {
 
 /**
  * Every plant's care state today (evaluateCare) and the day it is for, evaluated again after
- * writes (due-ness derives from several tables, and useLiveQuery re-runs on one) and on returning
- * to the foreground, where the day may have turned.
+ * writes (due-ness derives from several tables, and useLiveQuery re-runs on one), on returning to
+ * the foreground and at midnight, where the day turns.
  */
 function usePlantCare() {
   const [care, setCare] = useState(evaluateToday);
   const refresh = useCallback(() => setCare(evaluateToday()), []);
-  // ponytail: left open across midnight, Today shows yesterday until the next write or
-  // foregrounding; add a timer for the next local midnight if that ever matters.
   useAfterWritesOrForeground(refresh);
   return [care, refresh] as const;
 }

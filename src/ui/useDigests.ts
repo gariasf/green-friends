@@ -1,3 +1,4 @@
+import { File, Paths } from 'expo-file-system';
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 
@@ -13,7 +14,21 @@ const pending: PendingNotifications = {
     if (digests.length === 0 || !(await allowed())) return;
     await Promise.all(digests.map(schedule));
   },
+  // A file, as Sync's status is: the phone's own, gone with the app, and no database change.
+  remembered() {
+    try {
+      return rememberedFile.exists ? JSON.parse(rememberedFile.textSync()) : undefined;
+    } catch {
+      return undefined;
+    }
+  },
+  remember(digest) {
+    if (digest) rememberedFile.write(JSON.stringify(digest));
+    else if (rememberedFile.exists) rememberedFile.delete();
+  },
 };
+
+const rememberedFile = new File(Paths.document, 'digest.json');
 
 /**
  * Whether iOS lets the app notify, asked the first time there is something to remind about: an

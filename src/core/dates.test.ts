@@ -1,4 +1,4 @@
-import { daysBetween, localDay, localNoon, shiftDays, shiftMonths } from './dates';
+import { daysBetween, localDay, localNoon, msToNextDay, shiftDays, shiftMonths } from './dates';
 
 describe('calendar days', () => {
   test('localDay is the calendar day where the device is, not the UTC day', () => {
@@ -33,5 +33,12 @@ describe('calendar days', () => {
     expect(daysBetween('2026-09-26', '2026-09-28')).toBe(2);
     expect(daysBetween('2026-09-28', '2026-09-26')).toBe(-2);
     expect(daysBetween('2026-12-31', '2027-01-01')).toBe(1);
+  });
+
+  test('msToNextDay runs to the next local midnight, an hour short across the DST change', () => {
+    const hour = 60 * 60 * 1000;
+    expect(msToNextDay(new Date(2026, 8, 22, 23, 30))).toBe(hour / 2);
+    // Pacific/Auckland skips 02:00 to 03:00 on 2026-09-27.
+    expect(msToNextDay(new Date(2026, 8, 27, 1))).toBe(22 * hour);
   });
 });

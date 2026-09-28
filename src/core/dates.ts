@@ -22,6 +22,11 @@ export function localTime(at: Date): string {
   return `${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }
 
+/** How long from `at` until the next local midnight, when today turns into tomorrow. */
+export function msToNextDay(at: Date): number {
+  return new Date(at.getFullYear(), at.getMonth(), at.getDate() + 1).getTime() - at.getTime();
+}
+
 /** The day `days` after `day` (before, when negative). */
 export function shiftDays(day: string, days: number): string {
   const [year, month, date] = day.split('-').map(Number);

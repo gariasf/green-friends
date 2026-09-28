@@ -125,10 +125,14 @@ describe('Daily Digest projection', () => {
   /** A fake of the device's pending notifications. */
   function device() {
     let pending: Digest[] = [];
+    let kept: Pick<Digest, 'day' | 'time'> | undefined;
     const notifications: PendingNotifications = {
       replace: async (digests) => void (pending = digests),
+      remembered: () => kept,
+      remember: (digest) => void (kept = digest),
     };
-    return { notifications, pending: () => pending.map((digest) => digest.day) };
+    const first = () => pending[0] && `${pending[0].day} ${pending[0].time}`;
+    return { notifications, pending: () => pending.map((digest) => digest.day), first };
   }
 
   test('scheduling replaces what is pending with the digests planned at that moment', async () => {
@@ -143,5 +147,36 @@ describe('Daily Digest projection', () => {
     await scheduleDigests(db, phone.notifications, at(9, 29, 8, 30));
 
     expect(phone.pending()[0]).toBe('2026-10-01');
+  });
+
+  test('a digest shown today is not shown again when the digest time moves later', async () => {
+    const db = gardenDb();
+    const phone = device();
+    createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1)); // Overdue every day.
+    await scheduleDigests(db, phone.notifications, at(9, 29, 8));
+    expect(phone.first()).toBe('2026-09-29 09:00');
+
+    // Today's showed at 09:00; at 10:00 the digest moves to 18:00.
+    updateSettings(db, { digestTime: '18:00' }, at(9, 29, 10));
+    await scheduleDigests(db, phone.notifications, at(9, 29, 10));
+    expect(phone.first()).toBe('2026-09-30 18:00');
+
+    // Planned again later that day, today's still counts as shown; the next day is as ever.
+    await scheduleDigests(db, phone.notifications, at(9, 29, 12));
+    expect(phone.first()).toBe('2026-09-30 18:00');
+    await scheduleDigests(db, phone.notifications, at(9, 30, 8));
+    expect(phone.first()).toBe('2026-09-30 18:00');
+  });
+
+  test('moving the digest time later before today’s has shown moves today’s with it', async () => {
+    const db = gardenDb();
+    const phone = device();
+    createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
+    await scheduleDigests(db, phone.notifications, at(9, 29, 8));
+
+    updateSettings(db, { digestTime: '18:00' }, at(9, 29, 8, 30));
+    await scheduleDigests(db, phone.notifications, at(9, 29, 8, 30));
+
+    expect(phone.first()).toBe('2026-09-29 18:00');
   });
 });
