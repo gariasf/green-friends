@@ -16,6 +16,7 @@ import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
 import {
   alertError,
+  confirmItem,
   Field,
   optionalNumber,
   potSizeProblem,
@@ -112,19 +113,8 @@ export default function NewPlantScreen() {
       automaticallyAdjustKeyboardInsets
     >
       <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TextButton
-              label="Add"
-              header
-              bold
-              disabled={whyNot !== null}
-              // Why it's dimmed, for VoiceOver, which doesn't read the form's first line as it changes.
-              accessibilityHint={whyNot ?? undefined}
-              onPress={save}
-            />
-          ),
-        }}
+        // Why it's dimmed goes to VoiceOver too, which doesn't read the form's first line as it changes.
+        options={{ unstable_headerRightItems: () => [confirmItem('Add', save, whyNot)] }}
       />
       {whyNot && (
         <Text lineBreakStrategyIOS="standard" style={text.subheadline}>

@@ -1,5 +1,5 @@
 import { uuid } from 'expo-modules-core';
-import { router, Stack, ThemeProvider } from 'expo-router';
+import { router, Stack, ThemeProvider, type NativeStackNavigationOptions } from 'expo-router';
 import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
 import { useColorScheme, useWindowDimensions } from 'react-native';
 
@@ -7,9 +7,8 @@ import bundledSpecies from '@/assets/species.json';
 import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
-import { TextButton } from '@/src/ui/Form';
 import { useFindMissingFocus } from '@/src/ui/Photo';
-import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
+import { colors, font, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 import { useSync } from '@/src/ui/useSync';
 
@@ -35,6 +34,23 @@ const SHEET = {
   headerShown: false,
   contentStyle: { backgroundColor: colors.sheet },
 } as const;
+
+/**
+ * A form in a modal, New plant and Edit plant (spec #92): Cancel is iOS's own bar button, so it
+ * takes iOS 26's glass and padding, in ink like the back chevrons; the form's `useConfirmDiscard`
+ * asks first when it has changes. The form adds its confirm (`confirmItem`, src/ui/Form.tsx).
+ */
+const MODAL_FORM: NativeStackNavigationOptions = {
+  presentation: 'modal',
+  unstable_headerLeftItems: () => [
+    {
+      type: 'button',
+      label: 'Cancel',
+      labelStyle: { ...font.regular, color: colors.label },
+      onPress: () => router.back(),
+    },
+  ],
+};
 
 /** Each tab's title, as the tabs' layout labels it, by its route. */
 const TAB_TITLES: Record<string, string> = {
@@ -75,14 +91,8 @@ export default function RootLayout() {
             title: TAB_TITLES[getFocusedRouteNameFromRoute(route) ?? '(today)'],
           })}
         />
-        <Stack.Screen
-          name="plants/new"
-          options={{
-            title: 'New plant',
-            presentation: 'modal',
-            headerLeft: () => <TextButton label="Cancel" header onPress={() => router.back()} />,
-          }}
-        />
+        <Stack.Screen name="plants/new" options={{ ...MODAL_FORM, title: 'New plant' }} />
+        <Stack.Screen name="plants/[id]/edit" options={MODAL_FORM} />
         {/* The plant's photo leads the screen and its name follows, so the header has no title. */}
         <Stack.Screen name="plants/[id]/index" options={{ title: '' }} />
         <Stack.Screen name="plants/[id]/log" options={SHEET} />

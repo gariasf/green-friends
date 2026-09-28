@@ -7,7 +7,7 @@ import {
   tag,
 } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
-import { router, useNavigation } from 'expo-router';
+import { router, useNavigation, type NativeStackHeaderItem } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import { useId, useRef, type ReactNode } from 'react';
 import {
@@ -232,6 +232,28 @@ export function useConfirmDiscard(changed: boolean, title: string): () => void {
   };
 }
 
+/**
+ * A modal form's confirm, New plant's Add and Edit plant's Save (spec #92), as iOS's own prominent
+ * bar button, filled in `colors.confirm` under iOS's white label, greyed by iOS while there's a
+ * reason it can't, which VoiceOver hears as its hint.
+ */
+export function confirmItem(
+  label: string,
+  onPress: () => void,
+  whyNot: string | null,
+): NativeStackHeaderItem {
+  return {
+    type: 'button',
+    label,
+    variant: 'prominent',
+    tintColor: colors.confirm,
+    labelStyle: font.semibold,
+    disabled: whyNot !== null,
+    accessibilityHint: whyNot ?? undefined,
+    onPress,
+  };
+}
+
 /** Closes a sheet: iOS's grey ⓧ, top right. */
 export function CloseButton() {
   return (
@@ -282,15 +304,13 @@ export function PrimaryButton({
  * A button that is only its label, in the tint, in red when it destroys something, or grey while
  * disabled; `accessibilityLabel` names it for VoiceOver where the label alone is ambiguous, and
  * `accessibilityHint` says what it does where that isn't obvious. In a `header`, it is a 44 pt
- * target by its own size, its text growing no larger than the header's title; a modal's confirm
- * (New plant's Add) is `bold`, as iOS draws Done.
+ * target by its own size, its text growing no larger than the header's title.
  */
 export function TextButton({
   label,
   destructive = false,
   disabled = false,
   header = false,
-  bold = false,
   accessibilityLabel,
   accessibilityHint,
   onPress,
@@ -301,7 +321,6 @@ export function TextButton({
   destructive?: boolean;
   disabled?: boolean;
   header?: boolean;
-  bold?: boolean;
   /** The label's colour where the tint won't read, such as white over the Plant screen's photo. */
   color?: ColorValue;
   accessibilityLabel?: string;
@@ -326,7 +345,6 @@ export function TextButton({
         maxFontSizeMultiplier={header ? 1 : undefined}
         style={[
           styles.textButton,
-          bold && font.semibold,
           destructive && styles.destructive,
           disabled && styles.buttonLabelDisabled,
           color !== undefined && { color },

@@ -15,10 +15,10 @@ import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
 import {
   alertError,
+  confirmItem,
   Field,
   optionalNumber,
   potSizeProblem,
-  PrimaryButton,
   TextButton,
   useConfirmDiscard,
 } from '@/src/ui/Form';
@@ -30,8 +30,9 @@ import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 /**
  * A plant's details (spec #8): its Species, which a plant without one can gain (#31), its nickname
  * and Current Pot, per care type the Species default or an Override that shadows it (ADR-0003),
- * and Archive, Unarchive or Delete. Overrides stay through a change of Species. Leaving with
- * changes asks first; Archive and Unarchive save them (#90).
+ * and Archive, Unarchive or Delete. Overrides stay through a change of Species. A modal like New
+ * plant, with Cancel and Save in its header (spec #92); leaving with changes asks first, and
+ * Archive and Unarchive save them (#90).
  */
 export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<'/plants/[id]/edit'>();
@@ -107,7 +108,14 @@ export default function EditPlantScreen() {
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets
     >
-      <Stack.Screen options={{ title: displayName }} />
+      <Stack.Screen
+        options={{
+          title: displayName,
+          unstable_headerRightItems: () => [
+            confirmItem('Save', save, changed ? null : 'Nothing has changed yet.'),
+          ],
+        }}
+      />
       <Text accessibilityRole="header" style={styles.heading}>
         Species
       </Text>
@@ -179,8 +187,6 @@ export default function EditPlantScreen() {
         Care schedule
       </Text>
       {schedule.fields}
-
-      <PrimaryButton label="Save" onPress={save} />
 
       <View style={styles.actions}>
         {plant.archivedAt ? (

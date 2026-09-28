@@ -66,6 +66,12 @@ export const colors = {
   /** Behind a chip, a field, or a pressed row: warm, as the separator. */
   fill: DynamicColorIOS({ light: 'rgba(120, 100, 60, 0.09)', dark: 'rgba(255, 240, 210, 0.07)' }),
   tint: DynamicColorIOS(MEDICI),
+  /**
+   * A modal form's confirm in its header (spec #92), iOS's prominent bar button: Medici's light shade
+   * in both modes under iOS's own white label. iOS blends that label with the glass, so dark mode's
+   * paler tint under dark words read 1.9:1; white on this reads 4.7:1 as drawn.
+   */
+  confirm: MEDICI.light,
   /** Text on a tint fill: 5.08:1 in light mode, 7.14:1 in dark. */
   onTint: DynamicColorIOS({ light: '#ffffff', dark: '#0e2626' }),
   /**
