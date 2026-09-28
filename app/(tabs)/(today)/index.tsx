@@ -295,9 +295,10 @@ function CareCard({
 /** The plants that need nothing today, each with its next care, in a strip. */
 function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string }) {
   const { layout } = useListMotion();
+  const window = useWindowDimensions();
   // Text grows by fontScale at every size, so a plant this much wider wraps its words as it does
   // at the default size.
-  const width = 92 * useWindowDimensions().fontScale;
+  const width = peekWidth(window.width - space.l, 92 * window.fontScale, space.m, plants.length);
   return (
     <Animated.View layout={layout}>
       <Text accessibilityRole="header" style={[group.header, styles.restHeading]}>
@@ -343,6 +344,19 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
       </ScrollView>
     </Animated.View>
   );
+}
+
+/**
+ * The width of each plant in a strip with `room` to show them from its leading edge: at least
+ * `least`, and where more follow than fit, as wide as lets the last one on screen show only half,
+ * cut at the edge, so the strip plainly scrolls on (as the App Store's shelves do).
+ */
+function peekWidth(room: number, least: number, gap: number, count: number): number {
+  for (let shown = Math.floor((room + gap) / (least + gap)); shown > 0; shown--) {
+    const width = (room - shown * gap) / (shown + 0.5);
+    if (width >= least) return count > shown ? width : least;
+  }
+  return least;
 }
 
 const styles = StyleSheet.create({

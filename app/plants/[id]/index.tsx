@@ -4,10 +4,12 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import Animated, {
   interpolate,
   useAnimatedRef,
+  useAnimatedReaction,
   useAnimatedStyle,
   useReducedMotion,
   useScrollOffset,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { evaluateCare, plantSeasonOn, type CareStatus } from '@/src/core/care';
@@ -88,6 +90,14 @@ export default function PlantScreen() {
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(offset.value, [turn - 48, turn], [0, 1], 'clamp'),
   }));
+  // Once the photo has scrolled up under the bar, the bar takes the plant's name, as Apple
+  // Music's album pages do. Watched on the UI thread, so JavaScript hears only of the crossing.
+  useAnimatedReaction(
+    () => offset.value > turn,
+    (past, before) => {
+      if (past !== before) scheduleOnRN(setPastHero, past);
+    },
+  );
   const heroEntering = useHeroEntering();
   const photoPicker = usePhotoPicker(({ prepared, focus }) =>
     setPlantPhoto(db, photoFiles, id, prepared, focus),
@@ -110,12 +120,8 @@ export default function PlantScreen() {
         ref={scroll}
         // With a photo, the photo starts at the screen's top edge, under a clear navigation bar.
         contentInsetAdjustmentBehavior={uri ? 'never' : 'automatic'}
-        scrollEventThrottle={32}
-        // Once the photo has scrolled up under the bar, the bar turns opaque and takes the plant's
-        // name, as Apple Music's album pages do.
-        onScroll={
-          uri ? (event) => setPastHero(event.nativeEvent.contentOffset.y > turn) : undefined
-        }
+        // No scrollEventThrottle: Reanimated's default of 1 moves the photo every frame; 32 held
+        // its drift and stretch to 30 a second under 120 Hz scrolling.
         contentContainerStyle={[styles.content, uri && { paddingBottom: insets.bottom }]}
       >
         <Stack.Screen
