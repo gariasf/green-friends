@@ -61,6 +61,7 @@ import {
 } from './guide';
 import { CareIcon, GuideIcon, objectPosition, Thumb } from './icons';
 import { planDays } from './plan';
+import { useVariant } from './prototype-web-polish/variant';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
@@ -106,7 +107,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         <Empty title="All caught up" line="Nothing needs you today." />
       )}
       {plants.length > 0 && (
-        <Section title={NEEDS_YOU} note={plural(plants.length, 'plant')}>
+        <Section id="needs-you" title={NEEDS_YOU} note={plural(plants.length, 'plant')}>
           <ul className="cards">
             {plants.map((plant) => (
               <li key={plant.id}>
@@ -299,6 +300,7 @@ export function PlantDetail({
   view: PlantView;
   photoUrl: PhotoUrl;
 }) {
+  const variant = useVariant();
   const today = localDay(new Date());
   const plant = useMemo(() => {
     const care = evaluateCare(garden.db, today).find((candidate) => candidate.id === id);
@@ -344,6 +346,19 @@ export function PlantDetail({
 
   const photo = photoUrl(plant.photo);
   const pot = potLine(row.potSizeCm, row.soil);
+  const photoOf = (aspect: number) =>
+    photo ? (
+      <img
+        className="plant-photo"
+        src={photo}
+        alt={`Photo of ${name}`}
+        style={{ objectPosition: objectPosition(plant.focus, aspect) }}
+      />
+    ) : (
+      <div className="plant-photo initial band" aria-hidden="true">
+        {name.trim().charAt(0).toUpperCase()}
+      </div>
+    );
   return (
     <>
       <Breadcrumbs trail={[['Garden', '#/garden'], [name]]} />
@@ -356,20 +371,60 @@ export function PlantDetail({
           </span>
         )}
       </header>
-      <div className="plant-columns">
-        <div className="plant-main">
-          {photo ? (
-            <img
-              className="plant-photo"
-              src={photo}
-              alt={`Photo of ${name}`}
-              style={{ objectPosition: objectPosition(plant.focus, 16 / 9) }}
-            />
-          ) : (
-            <div className="plant-photo initial band" aria-hidden="true">
-              {name.trim().charAt(0).toUpperCase()}
-            </div>
-          )}
+      {variant === 'B' ? (
+        // PROTOTYPE (web polish): B puts the plant's status first, its photo in the rail.
+        <div className="plant-b">
+          <aside className="care-card" aria-labelledby="care-heading">
+            <header className="care-card-head">
+              <h2 id="care-heading">Care</h2>
+              <span className="quiet">{seasonLine(plant.season, today)}</span>
+            </header>
+            <ul className="care-rows">
+              {CARE_TYPES.map((type) => {
+                const status = plant.care[type];
+                const [, spoken] = tileValue(status, today);
+                const lastDone = events.find((event) => event.type === type)?.occurredOn;
+                const tone =
+                  status.state === 'due' ? (status.daysOverdue > 0 ? 'overdue' : 'due-today') : '';
+                return (
+                  <li key={type}>
+                    <CareIcon type={type} size={20} />
+                    <span className="grow">
+                      <strong>{CARE_WORDS[type].label}</strong>
+                      <span className="quiet">
+                        {intervalLine(type, plant.schedule, plant.season.season)}
+                      </span>
+                    </span>
+                    <span className="status">
+                      <span className={tone}>{sentence(spoken)}</span>
+                      <span className="quiet">{lastLine(lastDone, today)}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <dl className="facts">
+              <div>
+                <dt>Schedule</dt>
+                <dd>{whoseSchedule(row)}</dd>
+              </div>
+              {pot && (
+                <div>
+                  <dt>Pot</dt>
+                  <dd>{pot}</dd>
+                </div>
+              )}
+            </dl>
+            <a className="wrong" href={`#/plant/${id}/symptoms`}>
+              <GuideIcon name="symptom" />
+              <span className="grow">
+                <strong>Something wrong?</strong>
+                <span className="quiet">{SOMETHING_WRONG}</span>
+              </span>
+              <GuideIcon name="next" size={14} />
+            </a>
+          </aside>
+          <div className="plant-rail">{photoOf(4 / 5)}</div>
           <GuideSection guide={guide} months={plant.months} />
           <Section title="Care Log" note={entries(events.length)}>
             {events.length === 0 ? (
@@ -385,58 +440,78 @@ export function PlantDetail({
             )}
           </Section>
         </div>
+      ) : (
+        <div className="plant-columns">
+          <div className="plant-main">
+            {photoOf(16 / 9)}
+            <GuideSection guide={guide} months={plant.months} />
+            <Section title="Care Log" note={entries(events.length)}>
+              {events.length === 0 ? (
+                <p className="quiet">Nothing logged yet.</p>
+              ) : (
+                <table className="log">
+                  <tbody>
+                    {events.map((event) => (
+                      <CareLogRow key={event.id} event={event} today={today} />
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </Section>
+          </div>
 
-        <aside className="care-card" aria-labelledby="care-heading">
-          <header className="care-card-head">
-            <h2 id="care-heading">Care</h2>
-            <span className="quiet">{seasonLine(plant.season, today)}</span>
-          </header>
-          <ul className="care-rows">
-            {CARE_TYPES.map((type) => {
-              const status = plant.care[type];
-              const [, spoken] = tileValue(status, today);
-              const lastDone = events.find((event) => event.type === type)?.occurredOn;
-              const tone =
-                status.state === 'due' ? (status.daysOverdue > 0 ? 'overdue' : 'due-today') : '';
-              return (
-                <li key={type}>
-                  <CareIcon type={type} size={20} />
-                  <span className="grow">
-                    <strong>{CARE_WORDS[type].label}</strong>
-                    <span className="quiet">
-                      {intervalLine(type, plant.schedule, plant.season.season)}
+          <aside className="care-card" aria-labelledby="care-heading">
+            <header className="care-card-head">
+              <h2 id="care-heading">Care</h2>
+              <span className="quiet">{seasonLine(plant.season, today)}</span>
+            </header>
+            <ul className="care-rows">
+              {CARE_TYPES.map((type) => {
+                const status = plant.care[type];
+                const [, spoken] = tileValue(status, today);
+                const lastDone = events.find((event) => event.type === type)?.occurredOn;
+                const tone =
+                  status.state === 'due' ? (status.daysOverdue > 0 ? 'overdue' : 'due-today') : '';
+                return (
+                  <li key={type}>
+                    <CareIcon type={type} size={20} />
+                    <span className="grow">
+                      <strong>{CARE_WORDS[type].label}</strong>
+                      <span className="quiet">
+                        {intervalLine(type, plant.schedule, plant.season.season)}
+                      </span>
                     </span>
-                  </span>
-                  <span className="status">
-                    <span className={tone}>{sentence(spoken)}</span>
-                    <span className="quiet">{lastLine(lastDone, today)}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          <dl className="facts">
-            <div>
-              <dt>Schedule</dt>
-              <dd>{whoseSchedule(row)}</dd>
-            </div>
-            {pot && (
+                    <span className="status">
+                      <span className={tone}>{sentence(spoken)}</span>
+                      <span className="quiet">{lastLine(lastDone, today)}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <dl className="facts">
               <div>
-                <dt>Pot</dt>
-                <dd>{pot}</dd>
+                <dt>Schedule</dt>
+                <dd>{whoseSchedule(row)}</dd>
               </div>
-            )}
-          </dl>
-          <a className="wrong" href={`#/plant/${id}/symptoms`}>
-            <GuideIcon name="symptom" />
-            <span className="grow">
-              <strong>Something wrong?</strong>
-              <span className="quiet">{SOMETHING_WRONG}</span>
-            </span>
-            <GuideIcon name="next" size={14} />
-          </a>
-        </aside>
-      </div>
+              {pot && (
+                <div>
+                  <dt>Pot</dt>
+                  <dd>{pot}</dd>
+                </div>
+              )}
+            </dl>
+            <a className="wrong" href={`#/plant/${id}/symptoms`}>
+              <GuideIcon name="symptom" />
+              <span className="grow">
+                <strong>Something wrong?</strong>
+                <span className="quiet">{SOMETHING_WRONG}</span>
+              </span>
+              <GuideIcon name="next" size={14} />
+            </a>
+          </aside>
+        </div>
+      )}
     </>
   );
 }

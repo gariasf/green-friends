@@ -13,6 +13,8 @@ import type { PlantView } from './guide';
 import { GardenPage, PlantDetail, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
 import { loadSnapshot, storeKey, storedKey } from './snapshot';
+// PROTOTYPE (web polish): the variants on a switch. Never merge.
+import { Switcher } from './prototype-web-polish/variant';
 
 type State =
   | { kind: 'loading' }
@@ -112,6 +114,15 @@ export function App() {
     return () => removeEventListener('hashchange', onHashChange);
   }, []);
 
+  return (
+    <>
+      <Screen state={state} screen={screen} />
+      <Switcher />
+    </>
+  );
+}
+
+function Screen({ state, screen }: { state: State; screen: Route }) {
   if (state.kind === 'loading') return <main aria-busy="true" />;
   if (state.kind === 'message') {
     return (

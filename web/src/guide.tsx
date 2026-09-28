@@ -30,6 +30,7 @@ import { guides } from '../../src/ui/guides';
 import type { Garden } from './garden';
 import { Breadcrumbs, Section } from './frame';
 import { CareIcon, GuideIcon } from './icons';
+import { useVariant } from './prototype-web-polish/variant';
 
 /**
  * The Care Guide in the Web view (spec #48, #72), read-only: its section on the plant's page, the
@@ -82,6 +83,7 @@ export function GuideSection({
   guide: CareGuide | null;
   months: Record<Season, string>;
 }) {
+  const variant = useVariant();
   if (!guide) {
     return (
       <Section id="care-guide" title="Care Guide">
@@ -92,24 +94,32 @@ export function GuideSection({
       </Section>
     );
   }
+  // PROTOTYPE (web polish): B names fertilizing once, gives intervals only on the Care card, and
+  // drops the Dormant column where the garden has no Dormant season.
+  const b = variant === 'B';
+  const seasons = b && months.growing === ALL_YEAR ? SEASONS.slice(0, 1) : SEASONS;
   const { profile, schedule } = guide;
   const now = guide.season.season;
   const npk = npkNote(profile.fertilizer.type);
   const rows = [
     ['water', 'Water', profile.watering, schedule.water],
-    ['fertilize', 'Feed', profile.fertilizer, schedule.fertilize],
+    ['fertilize', b ? 'Fertilize' : 'Feed', profile.fertilizer, schedule.fertilize],
   ] as const;
   return (
     <Section id="care-guide" title="Care Guide" note={profile.name}>
-      <table className="seasons">
+      <table className={seasons.length > 1 ? 'seasons' : 'seasons single'}>
         <thead>
           <tr>
             <td />
-            {SEASONS.map(([season, label]) => (
-              <th key={season} scope="col" className={season === now ? 'now' : undefined}>
+            {seasons.map(([season, label]) => (
+              <th
+                key={season}
+                scope="col"
+                className={season === now && seasons.length > 1 ? 'now' : undefined}
+              >
                 <strong>{label}</strong>
                 <span className="quiet">{months[season]}</span>
-                {season === now && <span className="now-pill">Now</span>}
+                {season === now && seasons.length > 1 && <span className="now-pill">Now</span>}
               </th>
             ))}
           </tr>
@@ -121,10 +131,13 @@ export function GuideSection({
                 <CareIcon type={type} />
                 {label}
               </th>
-              {SEASONS.map(([season]) => (
-                <td key={season} className={season === now ? 'now' : undefined}>
+              {seasons.map(([season]) => (
+                <td
+                  key={season}
+                  className={season === now && seasons.length > 1 ? 'now' : undefined}
+                >
                   {advice[season]}
-                  <strong className="every">{seasonInterval(interval, season)}</strong>
+                  {!b && <strong className="every">{seasonInterval(interval, season)}</strong>}
                 </td>
               ))}
             </tr>

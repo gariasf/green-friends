@@ -12,7 +12,9 @@ export async function loadSnapshot(
   get: (url: string) => Promise<Response> = fetch,
 ): Promise<{ zip: Uint8Array; takenAt: Date | null } | null> {
   const { gardenId, encryptionKey } = await deriveSyncKeys(key, sha256);
-  const response = await get(`${RELAY_URL}/gardens/${gardenId}`);
+  // PROTOTYPE (web polish): the dev server proxies the relay, whose CORS allows only the deployed origin.
+  const relay = import.meta.env.DEV && get === fetch ? '/relay' : RELAY_URL;
+  const response = await get(`${relay}/gardens/${gardenId}`);
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`The relay answered HTTP ${response.status}`);
   const lastModified = response.headers.get('Last-Modified');
