@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { plantSeasonOn } from '@/src/core/care';
+import { localDay } from '@/src/core/dates';
 import {
   CARE_TYPES,
   hasOverride,
@@ -8,9 +10,11 @@ import {
   type CareSchedule,
   type CareType,
 } from '@/src/core/plants';
+import { db } from '@/src/db/client';
 import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
-import { Field, optionalNumber, Segmented } from '@/src/ui/Form';
-import { space, text } from '@/src/ui/theme';
+import { Field, optionalNumber, Segmented, wholeNumber } from '@/src/ui/Form';
+import { colors, font, space, text } from '@/src/ui/theme';
+import { everyLine, isAllYear, NO_SCHEDULE_LINE, scheduleLine } from '@/src/ui/words';
 
 /**
  * One care type's schedule as the form holds it: an Override while `own`, else the Species
@@ -25,15 +29,22 @@ type CareTypeForm = { own: boolean; growing: string; dormant: string };
  * so many or Paused; repotting every so many months. Each time an Override is switched on it
  * starts over, from the plant's own values where it has them, else from the defaults it shadows
  * then, as Edit plant's Species can change meanwhile. Gives the fields to show, the Override
- * columns they set (null for a care type left to its default), and why they can't be saved yet,
- * if they can't.
+ * columns they set (null for a care type left to its default), whether they differ from the
+ * plant's, and why they can't be saved yet, if they can't, in the form's words (#90).
  */
 export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | null) {
   const [form, setForm] = useState(() => startingSchedule(plant));
+  // A garden Growing all year has no Dormant season for a default to mention (#82, #90).
+  const [allYear] = useState(() => isAllYear(plantSeasonOn(db, null, localDay(new Date()))));
   const override = (type: CareType, interval: string) =>
     form[type].own ? optionalNumber(interval) : null;
-  // A blank Growing interval would clear the Override (ADR-0003), not keep an own schedule.
-  const blank = CARE_TYPES.find((type) => form[type].own && !form[type].growing.trim());
+  const overrides = {
+    wateringGrowingDays: override('water', form.water.growing),
+    wateringDormantDays: override('water', form.water.dormant),
+    fertilizingGrowingDays: override('fertilize', form.fertilize.growing),
+    fertilizingDormantDays: override('fertilize', form.fertilize.dormant),
+    repottingMonths: override('repot', form.repot.growing),
+  } satisfies CareSchedule;
 
   return {
     fields: CARE_TYPES.map((type) => (
@@ -42,6 +53,7 @@ export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | nu
         type={type}
         value={form[type]}
         defaults={defaults}
+        allYear={allYear}
         onChange={(value) =>
           setForm((current) => ({
             ...current,
@@ -56,28 +68,46 @@ export function useCareSchedule(plant: CareSchedule, defaults: CareSchedule | nu
         }
       />
     )),
-    overrides: {
-      wateringGrowingDays: override('water', form.water.growing),
-      wateringDormantDays: override('water', form.water.dormant),
-      fertilizingGrowingDays: override('fertilize', form.fertilize.growing),
-      fertilizingDormantDays: override('fertilize', form.fertilize.dormant),
-      repottingMonths: override('repot', form.repot.growing),
-    } satisfies CareSchedule,
-    problem: blank
-      ? `${CARE_COPY[blank].label}: enter how often, or pick ${defaults ? 'Species default' : 'None'}.`
-      : null,
+    overrides,
+    changed: (Object.keys(overrides) as (keyof CareSchedule)[]).some(
+      (column) => !Object.is(overrides[column], plant[column]),
+    ),
+    problem: scheduleProblem(form, defaults ? 'Species schedule' : 'None'),
   };
+}
+
+/**
+ * Why an own schedule can't be saved yet, or null: a Growing interval (repotting's only one) is a
+ * whole number, 1 or more, since a blank one would clear the Override (ADR-0003); a Dormant one is
+ * that or blank, for Paused. The core checks the same, in its own words.
+ */
+function scheduleProblem(form: Record<CareType, CareTypeForm>, orPick: string): string | null {
+  for (const type of CARE_TYPES) {
+    const { own, growing, dormant } = form[type];
+    if (!own) continue;
+    const { label } = CARE_COPY[type];
+    if (!growing.trim()) return `${label}: enter how often, or pick ${orPick}.`;
+    if (!wholeNumber(growing)) {
+      return `${label}: enter whole ${type === 'repot' ? 'months' : 'days'}, 1 or more.`;
+    }
+    if (dormant.trim() && !wholeNumber(dormant)) {
+      return `${label}: enter whole days for the Dormant season, or leave it blank.`;
+    }
+  }
+  return null;
 }
 
 function CareTypeSchedule({
   type,
   value,
   defaults,
+  allYear,
   onChange,
 }: {
   type: CareType;
   value: CareTypeForm;
   defaults: CareSchedule | null;
+  allYear: boolean;
   onChange: (value: CareTypeForm) => void;
 }) {
   const { label } = CARE_COPY[type];
@@ -85,20 +115,26 @@ function CareTypeSchedule({
     <View style={styles.careType}>
       <View style={styles.careTypeHead}>
         <CareSymbol type={type} size={18} />
-        <Text accessibilityRole="header" style={text.headline}>
+        {/* A care row's label, a step under the form's heading (#90). */}
+        <Text accessibilityRole="header" style={styles.careTypeLabel}>
           {label}
         </Text>
       </View>
       <Segmented
-        options={[defaults ? 'Species default' : 'None', 'Own schedule']}
+        options={[defaults ? 'Species schedule' : 'None', 'Own schedule']}
         selected={value.own ? 1 : 0}
         onChange={(index) => onChange({ ...value, own: index === 1 })}
       />
-      {!value.own && <Text style={text.subheadline}>{describeDefault(type, defaults)}</Text>}
+      {!value.own && (
+        <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
+          {describeDefault(type, defaults, allYear)}
+        </Text>
+      )}
       {value.own && type === 'repot' && (
         <Field
           label="Every"
           suffix="months"
+          placeholder="Required"
           value={value.growing}
           onChangeText={(growing) => onChange({ ...value, growing })}
           keyboardType="number-pad"
@@ -110,6 +146,7 @@ function CareTypeSchedule({
           <Field
             label="Growing season, every"
             suffix="days"
+            placeholder="Required"
             value={value.growing}
             onChangeText={(growing) => onChange({ ...value, growing })}
             keyboardType="number-pad"
@@ -124,7 +161,9 @@ function CareTypeSchedule({
             keyboardType="number-pad"
             accessibilityLabel={`${label}, Dormant season, days`}
           />
-          <Text style={text.footnote}>Blank pauses it in the Dormant season.</Text>
+          <Text lineBreakStrategyIOS="standard" style={text.footnote}>
+            Blank pauses it in the Dormant season.
+          </Text>
         </>
       )}
     </View>
@@ -148,23 +187,26 @@ function intervals(type: CareType, source: CareSchedule | null) {
   return { growing: asText(source?.[growing]), dormant: asText(source?.[dormant]) };
 }
 
-/** A care type's Species default in words; a plant with no Species has none. */
-function describeDefault(type: CareType, defaults: CareSchedule | null): string {
-  if (!defaults) return 'Never Due.';
+/**
+ * A care type's Species default in words, as the Care Guide says it ("Every 7 days, every 14 days
+ * in the Dormant season."); a plant with no Species has none.
+ */
+function describeDefault(type: CareType, defaults: CareSchedule | null, allYear: boolean): string {
   if (type === 'repot') {
-    return defaults.repottingMonths === null
-      ? 'Never.'
-      : `Every ${defaults.repottingMonths} months.`;
+    const months = defaults?.repottingMonths ?? null;
+    return `${months === null ? NO_SCHEDULE_LINE : everyLine(months, 'month')}.`;
   }
-  const growing = defaults[SEASONAL[type].growing];
-  const dormant = defaults[SEASONAL[type].dormant];
-  if (growing === null) return 'Never.';
-  return dormant === null
-    ? `Every ${growing} days, paused in the Dormant season.`
-    : `Every ${growing} days, every ${dormant} days in the Dormant season.`;
+  const growing = defaults?.[SEASONAL[type].growing] ?? null;
+  if (growing === null) return `${NO_SCHEDULE_LINE}.`;
+  const line = scheduleLine(
+    { growing, dormant: defaults?.[SEASONAL[type].dormant] ?? null },
+    allYear,
+  );
+  return `${line[0].toUpperCase()}${line.slice(1)}.`;
 }
 
 const styles = StyleSheet.create({
   careType: { gap: space.s },
   careTypeHead: { flexDirection: 'row', alignItems: 'center', gap: space.s },
+  careTypeLabel: { ...text.subheadline, ...font.semibold, color: colors.label },
 });

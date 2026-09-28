@@ -213,6 +213,13 @@ export const text = StyleSheet.create({
   footnote: { ...font.regular, fontSize: 13, color: colors.secondaryLabel },
 });
 
+/**
+ * How far a title2 may grow with Dynamic Type (a Text's `maxFontSizeMultiplier`): iOS's own Title 2
+ * grows from 22 to 56 pt, while React Native scales every size by body text's 3.57 (79 pt), which
+ * broke a sheet's title mid-word ("Repott / ed", #90).
+ */
+export const TITLE2_MAX_SCALE = 56 / 22;
+
 /** A navigation bar's titles in the app's type: every Stack's screenOptions spread these. */
 export const headerFonts = {
   headerTitleStyle: font.semibold,
@@ -231,8 +238,8 @@ export const target = StyleSheet.create({
 
 /**
  * Whether text is at one of iOS's accessibility sizes, where a row of controls that fits at every
- * standard size runs out of room: xxxLarge scales text by 1.35, the first accessibility size by
- * 1.64.
+ * standard size runs out of room: React Native scales text by 1.35 at xxxLarge, by 1.79 at the
+ * first accessibility size.
  */
 export function accessibilitySize(fontScale: number): boolean {
   return fontScale > 1.5;

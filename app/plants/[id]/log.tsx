@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -9,9 +9,17 @@ import { localDay } from '@/src/core/dates';
 import { getDisplayName } from '@/src/core/plants';
 import { db } from '@/src/db/client';
 import { CARE_COPY, useCareEventDetails } from '@/src/ui/CareEvent';
-import { alertError, CloseButton, PrimaryButton, Segmented, WhenPicker } from '@/src/ui/Form';
+import {
+  alertError,
+  CloseButton,
+  PrimaryButton,
+  Segmented,
+  SheetBody,
+  useConfirmDiscard,
+  WhenPicker,
+} from '@/src/ui/Form';
 import { taskHaptic, useSheetEntering } from '@/src/ui/motion';
-import { space, text } from '@/src/ui/theme';
+import { space, text, TITLE2_MAX_SCALE } from '@/src/ui/theme';
 
 /**
  * The log sheet (spec #22): logs any care type or a Note on any day up to today, a repot with its
@@ -39,23 +47,36 @@ export default function LogCareSheet() {
   // A Symptom's Log it as a Note fills the Note.
   const details = useCareEventDetails(type, { note });
   const enter = useSheetEntering();
+  // Only what was typed asks before it goes; a day is one tap to pick again.
+  const leave = useConfirmDiscard(
+    details.changed,
+    type === 'note' ? 'Discard this note?' : 'Discard this repot?',
+  );
 
   const log = () => {
+    if (details.problem) return alertError('Could not log it', new Error(details.problem));
     try {
       logCareEvent(db, { plantId: id, type, occurredOn: day, ...details.values });
       taskHaptic();
-      router.back();
+      leave();
     } catch (error) {
       alertError('Could not log it', error);
     }
   };
 
   return (
-    <View style={styles.sheet}>
+    <SheetBody>
       <View style={styles.header}>
-        <View style={styles.grow}>
+        <View
+          accessible
+          accessibilityRole="header"
+          accessibilityLabel={`Log care, ${displayName}`}
+          style={styles.grow}
+        >
           <Text style={text.footnote}>{displayName}</Text>
-          <Text style={text.title2}>Log care</Text>
+          <Text maxFontSizeMultiplier={TITLE2_MAX_SCALE} style={text.title2}>
+            Log care
+          </Text>
         </View>
         <CloseButton />
       </View>
@@ -79,12 +100,11 @@ export default function LogCareSheet() {
           onPress={log}
         />
       </Animated.View>
-    </View>
+    </SheetBody>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { gap: space.l, padding: space.xl, paddingTop: space.xxl },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.m },
   grow: { flex: 1 },
   part: { gap: space.l },

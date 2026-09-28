@@ -205,15 +205,19 @@ describe('causeFact', () => {
     const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
     logCareEvent(db, { plantId: plant.id, type: 'water', occurredOn: '2026-09-16' });
 
+    // With today's Season, which says whether a Dormant interval applies at all.
+    const season = { season: 'growing', startsOn: '2026-03-01' };
     expect(causeFact(db, plant.id, 'watering', '2026-09-22')).toEqual({
       kind: 'watering',
       lastOn: '2026-09-16',
       schedule: { growing: 7, dormant: 14 },
+      season,
     });
     expect(causeFact(db, plant.id, 'fertilizing', '2026-09-22')).toEqual({
       kind: 'fertilizing',
       lastOn: null,
       schedule: { growing: 30, dormant: null },
+      season,
     });
   });
 

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import type { ColorValue } from 'react-native';
 
 import type { CareEvent, CareEventType } from '@/src/core/careLog';
-import { Field, optionalNumber } from '@/src/ui/Form';
+import { Field, optionalNumber, potSizeProblem } from '@/src/ui/Form';
 import { Icon, type IconName } from '@/src/ui/Icon';
 import { colors } from '@/src/ui/theme';
 import { CARE_WORDS } from '@/src/ui/words';
@@ -33,8 +33,9 @@ export function CareSymbol({ type, size }: { type: CareEventType; size: number }
 /**
  * The form for what a Care Event of `type` records beside its day, a Note's text or a repot's new
  * pot size and soil, filled from `event` when editing one. Gives the fields to show, their values
- * for logCareEvent or editCareEvent (undefined where the type records nothing), and whether they
- * are complete: a Note needs text.
+ * for logCareEvent or editCareEvent (undefined where the type records nothing), whether they are
+ * complete (a Note needs text), whether they've changed from `event`, and why a pot size can't be
+ * saved, if it can't.
  */
 export function useCareEventDetails(
   type: CareEventType,
@@ -82,5 +83,11 @@ export function useCareEventDetails(
       soil: type === 'repot' ? soil : undefined,
     },
     complete: type !== 'note' || note.trim() !== '',
+    changed:
+      type === 'note'
+        ? note !== (event?.note ?? '')
+        : type === 'repot' &&
+          (potSizeCm !== (event?.potSizeCm?.toString() ?? '') || soil !== (event?.soil ?? '')),
+    problem: type === 'repot' ? potSizeProblem(potSizeCm) : null,
   };
 }

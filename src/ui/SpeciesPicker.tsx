@@ -9,6 +9,7 @@ import { scientificBeneath } from '@/src/ui/words';
 import {
   accessibilitySize,
   colors,
+  font,
   group,
   pressedStyle,
   radius,
@@ -56,7 +57,7 @@ export function SpeciesSearch({
             onPress={() => onPick(s)}
           >
             <Text style={text.body}>{s.colloquialName}</Text>
-            {scientific && <Text style={text.subheadline}>{scientific}</Text>}
+            {scientific && <Text style={styles.scientific}>{scientific}</Text>}
           </Pressable>
         );
       })}
@@ -74,16 +75,24 @@ export function SpeciesSearch({
   );
 }
 
-/** The Species picked (or its absence), with the action that changes it. */
+/**
+ * The Species picked (or its absence), with the action that changes it: under a Species' name its
+ * scientific name, in italics as everywhere else, or else a line about the plant's schedule;
+ * `actionLabel` names the action for VoiceOver ("Change species").
+ */
 export function PickedSpecies({
   title,
+  scientific,
   subtitle,
   action,
+  actionLabel,
   onAction,
 }: {
   title: string;
-  subtitle: string | null;
+  scientific?: string | null;
+  subtitle?: string;
   action: string;
+  actionLabel?: string;
   onAction: () => void;
 }) {
   // Beside the action, the title breaks mid-word at accessibility text sizes, so there it stacks.
@@ -92,15 +101,21 @@ export function PickedSpecies({
     <View style={[styles.picked, stacked && styles.pickedStacked]}>
       <View style={!stacked && styles.grow}>
         <Text style={text.body}>{title}</Text>
-        {subtitle && <Text style={text.subheadline}>{subtitle}</Text>}
+        {scientific && <Text style={styles.scientific}>{scientific}</Text>}
+        {subtitle && (
+          <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
+            {subtitle}
+          </Text>
+        )}
       </View>
-      <TextButton label={action} onPress={onAction} />
+      <TextButton label={action} accessibilityLabel={actionLabel} onPress={onAction} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   grow: { flex: 1 },
+  scientific: { ...text.subheadline, ...font.italic },
   // One line tall for a Species known by its scientific name; still a 44 pt target.
   match: { minHeight: 44, justifyContent: 'center', paddingVertical: space.s },
   picked: {

@@ -97,7 +97,13 @@ export function symptomCauses(symptom: Symptom, profile: CareProfile | null): st
 
 /** What the Care Log says beside a cause, never claiming it is the cause. */
 export type CauseFact =
-  | { kind: 'watering' | 'fertilizing'; lastOn: string | null; schedule: SeasonalSchedule }
+  | {
+      kind: 'watering' | 'fertilizing';
+      lastOn: string | null;
+      schedule: SeasonalSchedule;
+      /** Today's Season, which says whether the Dormant interval applies at all. */
+      season: SeasonOn;
+    }
   | { kind: 'repotting'; lastOn: string | null; potSizeCm: number | null }
   | { kind: 'season'; season: SeasonOn };
 
@@ -113,7 +119,12 @@ export function causeFact(db: Db, plantId: string, kind: FactKind, today: string
     listCareEvents(db, plantId).find((event) => event.type === type)?.occurredOn ?? null;
   if (kind === 'repotting') return { kind, lastOn, potSizeCm: plant.potSizeCm };
   const schedule = scheduleOf(db, plant);
-  return { kind, lastOn, schedule: kind === 'watering' ? schedule.water : schedule.fertilize };
+  return {
+    kind,
+    lastOn,
+    schedule: kind === 'watering' ? schedule.water : schedule.fertilize,
+    season: plantSeasonOn(db, plant.speciesId, today),
+  };
 }
 
 function scheduleOf(db: Db, plant: Plant): CareGuide['schedule'] {

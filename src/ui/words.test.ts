@@ -96,15 +96,32 @@ describe('Care Guide lines', () => {
 
   it('says what the Care Log says beside a cause', () => {
     const schedule = { growing: 7, dormant: 14 };
-    expect(causeFactLine({ kind: 'watering', lastOn: '2026-09-16', schedule }, '2026-09-22')).toBe(
+    const season = { season: 'growing', startsOn: '2026-03-01' } as const;
+    expect(
+      causeFactLine({ kind: 'watering', lastOn: '2026-09-16', schedule, season }, '2026-09-22'),
+    ).toBe(
       'Last watered 6\u00a0days ago. Schedule: every 7\u00a0days, every 14\u00a0days in the Dormant season',
     );
-    expect(causeFactLine({ kind: 'watering', lastOn: '2026-09-21', schedule }, '2026-09-22')).toBe(
+    expect(
+      causeFactLine({ kind: 'watering', lastOn: '2026-09-21', schedule, season }, '2026-09-22'),
+    ).toBe(
       'Last watered yesterday. Schedule: every 7\u00a0days, every 14\u00a0days in the Dormant season',
     );
+    // A garden Growing all year has no Dormant season to mention (#90).
     expect(
       causeFactLine(
-        { kind: 'fertilizing', lastOn: null, schedule: { growing: null, dormant: null } },
+        {
+          kind: 'watering',
+          lastOn: '2026-09-16',
+          schedule,
+          season: { season: 'growing', startsOn: null },
+        },
+        '2026-09-22',
+      ),
+    ).toBe('Last watered 6\u00a0days ago. Schedule: every 7\u00a0days');
+    expect(
+      causeFactLine(
+        { kind: 'fertilizing', lastOn: null, schedule: { growing: null, dormant: null }, season },
         '2026-09-22',
       ),
     ).toBe('Last fertilized: never logged. No schedule');

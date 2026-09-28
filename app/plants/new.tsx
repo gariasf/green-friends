@@ -1,4 +1,4 @@
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -14,8 +14,16 @@ import {
 import { type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
-import { alertError, Field, optionalNumber, TextButton, WhenPicker } from '@/src/ui/Form';
-import { PhotoButton, PlantPhoto, photoFiles, type Picked } from '@/src/ui/Photo';
+import {
+  alertError,
+  Field,
+  optionalNumber,
+  potSizeProblem,
+  TextButton,
+  useConfirmDiscard,
+  WhenPicker,
+} from '@/src/ui/Form';
+import { PlantPhoto, photoFiles, usePhotoPicker, type Picked } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
@@ -30,10 +38,13 @@ const LAST_DONE_LABEL: Record<CareType, string> = {
 
 /**
  * New plant: one scrolling sheet where the Species pick is the only required input (spec #8), with
- * Add in the header, always in reach, and at the top why it can't add yet (spec #22).
+ * Add in the header, always in reach, and at the top why it can't add yet (spec #22). Closing it
+ * once anything is in asks first (#90).
  */
 export default function NewPlantScreen() {
   const [species, setSpecies] = useState<Species | null>(null);
+  /** Searching again after a pick, with the way back to it. */
+  const [searching, setSearching] = useState(false);
   const [ownSchedule, setOwnSchedule] = useState(false);
   const [nickname, setNickname] = useState('');
   const [potSizeCm, setPotSizeCm] = useState('');
@@ -47,7 +58,15 @@ export default function NewPlantScreen() {
   /** The day each care type was last done; unanswered ones count from the plant's creation. */
   const [lastDone, setLastDone] = useState<Partial<Record<CareType, string>>>({});
 
-  const whyNot = whyNotYet(species, ownSchedule, nickname, schedule);
+  const whyNot = potSizeProblem(potSizeCm) ?? whyNotYet(species, ownSchedule, nickname, schedule);
+  const leave = useConfirmDiscard(
+    species !== null ||
+      ownSchedule ||
+      picked !== null ||
+      [nickname, potSizeCm, soil].some((field) => field.trim() !== '') ||
+      Object.values(lastDone).some(Boolean),
+    'Discard this plant?',
+  );
 
   const save = () => {
     let plant: Plant;
@@ -68,22 +87,23 @@ export default function NewPlantScreen() {
       if (picked) setPlantPhoto(db, photoFiles, plant.id, picked.prepared, picked.focus);
     } catch (error) {
       // The plant is in: leave rather than offer to add it twice.
-      alertError('Plant added without its photo', error, () => router.back());
+      alertError('Plant added without its photo', error, leave);
       return;
     }
-    router.back();
+    leave();
   };
 
   const addWithoutSpecies = () => setOwnSchedule(true);
   const pickSpecies = (picked: Species) => {
     setSpecies(picked);
+    setSearching(false);
     setOwnSchedule(false);
   };
   // Suggestions belong to the photo they came from.
-  const pickPhoto = (next: Picked) => {
+  const photoPicker = usePhotoPicker((next: Picked) => {
     identify.clear();
     setPicked(next);
-  };
+  });
 
   return (
     <ScrollView
@@ -97,6 +117,7 @@ export default function NewPlantScreen() {
             <TextButton
               label="Add"
               header
+              bold
               disabled={whyNot !== null}
               // Why it's dimmed, for VoiceOver, which doesn't read the form's first line as it changes.
               accessibilityHint={whyNot ?? undefined}
@@ -105,16 +126,21 @@ export default function NewPlantScreen() {
           ),
         }}
       />
-      {whyNot && <Text style={text.subheadline}>{whyNot}</Text>}
+      {whyNot && (
+        <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
+          {whyNot}
+        </Text>
+      )}
       <Text accessibilityRole="header" style={styles.heading}>
         Species
       </Text>
-      {species ? (
+      {species && !searching ? (
         <PickedSpecies
           title={species.colloquialName}
-          subtitle={scientificBeneath(species.colloquialName, species.scientificName)}
+          scientific={scientificBeneath(species.colloquialName, species.scientificName)}
           action="Change"
-          onAction={() => setSpecies(null)}
+          actionLabel="Change species"
+          onAction={() => setSearching(true)}
         />
       ) : ownSchedule ? (
         <PickedSpecies
@@ -126,11 +152,19 @@ export default function NewPlantScreen() {
       ) : (
         <SpeciesSearch
           onPick={pickSpecies}
-          fallback={{
-            label: 'Add without a species',
-            line: 'Check the spelling, or add it without a species and give it its own schedule.',
-            onPress: addWithoutSpecies,
-          }}
+          fallback={
+            species
+              ? {
+                  label: `Keep ${species.colloquialName}`,
+                  line: 'Check the spelling, or search by its scientific name.',
+                  onPress: () => setSearching(false),
+                }
+              : {
+                  label: 'Add without a species',
+                  line: 'Check the spelling, or add it without a species and give it its own schedule.',
+                  onPress: addWithoutSpecies,
+                }
+          }
         />
       )}
 
@@ -138,14 +172,23 @@ export default function NewPlantScreen() {
         About this plant
       </Text>
       <View style={styles.photoRow}>
-        <PlantPhoto
-          uri={prepared}
-          focus={picked?.focus}
-          size={64}
-          name={nickname || species?.colloquialName || ''}
-        />
-        <PhotoButton hasPhoto={prepared !== null} onPick={pickPhoto} />
+        {/* The square picks a photo too, as on the Plant screen. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={prepared ? 'Replace photo' : 'Add photo'}
+          onPress={photoPicker.choose}
+          style={({ pressed }) => pressed && pressedStyle.button}
+        >
+          <PlantPhoto
+            uri={prepared}
+            focus={picked?.focus}
+            size={64}
+            name={nickname || species?.colloquialName || ''}
+          />
+        </Pressable>
+        <TextButton label={prepared ? 'Replace photo' : 'Add photo'} onPress={photoPicker.choose} />
       </View>
+      {photoPicker.framing}
       {IDENTIFY_SHOWN && prepared && (
         <IdentifyFromPhoto
           state={identify.state}
@@ -159,7 +202,8 @@ export default function NewPlantScreen() {
       )}
       <Field
         label="Nickname"
-        placeholder={ownSchedule ? 'Required' : 'Optional'}
+        // Blank, the plant goes by its species' name (CONTEXT.md, Display Name), as in Edit plant.
+        placeholder={species?.colloquialName ?? (ownSchedule ? 'Required' : 'Optional')}
         value={nickname}
         onChangeText={setNickname}
         autoCapitalize="words"
@@ -188,7 +232,7 @@ export default function NewPlantScreen() {
       <Text accessibilityRole="header" style={styles.heading}>
         When did you last…
       </Text>
-      <Text style={text.subheadline}>
+      <Text lineBreakStrategyIOS="standard" style={text.subheadline}>
         Optional. Answers set the first due dates; the rest count from today.
       </Text>
       {CARE_TYPES.map((type) => (

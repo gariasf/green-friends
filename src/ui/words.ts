@@ -218,7 +218,7 @@ export function causeFactLine(fact: CauseFact, today: string): string {
   if (fact.kind === 'repotting') {
     return fact.potSizeCm === null ? when : `${when}, in a ${fact.potSizeCm} cm pot`;
   }
-  const schedule = scheduleLine(fact.schedule);
+  const schedule = scheduleLine(fact.schedule, isAllYear(fact.season));
   return `${when}. ${fact.schedule.growing === null ? 'No schedule' : `Schedule: ${schedule}`}`;
 }
 

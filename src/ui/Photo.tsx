@@ -94,23 +94,6 @@ type Found = { prepared: string; focus: Focus; byVision: boolean };
 /** The Plant screen's hero, as tall as this share of its width. */
 export const HERO_HEIGHT = 0.92;
 
-/** "Add photo", or "Replace photo" once there is one: usePhotoPicker as a button. */
-export function PhotoButton({
-  hasPhoto,
-  onPick,
-}: {
-  hasPhoto: boolean;
-  onPick: (picked: Picked) => void;
-}) {
-  const picker = usePhotoPicker(onPick);
-  return (
-    <>
-      <TextButton label={hasPhoto ? 'Replace photo' : 'Add photo'} onPress={picker.choose} />
-      {picker.framing}
-    </>
-  );
-}
-
 /**
  * Picking a photo: `choose` asks for one, prepares it for setPlantPhoto and finds its Focal
  * point, then `framing`, which the screen renders, shows Frame photo to correct the point (spec
