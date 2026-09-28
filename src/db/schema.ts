@@ -121,6 +121,13 @@ export const photos = sqliteTable('photos', {
    * absolute path moves between installs, and unchanged by Export and Import (spec #8).
    */
   filename: text('filename').notNull(),
+  /**
+   * The Focal point every frame centres on (spec #67): x and y from the photo's top-left, 0 to 1,
+   * and the photo's width over its height. All three or none; none is the centre.
+   */
+  focusX: real('focus_x'),
+  focusY: real('focus_y'),
+  aspect: real('aspect'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
   deletedAt: text('deleted_at'),

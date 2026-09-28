@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/src/ui/Icon';
+import type { Focus } from '@/src/core/photos';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
 
@@ -10,12 +11,14 @@ import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
  */
 export function PlantRow({
   photo,
+  focus,
   name,
   detail,
   first,
   onPress,
 }: {
   photo: string | null;
+  focus: Focus | null;
   name: string;
   detail: string | null;
   first: boolean;
@@ -27,7 +30,7 @@ export function PlantRow({
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && pressedStyle.row]}
     >
-      <PlantPhoto uri={photoUri(photo)} size={44} name={name} />
+      <PlantPhoto uri={photoUri(photo)} focus={focus} size={44} name={name} />
       {/* The divider starts after the photo and stops short of the far edge, as in iOS 26. */}
       <View style={[styles.body, !first && group.divider]}>
         <View style={styles.grow}>

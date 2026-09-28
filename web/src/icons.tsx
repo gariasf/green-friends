@@ -16,6 +16,7 @@ import {
 } from '@phosphor-icons/react';
 
 import type { CareEventType } from '../../src/core/careLog';
+import { framePosition, type Focus } from '../../src/core/photos';
 
 /**
  * A care type's icon, filled in its hue, as the phone's `Icon` draws it (src/ui/Icon.tsx, spec #57).
@@ -34,22 +35,42 @@ const CARE_ICONS: Record<CareEventType, PhosphorIcon> = {
 };
 
 /**
+ * A photo's `object-position` in a frame of `frameAspect` (width over height) it covers: on its
+ * Focal point, as the phone frames it (framePosition, spec #67).
+ */
+export function objectPosition(focus: Focus | null, frameAspect: number): string {
+  const { x, y } = framePosition(focus, frameAspect);
+  return `${x * 100}% ${y * 100}%`;
+}
+
+/**
  * A plant's photo, decorative beside its name as on the phone unless given `alt`, or the phone's
  * placeholder while it has none: the name's initial in Young Serif, tinted, on Ecru. `size` is its
  * class: 40, 64 or 88 px, or `cell`, a Garden grid cell's width.
  */
 export function Thumb({
   src,
+  focus = null,
   name,
   size = 'md',
   alt = '',
 }: {
   src: string | undefined;
+  focus?: Focus | null;
   name: string;
   size?: 'md' | 'lg' | 'xl' | 'cell';
   alt?: string;
 }) {
-  if (src) return <img className={`thumb ${size}`} src={src} alt={alt} />;
+  if (src) {
+    return (
+      <img
+        className={`thumb ${size}`}
+        src={src}
+        alt={alt}
+        style={{ objectPosition: objectPosition(focus, 1) }}
+      />
+    );
+  }
   return (
     <span className={`thumb ${size} initial`} aria-hidden="true">
       {name.trim().charAt(0).toUpperCase()}

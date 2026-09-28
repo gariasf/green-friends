@@ -61,6 +61,7 @@ export default function GardenScreen() {
               >
                 <PlantPhoto
                   uri={photoUri(plant.photo)}
+                  focus={plant.focus}
                   size={cell}
                   name={plant.displayName}
                   radius={radius.surface}

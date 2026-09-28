@@ -15,7 +15,7 @@ import { type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { useCareSchedule } from '@/src/ui/CareSchedule';
 import { alertError, Field, optionalNumber, TextButton, WhenPicker } from '@/src/ui/Form';
-import { PhotoButton, PlantPhoto, photoFiles } from '@/src/ui/Photo';
+import { PhotoButton, PlantPhoto, photoFiles, type Picked } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
@@ -38,8 +38,9 @@ export default function NewPlantScreen() {
   const [nickname, setNickname] = useState('');
   const [potSizeCm, setPotSizeCm] = useState('');
   const [soil, setSoil] = useState('');
-  /** The prepared photo's file, filed with the plant once it is added. */
-  const [prepared, setPrepared] = useState<string | null>(null);
+  /** The prepared photo and its Focal point, filed with the plant once it is added. */
+  const [picked, setPicked] = useState<Picked | null>(null);
+  const prepared = picked?.prepared ?? null;
   const identify = useIdentify();
   // Without a Species, a plant's Overrides are its whole schedule (ADR-0003).
   const schedule = useCareSchedule(NO_SCHEDULE, null);
@@ -64,7 +65,7 @@ export default function NewPlantScreen() {
       return;
     }
     try {
-      if (prepared) setPlantPhoto(db, photoFiles, plant.id, prepared);
+      if (picked) setPlantPhoto(db, photoFiles, plant.id, picked.prepared, picked.focus);
     } catch (error) {
       // The plant is in: leave rather than offer to add it twice.
       alertError('Plant added without its photo', error, () => router.back());
@@ -79,9 +80,9 @@ export default function NewPlantScreen() {
     setOwnSchedule(false);
   };
   // Suggestions belong to the photo they came from.
-  const pickPhoto = (next: string) => {
+  const pickPhoto = (next: Picked) => {
     identify.clear();
-    setPrepared(next);
+    setPicked(next);
   };
 
   return (
@@ -137,7 +138,12 @@ export default function NewPlantScreen() {
         About this plant
       </Text>
       <View style={styles.photoRow}>
-        <PlantPhoto uri={prepared} size={64} name={nickname || species?.colloquialName || ''} />
+        <PlantPhoto
+          uri={prepared}
+          focus={picked?.focus}
+          size={64}
+          name={nickname || species?.colloquialName || ''}
+        />
         <PhotoButton hasPhoto={prepared !== null} onPick={pickPhoto} />
       </View>
       {IDENTIFY_SHOWN && prepared && (

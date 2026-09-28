@@ -99,8 +99,9 @@ function plantGarden({ db, store }: Device) {
   logCareEvent(db, { plantId, type: 'repot', potSizeCm: 17, soil: 'Bark' }, noon(2026, 9, 21));
   const fed = logCareEvent(db, { plantId, type: 'fertilize' }, noon(2026, 9, 21));
   deleteCareEvent(db, fed.id, noon(2026, 9, 22));
-  setPlantPhoto(db, store.files, plantId, 'file:///cache/1.jpg', noon(2026, 9, 21));
-  setPlantPhoto(db, store.files, plantId, 'file:///cache/2.jpg', noon(2026, 9, 22));
+  setPlantPhoto(db, store.files, plantId, 'file:///cache/1.jpg', null, noon(2026, 9, 21));
+  const focus = { x: 0.35, y: 0.3, aspect: 0.75 };
+  setPlantPhoto(db, store.files, plantId, 'file:///cache/2.jpg', focus, noon(2026, 9, 22));
   updatePlant(db, plantId, { wateringGrowingDays: 5 }, noon(2026, 9, 22));
   const fern = createPlant(
     db,
@@ -109,7 +110,7 @@ function plantGarden({ db, store }: Device) {
   );
   archivePlant(db, fern.id, noon(2026, 9, 22));
   const pothos = createPlant(db, { speciesId: POTHOS }, noon(2026, 9, 20));
-  setPlantPhoto(db, store.files, pothos.id, 'file:///cache/3.jpg', noon(2026, 9, 21));
+  setPlantPhoto(db, store.files, pothos.id, 'file:///cache/3.jpg', null, noon(2026, 9, 21));
   deletePlant(db, store.files, pothos.id, noon(2026, 9, 22));
   updateSettings(
     db,
@@ -136,13 +137,13 @@ async function phoneAndTablet() {
 async function tabletBehindPhone() {
   const { phone, tablet, fern } = await phoneAndTablet();
   const later = noon(2026, 9, 23);
-  setPlantPhoto(phone.db, phone.store.files, fern.id, 'file:///cache/fern.jpg', later);
+  setPlantPhoto(phone.db, phone.store.files, fern.id, 'file:///cache/fern.jpg', null, later);
   const ivy = createPlant(
     phone.db,
     { nickname: 'Ivy', schedule: { ...NO_SCHEDULE, wateringGrowingDays: 5 } },
     later,
   );
-  setPlantPhoto(phone.db, phone.store.files, ivy.id, 'file:///cache/ivy.jpg', later);
+  setPlantPhoto(phone.db, phone.store.files, ivy.id, 'file:///cache/ivy.jpg', null, later);
   logCareEvent(phone.db, { plantId: ivy.id, type: 'water' }, later);
   updateSettings(phone.db, { digestTime: '08:00' }, later);
   return { phone, tablet };
@@ -210,7 +211,7 @@ describe('Import', () => {
       updatePlant(db, plantId, { nickname: 'Big Monty' }, noon(2026, 9, 23));
       editCareEvent(db, noteId, { note: 'Mites gone' }, noon(2026, 9, 23));
       logCareEvent(db, { plantId, type: 'water' }, noon(2026, 9, 23));
-      setPlantPhoto(db, store.files, plantId, 'file:///cache/4.jpg', noon(2026, 9, 23));
+      setPlantPhoto(db, store.files, plantId, 'file:///cache/4.jpg', null, noon(2026, 9, 23));
       updateSettings(db, { digestTime: '08:00' }, noon(2026, 9, 23));
     }
 
@@ -287,6 +288,7 @@ describe('Import', () => {
         phone.store.files,
         monty.id,
         'file:///cache/4.jpg',
+        null,
         noon(2026, 9, 23),
       );
       const later = new Date(2026, 8, 23, 18);
@@ -295,6 +297,7 @@ describe('Import', () => {
         tablet.store.files,
         monty.id,
         'file:///cache/5.jpg',
+        null,
         later,
       );
 
@@ -379,6 +382,33 @@ describe('Import', () => {
         photos: [],
         files: {},
       });
+    });
+  });
+
+  test('one from before Focal points brings its photos in framed on their centre', async () => {
+    const phone = device();
+    plantGarden(phone);
+    // Schema version 7, before photos had a Focal point (8).
+    const v7 = spoiled(await exportOf(phone), (json) => {
+      json.schema_version = 7;
+      for (const photo of json.photos) {
+        delete photo.focus_x;
+        delete photo.focus_y;
+        delete photo.aspect;
+      }
+    });
+    const fresh = device();
+
+    importInto(fresh, v7);
+
+    expect(contents(fresh)).toEqual({
+      ...contents(phone),
+      photos: listPhotoRows(phone.db).map((photo) => ({
+        ...photo,
+        focusX: null,
+        focusY: null,
+        aspect: null,
+      })),
     });
   });
 
@@ -523,6 +553,21 @@ describe('Import', () => {
           livePhoto(json).id = '../../Documents/SQLite/green-friends.db';
         },
         'Not a row id: ../../Documents',
+      ],
+      [
+        'a Focal point without its aspect',
+        (json) => void (livePhoto(json).aspect = null),
+        "A photo's Focal point needs its x, y and aspect together",
+      ],
+      [
+        'a Focal point off the photo',
+        (json) => void (livePhoto(json).focus_x = 1.2),
+        "A photo's Focal point must be on it, from 0 to 1, not 1.2, 0.3",
+      ],
+      [
+        'a photo of no shape',
+        (json) => void (livePhoto(json).aspect = 0),
+        "A photo's aspect must be a width over a height, not 0",
       ],
       [
         'a plant with neither a nickname nor a Species',

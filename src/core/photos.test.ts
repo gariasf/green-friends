@@ -1,7 +1,7 @@
 import { MONSTERA, NOON_SEP_22, POTHOS, gardenDb, noon } from '../test/garden';
 import { photoStore } from '../test/photos';
 import { evaluateCare } from './care';
-import { listPhotoRows, setPlantPhoto, type PhotoFiles } from './photos';
+import { framePosition, listPhotoRows, setPlantPhoto, type PhotoFiles } from './photos';
 import { createPlant, listPlants } from './plants';
 
 describe('plant photos', () => {
@@ -10,12 +10,22 @@ describe('plant photos', () => {
     const store = photoStore();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
 
-    const photo = setPlantPhoto(db, store.files, plant.id, 'file:///cache/pick.jpg', NOON_SEP_22);
+    const photo = setPlantPhoto(
+      db,
+      store.files,
+      plant.id,
+      'file:///cache/pick.jpg',
+      null,
+      NOON_SEP_22,
+    );
 
     expect(photo).toEqual({
       id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/),
       plantId: plant.id,
       filename: `${photo.id}.jpg`,
+      focusX: null,
+      focusY: null,
+      aspect: null,
       createdAt: NOON_SEP_22.toISOString(),
       updatedAt: NOON_SEP_22.toISOString(),
       deletedAt: null,
@@ -41,14 +51,60 @@ describe('plant photos', () => {
     ]);
   });
 
+  test('a photo keeps the Focal point it was given, and the Garden and Today frame on it', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+    createPlant(db, { speciesId: POTHOS }, NOON_SEP_22);
+    const focus = { x: 0.3, y: 0.25, aspect: 0.75 };
+
+    const photo = setPlantPhoto(db, store.files, monty.id, 'file:///cache/pick.jpg', focus);
+
+    expect(listPhotoRows(db)).toEqual([photo]);
+    expect(photo).toMatchObject({ focusX: 0.3, focusY: 0.25, aspect: 0.75 });
+    expect(listPlants(db)).toMatchObject([
+      { displayName: 'Monty', focus },
+      { displayName: 'Pothos', photo: null, focus: null },
+    ]);
+    expect(evaluateCare(db, '2026-09-22')).toMatchObject([
+      { displayName: 'Monty', focus },
+      { displayName: 'Pothos', focus: null },
+    ]);
+  });
+
+  test('a photo given no point is framed on its centre everywhere', () => {
+    const db = gardenDb();
+    const store = photoStore();
+    const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
+
+    setPlantPhoto(db, store.files, monty.id, 'file:///cache/pick.jpg');
+
+    expect(listPlants(db)).toMatchObject([{ displayName: 'Monty', focus: null }]);
+    expect(evaluateCare(db, '2026-09-22')).toMatchObject([{ displayName: 'Monty', focus: null }]);
+  });
+
   test('a replaced photo is Deleted as a tombstone and its file removed', () => {
     const db = gardenDb();
     const store = photoStore();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
-    const first = setPlantPhoto(db, store.files, plant.id, 'file:///cache/first.jpg', NOON_SEP_22);
+    const first = setPlantPhoto(
+      db,
+      store.files,
+      plant.id,
+      'file:///cache/first.jpg',
+      null,
+      NOON_SEP_22,
+    );
     const later = noon(2026, 9, 23);
 
-    const second = setPlantPhoto(db, store.files, plant.id, 'file:///cache/second.jpg', later);
+    const second = setPlantPhoto(
+      db,
+      store.files,
+      plant.id,
+      'file:///cache/second.jpg',
+      null,
+      later,
+    );
 
     expect(listPhotoRows(db)).toEqual([
       { ...first, updatedAt: later.toISOString(), deletedAt: later.toISOString() },
@@ -63,8 +119,15 @@ describe('plant photos', () => {
     const store = photoStore();
     const monty = createPlant(db, { speciesId: MONSTERA, nickname: 'Monty' }, NOON_SEP_22);
     const pothos = createPlant(db, { speciesId: POTHOS }, NOON_SEP_22);
-    setPlantPhoto(db, store.files, monty.id, 'file:///cache/monty.jpg', NOON_SEP_22);
-    const kept = setPlantPhoto(db, store.files, pothos.id, 'file:///cache/pothos.jpg', NOON_SEP_22);
+    setPlantPhoto(db, store.files, monty.id, 'file:///cache/monty.jpg', null, NOON_SEP_22);
+    const kept = setPlantPhoto(
+      db,
+      store.files,
+      pothos.id,
+      'file:///cache/pothos.jpg',
+      null,
+      NOON_SEP_22,
+    );
 
     const replaced = setPlantPhoto(db, store.files, monty.id, 'file:///cache/monty-2.jpg');
 
@@ -94,7 +157,14 @@ describe('plant photos', () => {
     const db = gardenDb();
     const store = photoStore();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
-    const photo = setPlantPhoto(db, store.files, plant.id, 'file:///cache/first.jpg', NOON_SEP_22);
+    const photo = setPlantPhoto(
+      db,
+      store.files,
+      plant.id,
+      'file:///cache/first.jpg',
+      null,
+      NOON_SEP_22,
+    );
     const full: PhotoFiles = {
       ...store.files,
       store: () => {
@@ -114,7 +184,14 @@ describe('plant photos', () => {
     const db = gardenDb();
     const store = photoStore();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
-    const first = setPlantPhoto(db, store.files, plant.id, 'file:///cache/first.jpg', NOON_SEP_22);
+    const first = setPlantPhoto(
+      db,
+      store.files,
+      plant.id,
+      'file:///cache/first.jpg',
+      null,
+      NOON_SEP_22,
+    );
     const stuck: PhotoFiles = {
       ...store.files,
       remove: () => {
@@ -129,5 +206,32 @@ describe('plant photos', () => {
       [first.filename]: 'file:///cache/first.jpg',
       [second.filename]: 'file:///cache/second.jpg',
     });
+  });
+});
+
+describe('framing a photo on its Focal point', () => {
+  test('a photo with no point is framed on its centre', () => {
+    expect(framePosition(null, 1)).toEqual({ x: 0.5, y: 0.5 });
+  });
+
+  test('a wide photo in a square slides sideways to put the point in the middle', () => {
+    // Twice as wide as the square: 0.6 of the way across sits mid-frame at 0.7 of the slack.
+    expect(framePosition({ x: 0.6, y: 0.2, aspect: 2 }, 1)).toEqual({ x: 0.7, y: 0.5 });
+    // Three times as wide: 0.4 across, 1.2 frame widths in, less half a frame, over 2 of slack.
+    expect(framePosition({ x: 0.4, y: 0.9, aspect: 3 }, 1)).toEqual({ x: 0.35, y: 0.5 });
+  });
+
+  test('a tall photo in a wide frame slides up or down', () => {
+    // A 3:4 photo in the Web view's 3:2 hero is twice the frame's height.
+    expect(framePosition({ x: 0.9, y: 0.3, aspect: 0.75 }, 1.5)).toEqual({ x: 0.5, y: 0.1 });
+  });
+
+  test('a point near an edge takes the frame only as far as the edge', () => {
+    expect(framePosition({ x: 0.1, y: 0.5, aspect: 2 }, 1)).toEqual({ x: 0, y: 0.5 });
+    expect(framePosition({ x: 0.5, y: 0.95, aspect: 0.75 }, 1.5)).toEqual({ x: 0.5, y: 1 });
+  });
+
+  test("a photo of the frame's own shape has nothing to slide", () => {
+    expect(framePosition({ x: 0.1, y: 0.9, aspect: 1.5 }, 1.5)).toEqual({ x: 0.5, y: 0.5 });
   });
 });

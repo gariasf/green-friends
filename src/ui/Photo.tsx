@@ -1,9 +1,10 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { ActionSheetIOS, Image, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Image, StyleSheet, Text, View, type ImageStyle } from 'react-native';
 
-import type { PhotoFiles } from '@/src/core/photos';
+import { findFocus } from '@/modules/photo-focus';
+import { framePosition, type Focus, type PhotoFiles } from '@/src/core/photos';
 import { alertError, TextButton } from '@/src/ui/Form';
 import { colors, font, radius } from '@/src/ui/theme';
 
@@ -40,13 +41,16 @@ export function photoUri(filename: string | null): string | null {
 /** The long edge of a stored photo, in pixels (ADR-0001). */
 const LONG_EDGE = 1600;
 
+/** A picked photo, prepared for setPlantPhoto, with the Focal point found in it. */
+export type Picked = { prepared: string; focus: Focus | null };
+
 /** "Add photo", or "Replace photo" once there is one: choosePhoto as a button. */
 export function PhotoButton({
   hasPhoto,
   onPick,
 }: {
   hasPhoto: boolean;
-  onPick: (prepared: string) => void;
+  onPick: (picked: Picked) => void;
 }) {
   return (
     <TextButton
@@ -57,13 +61,15 @@ export function PhotoButton({
 }
 
 /**
- * Asks for a photo, prepares it for setPlantPhoto and hands the prepared file to `onPick`, telling
- * the user when either fails.
+ * Asks for a photo, prepares it for setPlantPhoto, finds its Focal point and hands both to
+ * `onPick`, telling the user when picking or preparing fails. A point Vision can't find is none,
+ * the photo framed on its centre.
  */
-export async function choosePhoto(onPick: (prepared: string) => void): Promise<void> {
+export async function choosePhoto(onPick: (picked: Picked) => void): Promise<void> {
   try {
     const prepared = await pickPhoto();
-    if (prepared) onPick(prepared);
+    if (!prepared) return;
+    onPick({ prepared, focus: await findFocus(prepared).catch(() => null) });
   } catch (error) {
     alertError('Could not add the photo', error);
   }
@@ -123,16 +129,39 @@ function deleteIfThere(file: File): void {
 }
 
 /**
- * A plant's photo as a rounded square, or its initial on Ecru while it has none; `radius` is
- * `radius.inner` unless given (the Garden grid's are `radius.surface`).
+ * The style of a photo covering a `width` × `height` frame, placed so the frame centres on its
+ * Focal point (framePosition); without one, React Native's own cover, on the centre. The frame
+ * clips it.
+ */
+export function coverStyle(focus: Focus | null, width: number, height: number): ImageStyle {
+  if (!focus) return StyleSheet.absoluteFill;
+  const frame = width / height;
+  const wide = focus.aspect > frame;
+  const w = wide ? height * focus.aspect : width;
+  const h = wide ? height : width / focus.aspect;
+  const { x, y } = framePosition(focus, frame);
+  return {
+    position: 'absolute',
+    width: w,
+    height: h,
+    left: (width - w) * x,
+    top: (height - h) * y,
+  };
+}
+
+/**
+ * A plant's photo as a rounded square framed on its Focal point, or its initial on Ecru while it
+ * has none; `radius` is `radius.inner` unless given (the Garden grid's are `radius.surface`).
  */
 export function PlantPhoto({
   uri,
+  focus = null,
   size,
   name,
   radius: borderRadius,
 }: {
   uri: string | null;
+  focus?: Focus | null;
   size: number;
   name: string;
   radius?: number;
@@ -147,7 +176,7 @@ export function PlantPhoto({
       ]}
     >
       {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} />
+        <Image source={{ uri }} style={coverStyle(focus, size, size)} />
       ) : (
         <Initial name={name} size={size} />
       )}

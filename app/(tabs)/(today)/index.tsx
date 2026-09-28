@@ -188,7 +188,12 @@ function CareCard({
           onPress={() => openPlant(plant)}
           style={({ pressed }) => [styles.identity, pressed && pressedStyle.button]}
         >
-          <PlantPhoto uri={photoUri(plant.photo)} size={52} name={plant.displayName} />
+          <PlantPhoto
+            uri={photoUri(plant.photo)}
+            focus={plant.focus}
+            size={52}
+            name={plant.displayName}
+          />
           <View style={styles.grow}>
             <Text style={text.headline}>{plant.displayName}</Text>
             {scientific && <Text style={styles.scientific}>{scientific}</Text>}
@@ -307,7 +312,12 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
               onPress={() => openPlant(plant)}
               style={({ pressed }) => [styles.restPlant, { width }, pressed && pressedStyle.button]}
             >
-              <PlantPhoto uri={photoUri(plant.photo)} size={64} name={plant.displayName} />
+              <PlantPhoto
+                uri={photoUri(plant.photo)}
+                focus={plant.focus}
+                size={64}
+                name={plant.displayName}
+              />
               <Text style={styles.restName} numberOfLines={2}>
                 {plant.displayName}
               </Text>

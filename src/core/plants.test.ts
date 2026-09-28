@@ -471,6 +471,7 @@ describe('archiving plants', () => {
         displayName: 'Pothos',
         scientificName: 'Epipremnum aureum',
         photo: null,
+        focus: null,
         archivedAt: '2026-09-23T08:00:00.000Z',
       },
       {
@@ -478,6 +479,7 @@ describe('archiving plants', () => {
         displayName: 'Window',
         scientificName: 'Monstera deliciosa',
         photo: filename,
+        focus: null,
         archivedAt: '2026-09-22T08:00:00.000Z',
       },
     ]);
@@ -519,7 +521,14 @@ describe('deleting plants', () => {
     logCareEvent(db, { plantId: plant.id, type: 'note', note: 'Thrips?' }, NOON_SEP_22);
     const mistake = logCareEvent(db, { plantId: plant.id, type: 'fertilize' }, NOON_SEP_22);
     const earlier = deleteCareEvent(db, mistake.id, NOON_SEP_22);
-    const photo = setPlantPhoto(db, store.files, plant.id, 'file:///cache/pick.jpg', NOON_SEP_22);
+    const photo = setPlantPhoto(
+      db,
+      store.files,
+      plant.id,
+      'file:///cache/pick.jpg',
+      null,
+      NOON_SEP_22,
+    );
     const live = listCareEvents(db, plant.id);
     const later = noon(2026, 9, 23);
     const stamp = later.toISOString();

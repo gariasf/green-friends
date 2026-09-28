@@ -34,6 +34,7 @@ export default function ArchivedScreen() {
             <PlantRow
               key={plant.id}
               photo={plant.photo}
+              focus={plant.focus}
               name={plant.displayName}
               detail={
                 plant.archivedAt &&

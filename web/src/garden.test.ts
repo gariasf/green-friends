@@ -29,7 +29,8 @@ function phoneExport() {
     { nickname: 'Fern', schedule: { ...NO_SCHEDULE, wateringGrowingDays: 3 } },
     noon(2026, 9, 21),
   );
-  setPlantPhoto(db, files, monty.id, 'file:///cache/monty.jpg', noon(2026, 9, 21));
+  const focus = { x: 0.4, y: 0.3, aspect: 0.75 };
+  setPlantPhoto(db, files, monty.id, 'file:///cache/monty.jpg', focus, noon(2026, 9, 21));
   logCareEvent(
     db,
     { plantId: monty.id, type: 'water', occurredOn: '2026-09-21' },
@@ -40,12 +41,13 @@ function phoneExport() {
   return { db, plants: listPlants(db), zip: buildExport(db, files, '1.2.3', noon(2026, 9, 22)) };
 }
 
-test("an Export opened through sql.js lists the phone's plants, with their photos", async () => {
+test("an Export opened through sql.js lists the phone's plants, with their photos framed as there", async () => {
   const phone = phoneExport();
 
   const garden = openGarden(await initSqlJs(), phone.zip);
 
   expect(listPlants(garden.db)).toEqual(phone.plants);
+  expect(phone.plants.map((plant) => plant.focus)).toContainEqual({ x: 0.4, y: 0.3, aspect: 0.75 });
   const [photo] = phone.plants.flatMap((plant) => plant.photo ?? []);
   expect(new TextDecoder().decode(garden.photo(photo))).toBe('file:///cache/monty.jpg');
 });

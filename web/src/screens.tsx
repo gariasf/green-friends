@@ -26,7 +26,7 @@ import {
 import type { Garden } from './garden';
 import { guides } from '../../src/ui/guides';
 import { CareRows, GuideView, SymptomsView, SymptomView, type PlantView } from './guide';
-import { AppMark, BackCaret, CareIcon, Thumb } from './icons';
+import { AppMark, BackCaret, CareIcon, objectPosition, Thumb } from './icons';
 
 /** A photo's address in this page, by its filename; none for a plant without one. */
 export type PhotoUrl = (filename: string | null) => string | undefined;
@@ -66,7 +66,12 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         {plants.map((plant) => (
           <li key={plant.id}>
             <a className="card" href={`#/plant/${plant.id}`}>
-              <Thumb src={photoUrl(plant.photo)} name={plant.displayName} size="lg" />
+              <Thumb
+                src={photoUrl(plant.photo)}
+                focus={plant.focus}
+                name={plant.displayName}
+                size="lg"
+              />
               <span className="card-body">
                 <span className="name">{plant.displayName}</span>
                 <Scientific name={plant.displayName} scientificName={plant.scientificName} />
@@ -97,7 +102,11 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
               return (
                 <li key={plant.id}>
                   <a href={`#/plant/${plant.id}`}>
-                    <Thumb src={photoUrl(plant.photo)} name={plant.displayName} />
+                    <Thumb
+                      src={photoUrl(plant.photo)}
+                      focus={plant.focus}
+                      name={plant.displayName}
+                    />
                     <span className="name">{plant.displayName}</span>
                     <span className="quiet next">
                       {next && <CareIcon type={next.type} size={14} />}
@@ -156,7 +165,12 @@ export function GardenPanes({
                     href={`#/plant/${plant.id}`}
                     aria-current={plant.id === id ? 'page' : undefined}
                   >
-                    <Thumb src={photoUrl(plant.photo)} name={plant.displayName} size="cell" />
+                    <Thumb
+                      src={photoUrl(plant.photo)}
+                      focus={plant.focus}
+                      name={plant.displayName}
+                      size="cell"
+                    />
                     <span className="name">{plant.displayName}</span>
                     <span className="quiet line">
                       {due.length > 0 && <span className={`dot ${tone}`} />}
@@ -256,7 +270,11 @@ export function PlantDetail({
       {photo ? (
         // As the phone's hero: the photo across the pane, the names over its foot on a scrim.
         <div className="hero">
-          <img src={photo} alt={`Photo of ${plant.displayName}`} />
+          <img
+            src={photo}
+            alt={`Photo of ${plant.displayName}`}
+            style={{ objectPosition: objectPosition(plant.focus, 3 / 2) }}
+          />
           <div className="hero-names">
             <h1 tabIndex={-1}>{plant.displayName}</h1>
             <Scientific name={plant.displayName} scientificName={plant.scientificName} />

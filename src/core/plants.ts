@@ -4,7 +4,14 @@ import { CARE_TYPES, careEvents, photos, plants, species } from '../db/schema';
 import type { Db } from '../db/types';
 import type { CareEvent } from './careLog';
 import { checkPastOrToday, localDay } from './dates';
-import { deletePhotos, livePhotoJoin, removePhotoFiles, type PhotoFiles } from './photos';
+import {
+  deletePhotos,
+  focusColumns,
+  livePhotoJoin,
+  removePhotoFiles,
+  toFocus,
+  type PhotoFiles,
+} from './photos';
 import { getSpecies } from './species';
 
 export { CARE_TYPES };
@@ -254,6 +261,7 @@ function plantList(db: Db, scope: SQL) {
       displayName: displayNameSql.as('display_name'),
       scientificName: species.scientificName,
       photo: photos.filename,
+      focus: focusColumns,
       archivedAt: plants.archivedAt,
     })
     .from(plants)
@@ -261,7 +269,8 @@ function plantList(db: Db, scope: SQL) {
     .leftJoin(photos, livePhotoJoin)
     .where(and(isNull(plants.deletedAt), scope))
     .orderBy(sql`${displayNameSql} COLLATE NOCASE`)
-    .all();
+    .all()
+    .map((plant) => ({ ...plant, focus: toFocus(plant.focus) }));
 }
 
 /** The schedule columns of the two seasonal care types (CONTEXT.md, Season). */

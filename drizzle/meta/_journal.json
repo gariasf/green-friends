@@ -50,6 +50,13 @@
       "when": 1790534534578,
       "tag": "0006_species_rests_in_summer",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790578680347,
+      "tag": "0007_photos_focus",
+      "breakpoints": true
     }
   ]
 }

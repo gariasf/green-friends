@@ -15,7 +15,7 @@ describe('migrate', () => {
 
     migrate(db);
 
-    expect(getSchemaVersion(db)).toBe(7);
+    expect(getSchemaVersion(db)).toBe(8);
   });
 
   test('is a no-op on an up-to-date database', () => {
@@ -24,7 +24,7 @@ describe('migrate', () => {
 
     migrate(db);
 
-    expect(getSchemaVersion(db)).toBe(7);
+    expect(getSchemaVersion(db)).toBe(8);
   });
 
   test('turns around both-set watering and fertilizing Overrides of plants whose Species rests in summer', () => {

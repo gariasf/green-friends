@@ -38,7 +38,7 @@ describe('Export', () => {
     const db = gardenDb();
     const { files } = photoStore();
     const monty = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 20));
-    setPlantPhoto(db, files, monty.id, 'file:///cache/1.jpg', noon(2026, 9, 21));
+    setPlantPhoto(db, files, monty.id, 'file:///cache/1.jpg', null, noon(2026, 9, 21));
     const shared: Uint8Array[] = [];
 
     await shareExport(db, files, { share: async (_, zip) => void shared.push(zip) }, '1.2.3', NOW);
@@ -219,14 +219,36 @@ describe('Export', () => {
     ]);
   });
 
-  test('carries every photo row, replaced ones too, and the file of each live one', async () => {
+  test('carries every photo row, replaced ones too, with its Focal point, and the file of each live one', async () => {
     const db = gardenDb();
     const { files } = photoStore();
     const monty = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 20));
-    const first = setPlantPhoto(db, files, monty.id, 'file:///cache/1.jpg', noon(2026, 9, 21));
-    const second = setPlantPhoto(db, files, monty.id, 'file:///cache/2.jpg', noon(2026, 9, 22));
+    const first = setPlantPhoto(
+      db,
+      files,
+      monty.id,
+      'file:///cache/1.jpg',
+      null,
+      noon(2026, 9, 21),
+    );
+    const second = setPlantPhoto(
+      db,
+      files,
+      monty.id,
+      'file:///cache/2.jpg',
+      null,
+      noon(2026, 9, 22),
+    );
     const pothos = createPlant(db, { speciesId: POTHOS }, noon(2026, 9, 20));
-    const kept = setPlantPhoto(db, files, pothos.id, 'file:///cache/3.jpg', noon(2026, 9, 23));
+    const focus = { x: 0.4, y: 0.3, aspect: 0.75 };
+    const kept = setPlantPhoto(
+      db,
+      files,
+      pothos.id,
+      'file:///cache/3.jpg',
+      focus,
+      noon(2026, 9, 23),
+    );
     archivePlant(db, pothos.id, noon(2026, 9, 23));
 
     const zipped = await exportGarden(db, files);
@@ -236,6 +258,9 @@ describe('Export', () => {
         id: first.id,
         plant_id: monty.id,
         filename: `${first.id}.jpg`,
+        focus_x: null,
+        focus_y: null,
+        aspect: null,
         created_at: '2026-09-21T00:00:00.000Z',
         updated_at: '2026-09-22T00:00:00.000Z',
         deleted_at: '2026-09-22T00:00:00.000Z',
@@ -244,6 +269,9 @@ describe('Export', () => {
         id: second.id,
         plant_id: monty.id,
         filename: `${second.id}.jpg`,
+        focus_x: null,
+        focus_y: null,
+        aspect: null,
         created_at: '2026-09-22T00:00:00.000Z',
         updated_at: '2026-09-22T00:00:00.000Z',
         deleted_at: null,
@@ -252,6 +280,9 @@ describe('Export', () => {
         id: kept.id,
         plant_id: pothos.id,
         filename: `${kept.id}.jpg`,
+        focus_x: 0.4,
+        focus_y: 0.3,
+        aspect: 0.75,
         created_at: '2026-09-23T00:00:00.000Z',
         updated_at: '2026-09-23T00:00:00.000Z',
         deleted_at: null,

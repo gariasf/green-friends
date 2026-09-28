@@ -24,6 +24,10 @@ _Avoid_: scan, detect, recognise, AI
 One of up to three Species that Identify offers for a photo, with a confidence word. Choosing one sets the plant's Species as searching for it would.
 _Avoid_: match, result, prediction
 
+**Focal point**:
+The spot in a plant's photo that every frame centres on, as far as the photo's edges allow. The phone finds it when a photo is added, and the user can correct it right then. A photo without one is framed on its centre.
+_Avoid_: crop, focus area, saliency
+
 **Display Name**:
 What the UI calls a plant: its nickname where set, otherwise its species' colloquial name. A plant without a species must have a nickname.
 _Avoid_: title, label

@@ -12,7 +12,7 @@ import {
   type CareSchedule,
   type CareType,
 } from './plants';
-import { livePhotoJoin } from './photos';
+import { focusColumns, livePhotoJoin, toFocus, type Focus } from './photos';
 import { getSettings, type Settings } from './settings';
 import { getSpecies } from './species';
 
@@ -39,6 +39,8 @@ export type PlantCare = {
   toxicToPets: boolean | null;
   /** The live photo's filename (src/core/photos.ts); null when the plant has none. */
   photo: string | null;
+  /** The live photo's Focal point; null for none, or no photo. */
+  focus: Focus | null;
   care: Record<CareType, CareStatus>;
 };
 
@@ -74,13 +76,19 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
   for (const row of latest) if (row.on) lastDone.set(`${row.plantId}/${row.type}`, row.on);
 
   const inCare = db
-    .select({ plant: plants, species, displayName: displayNameSql, photo: photos.filename })
+    .select({
+      plant: plants,
+      species,
+      displayName: displayNameSql,
+      photo: photos.filename,
+      focus: focusColumns,
+    })
     .from(plants)
     .leftJoin(species, eq(plants.speciesId, species.id))
     .leftJoin(photos, livePhotoJoin)
     .where(and(isNull(plants.deletedAt), isNull(plants.archivedAt)))
     .all()
-    .map(({ plant, species, displayName, photo }) => {
+    .map(({ plant, species, displayName, photo, focus }) => {
       const schedule = effectiveSchedule(plant, species);
       // A care type never logged anchors to the local day of creation (ADR-0005).
       const anchor = localDay(new Date(plant.createdAt));
@@ -95,6 +103,7 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
           scientificName: species?.scientificName ?? null,
           toxicToPets: species?.toxicToPets ?? null,
           photo,
+          focus: toFocus(focus),
         },
         dueDays,
         restsInSummer: species?.restsInSummer ?? false,
