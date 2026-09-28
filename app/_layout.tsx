@@ -9,6 +9,7 @@ import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
 import { useFindMissingFocus } from '@/src/ui/Photo';
+import { polish, PolishSwitcher, usePolishGeneration } from '@/src/ui/PolishPrototype';
 import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 import { useSync } from '@/src/ui/useSync';
@@ -54,14 +55,25 @@ export default function RootLayout() {
   // React Native never measures text again when the text size changes under a running app, so
   // cards keep the heights of the old size; drawing every screen anew at the new size fixes it.
   const { fontScale } = useWindowDimensions();
+  // PROTOTYPE: a new variant remounts every screen; finish B puts sheets on the warm raised surface.
+  const generation = usePolishGeneration();
+  const sheet = {
+    ...SHEET,
+    contentStyle: { backgroundColor: polish.finish === 'B' ? colors.raised : colors.sheet },
+  };
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack
-        key={fontScale}
+        key={`${fontScale}-${generation}`}
         screenOptions={{
           ...headerFonts,
           contentStyle: { backgroundColor: colors.background },
           headerBackButtonDisplayMode: 'minimal',
+          // PROTOTYPE finish B: pushed bars on the ground, not iOS white.
+          ...(polish.finish === 'B' && {
+            headerStyle: { backgroundColor: colors.background },
+            headerShadowVisible: false,
+          }),
         }}
       >
         <Stack.Screen
@@ -81,10 +93,11 @@ export default function RootLayout() {
         />
         {/* The plant's photo leads the screen and its name follows, so the header has no title. */}
         <Stack.Screen name="plants/[id]/index" options={{ title: '' }} />
-        <Stack.Screen name="plants/[id]/log" options={SHEET} />
-        <Stack.Screen name="care-events/[id]" options={SHEET} />
+        <Stack.Screen name="plants/[id]/log" options={sheet} />
+        <Stack.Screen name="care-events/[id]" options={sheet} />
         <Stack.Screen name="archived" options={{ title: 'Archived' }} />
       </Stack>
+      <PolishSwitcher />
     </ThemeProvider>
   );
 }

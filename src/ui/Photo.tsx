@@ -27,6 +27,7 @@ import {
 } from '@/src/core/photos';
 import { db } from '@/src/db/client';
 import { alertError, TextButton } from '@/src/ui/Form';
+import { polish, quietPlaceholder } from '@/src/ui/PolishPrototype';
 import { colors, font, radius, space, text } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
@@ -357,6 +358,8 @@ export function PlantPhoto({
       accessibilityElementsHidden
       style={[
         styles.photo,
+        // PROTOTYPE finish B: a paler placeholder, so photos lead.
+        !uri && polish.finish === 'B' && { backgroundColor: quietPlaceholder },
         { width: size, height: size },
         borderRadius != null && { borderRadius },
       ]}
@@ -378,7 +381,10 @@ export function Initial({ name, size }: { name: string; size: number }) {
   return (
     <Text
       allowFontScaling={false}
-      style={[font.title, { fontSize: size * 0.46, color: colors.tint }]}
+      style={[
+        font.title,
+        { fontSize: size * (polish.finish === 'B' ? 0.3 : 0.46), color: colors.tint },
+      ]}
     >
       {name.trim().charAt(0).toUpperCase()}
     </Text>

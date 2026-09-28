@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Symptom } from '@/src/core/careGuide';
 import { Row } from '@/src/ui/CareGuide';
 import { guides } from '@/src/ui/guides';
-import { colors, group, space } from '@/src/ui/theme';
+import { colors, group, sectionHeader, space } from '@/src/ui/theme';
 import { SYMPTOM_GROUPS, SYMPTOMS_TITLE } from '@/src/ui/words';
 
 /** Each group's icon, beside every Symptom in it. */
@@ -21,7 +21,7 @@ export default function SymptomsScreen() {
       <Stack.Screen options={{ title: SYMPTOMS_TITLE }} />
       {SYMPTOM_GROUPS.map(({ kind, title }) => (
         <View key={kind}>
-          <Text accessibilityRole="header" style={[group.header, styles.head]}>
+          <Text accessibilityRole="header" style={[sectionHeader(), styles.head]}>
             {title}
           </Text>
           <View style={group.box}>

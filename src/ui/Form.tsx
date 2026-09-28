@@ -8,7 +8,7 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import {
   Alert,
   InputAccessoryView,
@@ -19,6 +19,7 @@ import {
   TextInput,
   useWindowDimensions,
   View,
+  type ColorValue,
   type StyleProp,
   type TextInputProps,
   type ViewStyle,
@@ -27,6 +28,7 @@ import {
 import { localDay, localNoon, shiftDays } from '@/src/core/dates';
 import { ChipGroup } from '@/src/ui/Chip';
 import { Icon } from '@/src/ui/Icon';
+import { polish } from '@/src/ui/PolishPrototype';
 import {
   accessibilitySize,
   colors,
@@ -107,6 +109,45 @@ export function WhenPicker({
     if (day !== null) props.onChange(day);
     else if (props.optional) props.onChange(null);
   };
+  // PROTOTYPE finish B: the date picker waits behind "Earlier…", so the sheet shows no date in the
+  // region's own format ("28 Sep 2026") beside the app's ("Sep 28") until one is wanted.
+  const [earlier, setEarlier] = useState(false);
+  const hideable = polish.finish === 'B';
+  const quickDay = quick.some((option) => option.value === props.value);
+  if (hideable) {
+    const chipsB = (
+      <ChipGroup
+        options={[...quick, { label: 'Earlier…', value: 'earlier' }]}
+        value={earlier || !quickDay ? 'earlier' : props.value}
+        onChange={(value) => {
+          if (value === 'earlier') return setEarlier(true);
+          setEarlier(false);
+          pick(value);
+        }}
+      />
+    );
+    return (
+      <View style={styles.fieldBlock}>
+        <Text style={styles.label}>{label}</Text>
+        <View style={styles.whenStack}>
+          {chipsB}
+          {(earlier || !quickDay) && (
+            <View style={styles.pickerRow}>
+              <Text style={[text.subheadline, styles.grow]}>Pick a day</Text>
+              <Host matchContents ignoreSafeArea="all" seedColor={colors.tint}>
+                <DatePicker
+                  selection={localNoon(props.value ?? today)}
+                  range={{ end: localNoon(today) }}
+                  onDateChange={(date) => pick(localDay(date))}
+                  modifiers={[datePickerStyle('compact'), labelsHidden()]}
+                />
+              </Host>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
   const chips = <ChipGroup options={quick} value={props.value} onChange={pick} />;
   // Sized by its SwiftUI content both ways (the community datetime-picker drop-in only matches it
   // vertically, and collapses in a row). A Host inside a row that wraps loses its place (@expo/ui
@@ -245,11 +286,14 @@ export function TextButton({
   accessibilityHint,
   onPress,
   style,
+  color,
 }: {
   label: string;
   destructive?: boolean;
   disabled?: boolean;
   header?: boolean;
+  /** PROTOTYPE finish B: the label's colour, white over the Plant screen's photo. */
+  color?: ColorValue;
   accessibilityLabel?: string;
   accessibilityHint?: string;
   onPress: () => void;
@@ -274,6 +318,7 @@ export function TextButton({
           styles.textButton,
           destructive && styles.destructive,
           disabled && styles.buttonLabelDisabled,
+          color !== undefined && { color },
         ]}
       >
         {label}

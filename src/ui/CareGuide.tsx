@@ -12,7 +12,17 @@ import {
 import { CARE_COPY } from '@/src/ui/CareEvent';
 import { Segmented } from '@/src/ui/Form';
 import { Icon, type IconName } from '@/src/ui/Icon';
-import { colors, font, group, pressedStyle, radius, space, text } from '@/src/ui/theme';
+import { polish } from '@/src/ui/PolishPrototype';
+import {
+  colors,
+  font,
+  group,
+  pressedStyle,
+  radius,
+  sectionHeader,
+  space,
+  text,
+} from '@/src/ui/theme';
 import {
   feedLine,
   isAllYear,
@@ -64,7 +74,16 @@ export function Row({
 }) {
   const content = (
     <>
-      <Icon name={symbol} size={20} color={tint} />
+      {/* PROTOTYPE finish B: the icons that aren't a care type's filled one at bold weight, so
+          their ink matches the filled ones in the same column. */}
+      <Icon
+        name={symbol}
+        size={20}
+        color={tint}
+        weight={
+          polish.finish === 'B' && tint !== WATER.hue && tint !== FEED.hue ? 'bold' : undefined
+        }
+      />
       <View style={styles.rowText}>
         <Text style={text.headline}>{title}</Text>
         {body ? <Text style={text.subheadline}>{body}</Text> : null}
@@ -145,7 +164,7 @@ export function CareGroup({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHead}>
-        <Text accessibilityRole="header" style={group.header}>
+        <Text accessibilityRole="header" style={sectionHeader()}>
           Care
         </Text>
         <Text style={[text.footnote, styles.grow, styles.end]}>{seasonLine(season, today)}</Text>
@@ -286,7 +305,7 @@ function Card({
   children: ReactNode;
 }) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, polish.finish === 'B' && styles.outlined]}>
       <View style={styles.line}>
         <Icon name={symbol} size={18} color={tint} />
         <Text accessibilityRole="header" style={[text.title2, styles.grow]}>
@@ -312,7 +331,7 @@ export function CauseCard({
   onLog: () => void;
 }) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, polish.finish === 'B' && styles.outlined]}>
       <Text accessibilityRole="header" style={text.title2}>
         {cause.name}
       </Text>

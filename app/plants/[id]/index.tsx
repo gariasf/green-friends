@@ -1,6 +1,13 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+  DynamicColorIOS,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedRef,
@@ -20,7 +27,7 @@ import {
   type CareEvent,
   type CareEventType,
 } from '@/src/core/careLog';
-import { localDay } from '@/src/core/dates';
+import { daysBetween, localDay } from '@/src/core/dates';
 import { setPlantPhoto } from '@/src/core/photos';
 import {
   CARE_TYPES,
@@ -47,20 +54,29 @@ import {
   PlantPhoto,
   usePhotoPicker,
 } from '@/src/ui/Photo';
+import { polish } from '@/src/ui/PolishPrototype';
 import {
   accessibilitySize,
   colors,
   font,
-  group,
   pressedStyle,
   radius,
+  sectionHeader,
   space,
   text,
   useRaised,
 } from '@/src/ui/theme';
 import { useUndoToast } from '@/src/ui/UndoToast';
 import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
-import { dayLabel, lastLine, scientificBeneath, tileValue, whoseSchedule } from '@/src/ui/words';
+import {
+  dateLabel,
+  dayLabel,
+  lastLine,
+  plural,
+  scientificBeneath,
+  tileValue,
+  whoseSchedule,
+} from '@/src/ui/words';
 
 /**
  * A plant's screen, where tapping a plant anywhere leads (spec #22, the prototype's variant B): its
@@ -112,6 +128,13 @@ export default function PlantScreen() {
     router.push({ pathname: '/plants/[id]/log', params: { id, type } });
   const pickPhoto = photoPicker.choose;
   const badge = plant.toxicToPets !== null && <Toxicity toxic={plant.toxicToPets} />;
+  const done = (type: CareType) => {
+    const event = logCareEvent(db, { plantId: id, type });
+    tickHaptic();
+    undo.offer(`${CARE_COPY[type].done} ${plant.displayName}`, [event.id]);
+  };
+  // PROTOTYPE finish B: the bar's buttons in white over the photo, the tint once it has passed.
+  const onPhoto = polish.finish === 'B' && !!uri && !pastHero;
 
   return (
     <>
@@ -140,10 +163,12 @@ export default function PlantScreen() {
                 )
               : undefined,
             title: uri && pastHero ? plant.displayName : '',
+            headerTintColor: onPhoto ? colors.onPhoto : undefined,
             headerRight: () => (
               <TextButton
                 label="Edit"
                 header
+                color={onPhoto ? colors.onPhoto : undefined}
                 onPress={() => router.push({ pathname: '/plants/[id]/edit', params: { id } })}
               />
             ),
@@ -228,20 +253,22 @@ export default function PlantScreen() {
                 lastDone={lastDone(type)}
                 today={today}
                 onOpen={() => openLog(type)}
-                onDone={() => {
-                  const event = logCareEvent(db, { plantId: id, type });
-                  tickHaptic();
-                  undo.offer(`${CARE_COPY[type].done} ${plant.displayName}`, [event.id]);
-                }}
+                onDone={() => done(type)}
               />
             ))}
           </View>
         )}
+        {/* PROTOTYPE tiles B: what's Due now, in a tinted row under the tiles, with its Done. */}
+        {care &&
+          polish.tiles === 'B' &&
+          CARE_TYPES.filter((type) => care[type].state === 'due').map((type) => (
+            <DueRow key={type} type={type} status={care[type]} onDone={() => done(type)} />
+          ))}
 
         {care && <CareGroup id={id} guide={plant.guide} season={plant.season} today={today} />}
 
         <View style={styles.logHead}>
-          <Text accessibilityRole="header" style={group.header}>
+          <Text accessibilityRole="header" style={sectionHeader()}>
             Care Log
           </Text>
           <TextButton label="Add note" onPress={() => openLog('note')} />
@@ -353,28 +380,49 @@ function CareTile({
   const [value, spoken] = tileValue(status, today);
   const due = status.state === 'due';
   const overdue = due && status.daysOverdue > 0;
-  const last = lastLine(lastDone, today);
   const raised = useRaised();
+  // PROTOTYPE tiles B and C: values that say which way they count, the next date while upcoming.
+  const worded = polish.tiles !== 'A';
+  const taps = polish.tiles === 'C' && due;
+  const last =
+    worded && status.state === 'upcoming'
+      ? dateLabel(
+          status.dueOn,
+          today,
+          status.dueOn.slice(0, 4) === today.slice(0, 4) ? 'short' : undefined,
+        )
+      : lastLine(lastDone, today);
   return (
     <View style={[styles.tile, raised]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}, ${spoken}. ${last}`}
-        accessibilityHint="Logs it on a day you choose"
-        onPress={onOpen}
+        accessibilityHint={
+          taps ? 'Logs it as done today. Long-press to pick a day' : 'Logs it on a day you choose'
+        }
+        onPress={taps ? onDone : onOpen}
+        onLongPress={taps ? onOpen : undefined}
         style={({ pressed }) => [styles.tileBody, pressed && pressedStyle.button]}
       >
         <View style={styles.tileHead}>
           <CareSymbol type={type} size={18} />
           <Text style={text.footnote}>{label}</Text>
         </View>
-        <Text style={[styles.tileValue, due && (overdue ? styles.caution : styles.dueToday)]}>
-          {value}
-          {overdue && <Text style={styles.overdueWord}> overdue</Text>}
-        </Text>
-        <Text style={text.footnote}>{last}</Text>
+        {worded ? (
+          <WordedValue status={status} today={today} />
+        ) : (
+          <Text style={[styles.tileValue, due && (overdue ? styles.caution : styles.dueToday)]}>
+            {value}
+            {overdue && <Text style={styles.overdueWord}> overdue</Text>}
+          </Text>
+        )}
+        <View style={styles.tileFoot}>
+          <Text style={[text.footnote, styles.grow]}>{last}</Text>
+          {/* PROTOTYPE tiles C: the circle says a tap logs it, as on Today. */}
+          {taps && <Icon name="circle" size={22} color={colors.tertiaryLabel} />}
+        </View>
       </Pressable>
-      {due && (
+      {due && polish.tiles === 'A' && (
         <Pressable
           accessibilityRole="button"
           // Starts with the word it shows, so Voice Control's "Tap Done" finds it.
@@ -389,6 +437,77 @@ function CareTile({
           <Text style={styles.doneLabel}>Done</Text>
         </Pressable>
       )}
+    </View>
+  );
+}
+
+/**
+ * PROTOTYPE tiles B and C: the value with its direction and its unit small beside the number:
+ * "in 3 d", "Tomorrow", "Today", "5 d overdue", "in 17 mo".
+ */
+function WordedValue({ status, today }: { status: CareStatus; today: string }) {
+  const big = styles.tileValue;
+  switch (status.state) {
+    case 'unscheduled':
+      return <Text style={big}>—</Text>;
+    case 'paused':
+      return <Text style={big}>Paused</Text>;
+    case 'due':
+      return status.daysOverdue === 0 ? (
+        <Text style={[big, styles.dueToday]}>Today</Text>
+      ) : (
+        <Text style={[big, styles.caution]}>
+          {status.daysOverdue}
+          <Text style={[styles.unit, styles.caution]}> d overdue</Text>
+        </Text>
+      );
+    case 'upcoming': {
+      const days = daysBetween(today, status.dueOn);
+      const months = days >= 60;
+      return (
+        <Text style={big}>
+          <Text style={styles.unit}>in </Text>
+          {months ? Math.round(days / 30.4) : days}
+          <Text style={styles.unit}>{months ? ' mo' : ' d'}</Text>
+        </Text>
+      );
+    }
+  }
+}
+
+/** PROTOTYPE tiles B: a Due care type under the tiles, tinted as now, with Done. */
+function DueRow({
+  type,
+  status,
+  onDone,
+}: {
+  type: CareType;
+  status: CareStatus;
+  onDone: () => void;
+}) {
+  const overdue = status.state === 'due' && status.daysOverdue > 0;
+  const when =
+    status.state === 'due' && overdue
+      ? `${plural(status.daysOverdue, 'day')} overdue`
+      : 'Due today';
+  return (
+    <View style={styles.dueRow}>
+      <CareSymbol type={type} size={18} />
+      <Text style={[text.subheadline, styles.grow, { color: colors.label }]}>
+        {CARE_COPY[type].label} ·{' '}
+        <Text style={overdue ? styles.caution : styles.dueToday}>{when}</Text>
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Done, ${CARE_COPY[type].done.toLowerCase()}`}
+        accessibilityHint="Logs it as done today"
+        hitSlop={{ top: 9, bottom: 9 }}
+        onPress={onDone}
+        style={({ pressed }) => [styles.done, styles.doneInRow, pressed && pressedStyle.button]}
+      >
+        <Icon name="check" size={12} color={colors.onTint} />
+        <Text style={styles.doneLabel}>Done</Text>
+      </Pressable>
     </View>
   );
 }
@@ -498,6 +617,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tint,
   },
   doneLabel: { ...text.subheadline, ...font.semibold, color: colors.onTint },
+  tileFoot: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  unit: { ...text.subheadline, ...font.semibold, fontSize: 15, color: colors.label },
+  dueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.s,
+    marginHorizontal: space.l,
+    marginTop: space.s,
+    paddingVertical: space.s,
+    paddingLeft: space.m,
+    paddingRight: space.s,
+    borderRadius: radius.surface,
+    borderCurve: 'continuous',
+    backgroundColor: DynamicColorIOS({
+      light: 'rgba(65, 119, 119, 0.10)',
+      dark: 'rgba(127, 184, 184, 0.14)',
+    }),
+  },
+  doneInRow: {
+    marginHorizontal: 0,
+    marginBottom: 0,
+    paddingHorizontal: space.m,
+    paddingVertical: 6,
+  },
   logHead: {
     flexDirection: 'row',
     alignItems: 'center',

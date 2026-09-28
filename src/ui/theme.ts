@@ -1,6 +1,8 @@
 import { Color, DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 import { DynamicColorIOS, StyleSheet, useColorScheme, type ColorSchemeName } from 'react-native';
 
+import { polish } from '@/src/ui/PolishPrototype';
+
 // The palette (ticket #34): four colours from Sanzo Wada's A Dictionary of Color Combinations,
 // their hex the naive conversion of the owner's CMYK, each but Olive Ocher with a dark shade.
 /** Dark Medici Blue, the tint: 5.08:1 on white, 7.66:1 on the dark card. */
@@ -131,6 +133,8 @@ export function navigationTheme(scheme: ColorSchemeName): Theme {
       ...base.colors,
       primary: dark ? MEDICI.dark : MEDICI.light,
       background: dark ? GROUND.dark : GROUND.light,
+      // PROTOTYPE finish B: pushed bars on the ground rather than iOS white.
+      ...(polish.finish === 'B' && { card: dark ? GROUND.dark : GROUND.light }),
     },
   };
 }
@@ -254,3 +258,8 @@ export const group = StyleSheet.create({
   /** A section's heading, in sentence case, placed by its screen in line with what it heads. */
   header: { ...text.headline, color: colors.secondaryLabel },
 });
+
+/** PROTOTYPE: a section's heading, read at render: finish B sets it as the Web view's serif h2. */
+export function sectionHeader() {
+  return polish.finish === 'B' ? text.title2 : group.header;
+}

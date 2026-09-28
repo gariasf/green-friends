@@ -16,12 +16,14 @@ import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
 import { taskHaptic, TICK_MS, TickMark, tickHaptic, useListMotion } from '@/src/ui/motion';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
+import { polish } from '@/src/ui/PolishPrototype';
 import {
   colors,
   font,
   group,
   pressedStyle,
   radius,
+  sectionHeader,
   space,
   target,
   text,
@@ -80,8 +82,8 @@ export default function TodayScreen() {
         </Text>
         {/* What is there when Today opens is simply there; only later changes animate. */}
         <LayoutAnimationConfig skipEntering>
-          {needingAttention.map((plant) => (
-            <CareCard key={plant.id} plant={plant} onLog={log} />
+          {needingAttention.map((plant, index) => (
+            <CareCard key={plant.id} plant={plant} onLog={log} hero={index === 0} />
           ))}
           {needingAttention.length === 0 && plants.length > 0 && (
             <Animated.View entering={FadeIn}>
@@ -157,9 +159,11 @@ function openPicked({ id }: PlantCare, action: string) {
 function CareCard({
   plant,
   onLog,
+  hero,
 }: {
   plant: PlantCare;
   onLog: (plant: PlantCare, types: CareType[]) => void;
+  hero: boolean;
 }) {
   const due = dueCare(plant);
   const [ticked, setTicked] = useState<CareType[]>([]);
@@ -180,12 +184,109 @@ function CareCard({
     }, TICK_MS);
   };
 
+  // PROTOTYPE today B: only the first card (the most Overdue) is raised; the rest are outlined on
+  // the surface, and a plant with one Due care type folds into one row.
+  const quiet = polish.today === 'B';
+  const surface = quiet && !hero ? styles.outlined : raised;
+  const more = (
+    <Host matchContents ignoreSafeArea="all">
+      <Menu
+        label={
+          <RNHostView matchContents>
+            <View style={target.icon}>
+              <View style={[styles.more, quiet && styles.moreBare]}>
+                <Icon
+                  name="more"
+                  size={18}
+                  color={quiet ? colors.tertiaryLabel : colors.secondaryLabel}
+                />
+              </View>
+            </View>
+          </RNHostView>
+        }
+        modifiers={[accessibilityLabel(`More for ${plant.displayName}`)]}
+      >
+        <Section title={plant.displayName}>
+          {MORE.map(({ id, title, image }) => (
+            <Button
+              key={id}
+              label={title}
+              systemImage={image}
+              onPress={() => openPicked(plant, id)}
+            />
+          ))}
+        </Section>
+      </Menu>
+    </Host>
+  );
+  const circle = (type: CareType) => {
+    const done = ticked.includes(type);
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
+        accessibilityHint="Logs it as done today"
+        accessibilityState={{ checked: done, disabled: done }}
+        disabled={done}
+        hitSlop={8}
+        onPress={() => tick([type])}
+      >
+        {({ pressed }) => (
+          <TickMark
+            done={done || pressed}
+            size={30}
+            circle={<Icon name="circle" size={30} color={colors.tertiaryLabel} />}
+            check={<Icon name="checkCircle" size={30} color={colors.tint} />}
+          />
+        )}
+      </Pressable>
+    );
+  };
+  if (quiet && due.length === 1) {
+    const [{ type, daysOverdue }] = due;
+    const overdue = daysOverdue > 0;
+    return (
+      <Animated.View
+        layout={layout}
+        entering={entering}
+        exiting={exiting}
+        style={[styles.card, surface, styles.folded]}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint="Opens the plant"
+          onPress={() => openPlant(plant)}
+          style={({ pressed }) => [styles.identity, pressed && pressedStyle.button]}
+        >
+          <PlantPhoto
+            uri={photoUri(plant.photo)}
+            focus={plant.focus}
+            size={52}
+            name={plant.displayName}
+          />
+          <View style={styles.grow}>
+            <Text style={text.headline}>{plant.displayName}</Text>
+            <View style={styles.foldLine}>
+              <CareSymbol type={type} size={14} />
+              <Text style={[styles.status, overdue ? styles.overdue : styles.dueToday]}>
+                {CARE_COPY[type].label} ·{' '}
+                {overdue ? `${plural(daysOverdue, 'day')} overdue` : 'due today'}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+        {more}
+        {circle(type)}
+      </Animated.View>
+    );
+  }
+
   return (
     <Animated.View
       layout={layout}
       entering={entering}
       exiting={exiting}
-      style={[styles.card, raised]}
+      style={[styles.card, surface]}
     >
       <View style={styles.cardHead}>
         <Pressable
@@ -207,35 +308,10 @@ function CareCard({
         </Pressable>
         {/* iOS's own menu, which opens on a tap. SwiftUI's Menu is the button VoiceOver reads, so
             the label goes on it; @expo/ui's MenuView drop-in can't pass it one. */}
-        <Host matchContents ignoreSafeArea="all">
-          <Menu
-            label={
-              <RNHostView matchContents>
-                <View style={target.icon}>
-                  <View style={styles.more}>
-                    <Icon name="more" size={18} color={colors.secondaryLabel} />
-                  </View>
-                </View>
-              </RNHostView>
-            }
-            modifiers={[accessibilityLabel(`More for ${plant.displayName}`)]}
-          >
-            <Section title={plant.displayName}>
-              {MORE.map(({ id, title, image }) => (
-                <Button
-                  key={id}
-                  label={title}
-                  systemImage={image}
-                  onPress={() => openPicked(plant, id)}
-                />
-              ))}
-            </Section>
-          </Menu>
-        </Host>
+        {more}
       </View>
       {due.map(({ type, daysOverdue }) => {
         const overdue = daysOverdue > 0;
-        const done = ticked.includes(type);
         return (
           <Animated.View
             key={type}
@@ -258,25 +334,7 @@ function CareCard({
                 </Text>
               </View>
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${CARE_COPY[type].label} ${plant.displayName}`}
-              accessibilityHint="Logs it as done today"
-              accessibilityState={{ checked: done, disabled: done }}
-              disabled={done}
-              // 30 pt across; this makes it a 46 pt target.
-              hitSlop={8}
-              onPress={() => tick([type])}
-            >
-              {({ pressed }) => (
-                <TickMark
-                  done={done || pressed}
-                  size={30}
-                  circle={<Icon name="circle" size={30} color={colors.tertiaryLabel} />}
-                  check={<Icon name="checkCircle" size={30} color={colors.tint} />}
-                />
-              )}
-            </Pressable>
+            {circle(type)}
           </Animated.View>
         );
       })}
@@ -302,7 +360,7 @@ function RestOfGarden({ plants, today }: { plants: PlantCare[]; today: string })
   const width = peekWidth(window.width - space.l, 92 * window.fontScale, space.m, plants.length);
   return (
     <Animated.View layout={layout}>
-      <Text accessibilityRole="header" style={[group.header, styles.restHeading]}>
+      <Text accessibilityRole="header" style={[sectionHeader(), styles.restHeading]}>
         Everything else
       </Text>
       <ScrollView
@@ -380,6 +438,14 @@ const styles = StyleSheet.create({
     paddingLeft: space.l,
   },
   scientific: { ...text.footnote, ...font.italic },
+  outlined: {
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: colors.outline,
+  },
+  folded: { flexDirection: 'row', alignItems: 'center', paddingRight: space.l },
+  foldLine: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: 2 },
+  moreBare: { backgroundColor: 'transparent' },
   more: {
     width: 32,
     height: 32,
