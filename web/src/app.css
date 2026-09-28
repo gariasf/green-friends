@@ -700,16 +700,28 @@ kbd {
   min-width: 0;
 }
 
+/* A care Due on two lines, always: the care type, then its status beneath. */
 .due li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   margin-top: 0.375rem;
   font-size: var(--text-sm);
 }
 
-.due li > :last-child {
-  margin-left: auto;
+.due .care-icon {
+  margin-top: 0.2rem;
+}
+
+.due-words {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+/* Today's date, alone under the title, a size up and in ink. */
+.date {
+  font-size: var(--text-md);
 }
 
 .empty {
@@ -1384,6 +1396,29 @@ th {
 .check {
   flex: none;
   color: var(--tint);
+}
+
+/* A narrow calendar: each name over two lines rather than cut, without the photos. */
+@container (max-width: 64rem) {
+  .calendar .thumb {
+    display: none;
+  }
+
+  .calendar .items a {
+    align-items: flex-start;
+  }
+
+  .calendar :is(.care-icon, .check) {
+    margin-top: 0.15rem;
+  }
+
+  .calendar .item-name {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
 }
 
 .calendar-list {

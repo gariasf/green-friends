@@ -29,7 +29,6 @@ import {
   COMING_UP,
   dateLabel,
   dueLine,
-  dueThisWeek,
   entries,
   everyLine,
   lastLine,
@@ -62,9 +61,10 @@ export type PhotoUrl = (filename: string | null) => string | undefined;
 // ponytail: the day is the one the screen was drawn on; left open past midnight, Today shows
 // yesterday until the next navigation, as the phone's does until the next write.
 /**
- * Today (spec #72): the browser's day and how many plants need you, each plant that Needs
- * Attention as a card with what is Due or Overdue and by how much, then Coming up, two weeks from
- * this week's Monday as a calendar. Read-only, so a plant opens its page rather than logging care.
+ * Today (spec #72, #76): the browser's day, then how many plants need you as the heading over each
+ * plant that Needs Attention, a card with what is Due or Overdue and by how much, then Coming up,
+ * two weeks from this week's Monday as a calendar. Read-only, so a plant opens its page rather
+ * than logging care.
  */
 export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl }) {
   const today = localDay(new Date());
@@ -73,11 +73,6 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
   // Weeks start on Monday.
   const monday = shiftDays(today, -((localNoon(today).getDay() + 6) % 7));
   const plan = useMemo(() => planDays(garden.db, today, monday, 14), [garden, today, monday]);
-  const dueThisWeekCount = plan
-    .slice(0, 7)
-    .filter(({ day }) => day >= today)
-    .flatMap(({ items }) => items)
-    .filter(({ kind }) => kind !== 'done').length;
   const date = localNoon(today).toLocaleDateString(undefined, {
     weekday: 'long',
     day: 'numeric',
@@ -89,9 +84,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
     <>
       <header className="page-head">
         <h1 tabIndex={-1}>Today</h1>
-        <p className="quiet">
-          {plants.length > 0 ? `${date} · ${plantsNeedYou(plants.length)}` : date}
-        </p>
+        <p className="date">{date}</p>
       </header>
       {inCare.length === 0 && (
         <Empty title="No plants in care" line="Add one in Green Friends on your phone." />
@@ -100,7 +93,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         <Empty title="All caught up" line="Nothing needs you today." />
       )}
       {plants.length > 0 && (
-        <Section title={NEEDS_YOU} note={plural(plants.length, 'plant')}>
+        <Section title={plantsNeedYou(plants.length)}>
           <ul className="cards">
             {plants.map((plant) => (
               <li key={plant.id}>
@@ -115,14 +108,17 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
                     <span className="name">{plant.displayName}</span>
                     <ul className="due">
                       {dueCare(plant).map(({ type, daysOverdue }) => (
+                        // Two lines, always, so every card keeps one shape at any width.
                         <li key={type}>
                           <CareIcon type={type} size={16} />
-                          <span>{CARE_WORDS[type].label}</span>
-                          {daysOverdue > 0 ? (
-                            <span className="overdue">{plural(daysOverdue, 'day')} overdue</span>
-                          ) : (
-                            <span className="due-today">Due today</span>
-                          )}
+                          <span className="due-words">
+                            <span>{CARE_WORDS[type].label}</span>
+                            {daysOverdue > 0 ? (
+                              <span className="overdue">{plural(daysOverdue, 'day')} overdue</span>
+                            ) : (
+                              <span className="due-today">Due today</span>
+                            )}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -134,7 +130,7 @@ export function Today({ garden, photoUrl }: { garden: Garden; photoUrl: PhotoUrl
         </Section>
       )}
       {inCare.length > 0 && (
-        <Section title={COMING_UP} note={`${range} · ${dueThisWeek(dueThisWeekCount)}`}>
+        <Section title={COMING_UP} note={range}>
           <Calendar plan={plan} today={today} photoUrl={photoUrl} />
         </Section>
       )}

@@ -314,11 +314,8 @@ export function entries(count: number): string {
   return `${count}\u00a0${count === 1 ? 'entry' : 'entries'}`;
 }
 
-/** Today's two-week calendar in the Web view, and how much of this week is still Due: "9 Due this week". */
+/** Today's two-week calendar in the Web view. */
 export const COMING_UP = 'Coming up';
-export function dueThisWeek(count: number): string {
-  return `${count} Due this week`;
-}
 
 /** Under Coming up, after a check and after a care icon. */
 export const CALENDAR_LEGEND = {
