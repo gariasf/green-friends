@@ -46,7 +46,7 @@ function todayIs(day: Date) {
 
 afterEach(() => vi.useRealTimers());
 
-test("a Monstera's page carries its Care Guide, both Seasons side by side with nothing to switch", async () => {
+test("a Monstera's page carries its Care Guide, both Seasons side by side with its advice only", async () => {
   todayIs(noon(2026, 9, 28));
   const { render, monty } = await snapshotGarden();
 
@@ -54,9 +54,11 @@ test("a Monstera's page carries its Care Guide, both Seasons side by side with n
   expect(page).toMatch(
     /<th scope="col" class="now"><strong>Growing<\/strong><span class="quiet">Mar – Oct<\/span><span class="now-pill">Now<\/span><\/th><th scope="col"><strong>Dormant<\/strong><span class="quiet">Nov – Feb<\/span><\/th>/,
   );
+  expect(page).toMatch(/<th scope="row">(?:(?!<\/th>).)*Fertilize<\/th>/);
+  expect(page).not.toContain('Feed</th>');
+  // The intervals are the Care card's alone: this Season's, never the Dormant one's.
   expect(page).toContain('Every 7\u00a0days');
-  expect(page).toContain('Every 14\u00a0days');
-  expect(page).toContain('Paused');
+  expect(page).not.toContain('Every 14\u00a0days');
   expect(page).not.toContain('aria-pressed');
   expect(page).toContain('Tropical aroid');
   expect(page).toContain('Morning sun');
@@ -79,12 +81,13 @@ test("in December the Dormant column is Now's", async () => {
   );
 });
 
-test('a garden Growing all year says so under both Seasons', async () => {
+test('a garden Growing all year has no Dormant column, and nothing to mark Now', async () => {
   const { render, monty } = await snapshotGarden({ growingStartMonth: 1, growingEndMonth: 12 });
 
   const page = render(monty);
-  expect(page).toContain('<span class="quiet">all year</span>');
-  expect(page).toContain('<span class="quiet">not in your garden</span>');
+  expect(page).toContain('<strong>Growing</strong><span class="quiet">all year</span></th>');
+  expect(page).not.toContain('Dormant</strong>');
+  expect(page).not.toContain('now-pill');
 });
 
 test('a Symptom lists its causes with the watering fact, and nothing to log', async () => {

@@ -36,6 +36,7 @@ import {
   nextCareLine,
   NEEDS_YOU,
   NO_SCHEDULE_LINE,
+  PAUSED,
   noPlantCalled,
   plantsInCare,
   plantsNeedYou,
@@ -51,14 +52,7 @@ import type { Garden } from './garden';
 import { guides } from '../../src/ui/guides';
 import { Calendar } from './calendar';
 import { Breadcrumbs, Section, Toggle } from './frame';
-import {
-  GuideSection,
-  seasonInterval,
-  seasonMonths,
-  SymptomsView,
-  SymptomView,
-  type PlantView,
-} from './guide';
+import { GuideSection, seasonMonths, SymptomsView, SymptomView, type PlantView } from './guide';
 import { CareIcon, GuideIcon, objectPosition, Thumb } from './icons';
 import { planDays } from './plan';
 
@@ -282,11 +276,11 @@ export function GardenPage({ garden, photoUrl }: { garden: Garden; photoUrl: Pho
 }
 
 /**
- * A plant on a page of its own (spec #72): its names, then the photo with the Care card beside it,
- * each care type's interval, status and when it was last done, whose schedule it follows, its Pot
- * and Something wrong?; under the photo its Care Guide (spec #48) and its Care Log. By `view`, its
- * Symptoms or one Symptom instead. The Web view lists only plants in care, so a link to any other
- * says so.
+ * A plant on a page of its own (spec #72), its status first (spec #76): its names, then the Care
+ * card, each care type's interval, status and when it was last done, whose schedule it follows,
+ * its Pot and Something wrong?; the photo in a rail beside it; then its Care Guide (spec #48) and
+ * its Care Log. By `view`, its Symptoms or one Symptom instead. The Web view lists only plants in
+ * care, so a link to any other says so.
  */
 export function PlantDetail({
   garden,
@@ -357,36 +351,7 @@ export function PlantDetail({
         )}
       </header>
       <div className="plant-columns">
-        <div className="plant-main">
-          {photo ? (
-            <img
-              className="plant-photo"
-              src={photo}
-              alt={`Photo of ${name}`}
-              style={{ objectPosition: objectPosition(plant.focus, 16 / 9) }}
-            />
-          ) : (
-            <div className="plant-photo initial band" aria-hidden="true">
-              {name.trim().charAt(0).toUpperCase()}
-            </div>
-          )}
-          <GuideSection guide={guide} months={plant.months} />
-          <Section title="Care Log" note={entries(events.length)}>
-            {events.length === 0 ? (
-              <p className="quiet">Nothing logged yet.</p>
-            ) : (
-              <table className="log">
-                <tbody>
-                  {events.map((event) => (
-                    <CareLogRow key={event.id} event={event} today={today} />
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Section>
-        </div>
-
-        <aside className="care-card" aria-labelledby="care-heading">
+        <section className="care-card" aria-labelledby="care-heading">
           <header className="care-card-head">
             <h2 id="care-heading">Care</h2>
             <span className="quiet">{seasonLine(plant.season, today)}</span>
@@ -435,7 +400,43 @@ export function PlantDetail({
             </span>
             <GuideIcon name="next" size={14} />
           </a>
-        </aside>
+        </section>
+
+        <div className="plant-rail">
+          {photo ? (
+            // Framed on its Focal point both as the rail's 4:5 and as one column's 16:9 band.
+            <img
+              className="plant-photo"
+              src={photo}
+              alt={`Photo of ${name}`}
+              style={
+                {
+                  '--frame-rail': objectPosition(plant.focus, 4 / 5),
+                  '--frame-band': objectPosition(plant.focus, 16 / 9),
+                } as CSSProperties
+              }
+            />
+          ) : (
+            <div className="plant-photo initial" aria-hidden="true">
+              {name.trim().charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+
+        <GuideSection guide={guide} months={plant.months} />
+        <Section title="Care Log" note={entries(events.length)}>
+          {events.length === 0 ? (
+            <p className="quiet">Nothing logged yet.</p>
+          ) : (
+            <table className="log">
+              <tbody>
+                {events.map((event) => (
+                  <CareLogRow key={event.id} event={event} today={today} />
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Section>
       </div>
     </>
   );
@@ -448,7 +449,9 @@ function intervalLine(type: CareType, schedule: CareSchedule, season: SeasonOn['
     return months === null ? NO_SCHEDULE_LINE : everyLine(months, 'month');
   }
   const { growing, dormant } = SEASONAL[type];
-  return seasonInterval({ growing: schedule[growing], dormant: schedule[dormant] }, season);
+  if (schedule[growing] === null) return NO_SCHEDULE_LINE;
+  const days = schedule[season === 'dormant' ? dormant : growing];
+  return days === null ? PAUSED : everyLine(days, 'day');
 }
 
 /** A Care Event: its day, what was done, its details, and how long ago. */

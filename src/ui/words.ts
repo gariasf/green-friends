@@ -300,9 +300,8 @@ export function everyLine(count: number, unit: 'day' | 'month'): string {
 export const PAUSED = 'Paused';
 export const NO_SCHEDULE_LINE = 'No schedule';
 
-/** The Web view's Season table, for a garden that grows all year: under Growing, and under Dormant. */
+/** The Web view's Season table, under Growing, for a garden that grows all year. */
 export const ALL_YEAR = 'all year';
-export const NOT_IN_YOUR_GARDEN = 'not in your garden';
 
 /** The Care Guide's fixed grid's first heading. */
 export const HOW_TO_WATER = 'How to water';

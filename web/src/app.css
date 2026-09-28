@@ -751,62 +751,77 @@ kbd {
 }
 
 /*
- * A plant's page (spec #72): its names in a row, then from 56rem two columns, the photo with the
- * Care Guide and the Care Log under it, and the Care card beside it, sticky; below, one column with
- * the Care card first.
+ * A plant's page (spec #76): its name on a line of its own, then its status first. From 56rem the
+ * Care card, the Care Guide and the Care Log in the main column, the photo in a sticky rail beside
+ * them; below, one column with the photo as a band after the Care card.
  */
 .plant-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 1rem;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
 }
 
-.plant-head .badge {
-  align-self: center;
+.plant-head h1 {
+  flex-basis: 100%;
 }
 
 .plant-columns {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2rem 3rem;
 }
 
-@container (min-width: 56rem) {
-  .plant-columns {
-    grid-template-columns: minmax(0, 1fr) 22rem;
-  }
-
-  .care-card {
-    position: sticky;
-    top: 1.5rem;
-  }
-}
-
-@container (max-width: calc(56rem - 1px)) {
-  .care-card {
-    order: -1;
-  }
+.plant-columns > .section {
+  margin-top: 1.25rem;
 }
 
 .plant-photo {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 30rem;
+  max-height: 24rem;
   border-radius: var(--radius-surface);
   object-fit: cover;
+  object-position: var(--frame-band);
 }
 
-.plant-photo.band {
+/* A plant without a photo: its initial centred in the photo's place. */
+.plant-photo.initial {
+  display: grid;
   aspect-ratio: 3 / 1;
-  font-size: 4rem;
+  font-size: 5rem;
 }
 
+@container (min-width: 56rem) {
+  .plant-columns {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+
+  .plant-columns > :not(.plant-rail) {
+    grid-column: 1;
+  }
+
+  .plant-rail {
+    position: sticky;
+    top: 1.5rem;
+    grid-row: 1 / span 3;
+    grid-column: 2;
+    align-self: start;
+  }
+
+  .plant-rail .plant-photo {
+    aspect-ratio: 4 / 5;
+    max-height: none;
+    object-position: var(--frame-rail);
+  }
+}
+
+/* The Care card, the page's hero: a row per care type, three abreast where the card is 40rem. */
 .care-card {
-  align-self: start;
+  container-type: inline-size;
   padding: 1.25rem 1.5rem 1rem;
   border-radius: var(--radius-surface);
-  background: var(--raised);
 }
 
 .care-card-head {
@@ -814,16 +829,18 @@ kbd {
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--separator);
+  padding-bottom: 0.25rem;
 }
 
 .care-rows li {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--separator);
+  padding-top: 0.875rem;
+}
+
+.care-rows strong {
+  font-weight: 600;
 }
 
 .care-rows .grow > *,
@@ -839,16 +856,53 @@ kbd {
   text-align: right;
 }
 
+.care-rows .status > :first-child {
+  white-space: nowrap;
+}
+
+@container (min-width: 40rem) {
+  .care-rows {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .care-rows li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.25rem 0.625rem;
+    padding-top: 0.5rem;
+  }
+
+  .care-rows .care-icon {
+    margin-top: 0.15rem;
+  }
+
+  .care-rows .status {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .facts {
+    display: flex;
+    gap: 2.5rem;
+  }
+}
+
+/* Schedule and Pot under a hairline, then Something wrong?. */
 .facts {
-  margin: 0 0 0.5rem;
+  margin: 1rem 0 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--separator);
 }
 
 .facts div {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--separator);
+  padding: 0.25rem 0;
   font-size: var(--text-sm);
 }
 
@@ -882,7 +936,7 @@ kbd {
   background: var(--fill);
 }
 
-/* The Care Guide (spec #48, #72): its icons' hues, the Season table and the fixed grid. */
+/* The Care Guide (spec #48, #76): its icons' hues, then the Season table and the sheet. */
 .guide-light {
   --hue: var(--sun);
 }
@@ -908,20 +962,43 @@ th {
   text-align: left;
 }
 
-/* Water and Feed by Season: today's column on the surface under a Now pill, the other quiet. */
+/*
+ * The sheet: the Season table and the rows under it, each outlined, on one label column
+ * (13.75rem), so every text starts on one edge. Today's Season sits on the now tint under its
+ * pill; the other Season is quiet.
+ */
+.seasons,
+.guide-grid {
+  --label-column: 13.75rem;
+  --sheet-inset: 1.25rem;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-surface);
+}
+
 .seasons {
   table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
 }
 
 .seasons :is(th, td) {
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid var(--separator);
+  padding: 1rem;
   vertical-align: top;
 }
 
+.seasons thead :is(th, td) {
+  padding-block: 0.75rem;
+}
+
+.seasons tbody :is(th, td) {
+  border-top: 1px solid var(--separator);
+}
+
 .seasons :is(thead td, tbody th) {
-  width: 7.5rem;
-  padding-left: 0;
+  box-sizing: border-box;
+  width: var(--label-column);
+  padding-left: var(--sheet-inset);
 }
 
 .seasons thead th {
@@ -943,18 +1020,10 @@ th {
 }
 
 .seasons .now {
-  background: var(--surface);
+  background: var(--now);
 }
 
-.seasons thead .now {
-  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
-}
-
-.seasons tr:last-child .now {
-  border-radius: 0 0 var(--radius-inner) var(--radius-inner);
-}
-
-.seasons td:not(.now) {
+.seasons td:not(.now):not(:only-of-type) {
   color: var(--secondary-label);
 }
 
@@ -962,30 +1031,50 @@ th {
   float: right;
 }
 
-.every {
-  display: block;
-  margin-top: 0.375rem;
-  font-size: var(--text-sm);
+.guide-grid {
+  margin-top: 1rem;
 }
 
-.guide-grid {
+.guide-grid > section {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 2.5rem;
-  margin-top: 1.5rem;
+  grid-template-columns: calc(var(--label-column) - var(--sheet-inset)) minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  padding: 1rem var(--sheet-inset);
+}
+
+.guide-grid > section + section {
+  border-top: 1px solid var(--separator);
+}
+
+.guide-grid > section > * {
+  grid-column: 2;
+}
+
+.guide-grid h3 {
+  display: flex;
+  grid-row: 1 / span 4;
+  grid-column: 1;
+  align-items: center;
+  align-self: start;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.guide-grid p + p {
+  margin-top: 0.375rem;
 }
 
 @container (max-width: 44rem) {
+  .seasons,
   .guide-grid {
-    grid-template-columns: minmax(0, 1fr);
+    --label-column: 6.5rem;
+    --sheet-inset: 0.875rem;
   }
 
   .seasons :is(th, td) {
     padding: 0.75rem 0.625rem;
-  }
-
-  .seasons :is(thead td, tbody th) {
-    width: 4.5rem;
   }
 
   .seasons tbody th .care-icon {
@@ -996,46 +1085,21 @@ th {
   .seasons thead th .quiet {
     display: block;
   }
-}
 
-.guide-grid > section {
-  padding: 1rem 0 1.25rem;
-  border-top: 1px solid var(--separator);
-}
+  .guide-grid > section {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-.guide-grid > .wide {
-  grid-column: 1 / -1;
-}
-
-.guide-grid h3,
-.causes tbody th strong {
-  margin: 0 0 0.375rem;
-  font-family: var(--font-title);
-  font-size: 1.2rem;
-  font-weight: 400;
-}
-
-.guide-grid h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.guide-grid p + p {
-  margin-top: 0.375rem;
-}
-
-.guide-grid > .fact {
-  margin-top: 0.5rem;
-  padding: 1rem 1.25rem;
-  border: 0;
-  border-radius: var(--radius-inner);
-  background: var(--fill);
+  .guide-grid > section > *,
+  .guide-grid h3 {
+    grid-row: auto;
+    grid-column: 1;
+  }
 }
 
 .scale {
   display: block;
-  margin-top: 0.25rem;
+  margin-top: 0.375rem;
 }
 
 .steps {
@@ -1056,11 +1120,29 @@ th {
   background: var(--sun);
 }
 
-/* The Care Log: a Care Event a row, its day, what was done, its details and how long ago. */
+/* The Care Log: outlined, a Care Event a row: its day, what was done, its details, how long ago. */
+.log {
+  border: 1px solid var(--outline);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-surface);
+}
+
 .log td {
-  padding: 0.5rem 0.75rem 0.5rem 0;
-  border-bottom: 1px solid var(--separator);
+  padding: 0.625rem 0.75rem 0.625rem 0;
   vertical-align: baseline;
+}
+
+.log tr + tr td {
+  border-top: 1px solid var(--separator);
+}
+
+.log td:first-child {
+  padding-left: 1.25rem;
+}
+
+.log td:last-child {
+  padding-right: 1.25rem;
 }
 
 .log .day {
@@ -1081,7 +1163,6 @@ th {
 }
 
 .log .ago {
-  padding-right: 0;
   text-align: right;
   white-space: nowrap;
 }
@@ -1098,8 +1179,13 @@ th {
   margin-top: 0;
 }
 
-.links li + li {
-  border-top: 1px solid var(--separator);
+/* A list of links on space, its chevron only where the pointer is. */
+.links a .guide-next {
+  opacity: 0;
+}
+
+.links a:hover .guide-next {
+  opacity: 0.6;
 }
 
 .causes :is(th, td) {
@@ -1121,6 +1207,13 @@ th {
 
 .causes thead th:first-child {
   width: 16rem;
+}
+
+.causes tbody th strong {
+  margin: 0 0 0.375rem;
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 400;
 }
 
 .causes tbody th {

@@ -5,23 +5,19 @@ import {
   symptomCauses,
   type CareGuide,
   type CareProfile,
-  type SeasonalSchedule,
 } from '../../src/core/careGuide';
 import type { Settings } from '../../src/core/settings';
 import {
   ALL_YEAR,
+  CARE_WORDS,
   CAUSE_COLUMNS,
   causeFactLine,
   causesIntro,
-  everyLine,
   HOW_TO_WATER,
   lightLabel,
   lightWords,
   NO_CARE_GUIDE,
-  NO_SCHEDULE_LINE,
-  NOT_IN_YOUR_GARDEN,
   npkNote,
-  PAUSED,
   PET_WARNING,
   SYMPTOM_GROUPS,
   SYMPTOMS_TITLE,
@@ -43,18 +39,18 @@ export type PlantView =
 
 type Season = SeasonOn['season'];
 
-/** The months each Season runs in a garden, "Mar – Oct" / "Nov – Feb", or all year and never. */
+/** The months each Season runs in a garden, "Mar – Oct" / "Nov – Feb"; null when it grows all year. */
 export function seasonMonths(
   settings: Pick<Settings, 'growingStartMonth' | 'growingEndMonth'>,
   restsInSummer: boolean,
-): Record<Season, string> {
+): Record<Season, string> | null {
   const growing = Array.from(
     { length: 12 },
     (_, month) =>
       seasonOn(`2026-${String(month + 1).padStart(2, '0')}-15`, settings, restsInSummer).season ===
       'growing',
   );
-  if (growing.every(Boolean)) return { growing: ALL_YEAR, dormant: NOT_IN_YOUR_GARDEN };
+  if (growing.every(Boolean)) return null;
   const name = (month: number) =>
     new Date(2026, month, 15).toLocaleDateString(undefined, { month: 'short' });
   const first = growing.findIndex((on, month) => on && !growing[(month + 11) % 12]);
@@ -71,16 +67,16 @@ const SEASONS = [
 ] as const;
 
 /**
- * The plant's Care Guide, with nothing to switch: Water and Feed by Season in two columns, each with
- * the plant's interval and today's marked Now, then the rest in a fixed grid. Without a profile,
- * the nudge.
+ * The plant's Care Guide as a sheet (spec #76): watering and fertilizing advice by Season, today's
+ * marked Now (a garden Growing all year has no Dormant column), then the rest on the same label
+ * column. The intervals are the Care card's. Without a profile, the nudge.
  */
 export function GuideSection({
   guide,
   months,
 }: {
   guide: CareGuide | null;
-  months: Record<Season, string>;
+  months: Record<Season, string> | null;
 }) {
   if (!guide) {
     return (
@@ -92,12 +88,14 @@ export function GuideSection({
       </Section>
     );
   }
-  const { profile, schedule } = guide;
-  const now = guide.season.season;
+  const { profile } = guide;
+  const seasons = months ? SEASONS : SEASONS.slice(0, 1);
+  // Now marks one Season of two; a garden Growing all year has only the one.
+  const now = months ? guide.season.season : null;
   const npk = npkNote(profile.fertilizer.type);
   const rows = [
-    ['water', 'Water', profile.watering, schedule.water],
-    ['fertilize', 'Feed', profile.fertilizer, schedule.fertilize],
+    ['water', profile.watering],
+    ['fertilize', profile.fertilizer],
   ] as const;
   return (
     <Section id="care-guide" title="Care Guide" note={profile.name}>
@@ -105,26 +103,25 @@ export function GuideSection({
         <thead>
           <tr>
             <td />
-            {SEASONS.map(([season, label]) => (
+            {seasons.map(([season, label]) => (
               <th key={season} scope="col" className={season === now ? 'now' : undefined}>
                 <strong>{label}</strong>
-                <span className="quiet">{months[season]}</span>
+                <span className="quiet">{months ? months[season] : ALL_YEAR}</span>
                 {season === now && <span className="now-pill">Now</span>}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map(([type, label, advice, interval]) => (
+          {rows.map(([type, advice]) => (
             <tr key={type}>
               <th scope="row">
                 <CareIcon type={type} />
-                {label}
+                {CARE_WORDS[type].label}
               </th>
-              {SEASONS.map(([season]) => (
+              {seasons.map(([season]) => (
                 <td key={season} className={season === now ? 'now' : undefined}>
                   {advice[season]}
-                  <strong className="every">{seasonInterval(interval, season)}</strong>
                 </td>
               ))}
             </tr>
@@ -187,13 +184,6 @@ export function GuideSection({
       </div>
     </Section>
   );
-}
-
-/** A seasonal interval in one Season: "Every 14 days", Paused, or no schedule at all. */
-export function seasonInterval(interval: SeasonalSchedule, season: Season): string {
-  if (interval.growing === null) return NO_SCHEDULE_LINE;
-  const days = interval[season];
-  return days === null ? PAUSED : everyLine(days, 'day');
 }
 
 /** The shared light scale with this profile's step filled in, and its step and direct sun in words. */
