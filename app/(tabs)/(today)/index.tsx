@@ -14,13 +14,7 @@ import { CARE_COPY, CareSymbol } from '@/src/ui/CareEvent';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { TextButton } from '@/src/ui/Form';
 import { Icon } from '@/src/ui/Icon';
-import {
-  taskHaptic,
-  TICK_MS,
-  TickMark,
-  tickHaptic,
-  useTodayMotion,
-} from '@/src/ui/MotionPrototype';
+import { taskHaptic, tickMs, TickMark, tickHaptic, useTodayMotion } from '@/src/ui/MotionPrototype';
 import { PlantPhoto, photoUri } from '@/src/ui/Photo';
 import {
   colors,
@@ -177,7 +171,7 @@ function CareCard({
       onLog(plant, fresh);
       // Undone, the rows come back unticked.
       setTicked((current) => current.filter((type) => !fresh.includes(type)));
-    }, TICK_MS);
+    }, tickMs());
   };
 
   return (

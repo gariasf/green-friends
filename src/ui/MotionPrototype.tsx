@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import Storage from 'expo-sqlite/kv-store';
-import { useEffect, type ReactNode } from 'react';
-import { DevSettings, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -19,8 +19,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
- * PROTOTYPE (prototype/motion, #55 step 4, never merged): one switch, read once at startup; a tap
- * on the pill moves it on and reloads. Phone only.
+ * PROTOTYPE (prototype/motion, #55 step 4, never merged): one switch, read at startup; a tap on
+ * the pill moves it on and remounts the screens (DevSettings.reload does nothing in Release). Phone only.
  *
  * - A today's: the tick swaps in, every tick fires the Success haptic, rows fade out in 150 ms,
  *   the hero's bar flips opaque, a Garden cell dims on press, sheets and the toast as they are.
@@ -48,7 +48,20 @@ function read(): Variant {
   return (VALUES as readonly string[]).includes(stored ?? '') ? (stored as Variant) : 'A';
 }
 
-export const motion: Variant = read();
+export let motion: Variant = read();
+
+// A tap on the pill bumps this, and the root layout keys its navigator on it.
+let generation = 0;
+const listeners = new Set<() => void>();
+export function useMotionGeneration() {
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    () => generation,
+  );
+}
 
 /** Screenshots set this to leave the pill out. */
 const hidden = Storage.getItemSync('prototype.hidePill') === '1';
@@ -82,7 +95,7 @@ export function useTodayMotion() {
 }
 
 /** How long a ticked circle shows its tick before the care is logged and its row leaves. */
-export const TICK_MS = motion === 'C' ? 380 : motion === 'B' ? 300 : 250;
+export const tickMs = () => (motion === 'C' ? 380 : motion === 'B' ? 300 : 250);
 
 /** The haptic for one tick: Success in A, a light impact in B and C (HIG: Success is for a task). */
 export function tickHaptic() {
@@ -151,9 +164,10 @@ export function PressScale({
   const reduced = useReducedMotion();
   const pressed = useSharedValue(0);
   const scaled = motion !== 'A' && !reduced;
+  const depth = motion === 'C' ? 0.05 : 0.03;
   const animated = useAnimatedStyle(() => ({
     opacity: scaled ? 1 : 1 - 0.5 * pressed.value,
-    transform: [{ scale: scaled ? 1 - (motion === 'C' ? 0.05 : 0.03) * pressed.value : 1 }],
+    transform: [{ scale: scaled ? 1 - depth * pressed.value : 1 }],
   }));
   const to = (value: number) => {
     if (motion === 'A') pressed.value = value;
@@ -194,16 +208,16 @@ function settle() {
 }
 
 /** In C, the hero stretches from its foot when pulled down. Nothing under Reduce Motion. */
-export function heroStretch(y: number, height: number, reduced: boolean) {
+export function heroStretch(y: number, height: number, reduced: boolean, variant: Variant) {
   'worklet';
-  if (motion !== 'C' || reduced || y >= 0) return { transform: [{ translateY: 0 }, { scale: 1 }] };
+  if (variant !== 'C' || reduced || y >= 0) return { transform: [{ translateY: 0 }, { scale: 1 }] };
   return { transform: [{ translateY: y / 2 }, { scale: 1 - y / height }] };
 }
 
 /** In B and C, the photo drifts at half speed as it scrolls up. Nothing under Reduce Motion. */
-export function heroDrift(y: number, reduced: boolean) {
+export function heroDrift(y: number, reduced: boolean, variant: Variant) {
   'worklet';
-  if (motion === 'A' || reduced) return { transform: [{ translateY: 0 }] };
+  if (variant === 'A' || reduced) return { transform: [{ translateY: 0 }] };
   return { transform: [{ translateY: Math.max(0, y) / 2 }] };
 }
 
@@ -246,8 +260,10 @@ export function MotionSwitcher() {
   const insets = useSafeAreaInsets();
   if (hidden) return null;
   const next = () => {
-    Storage.setItemSync(KEY, VALUES[(VALUES.indexOf(motion) + 1) % VALUES.length]);
-    DevSettings.reload();
+    motion = VALUES[(VALUES.indexOf(motion) + 1) % VALUES.length];
+    Storage.setItemSync(KEY, motion);
+    generation += 1;
+    listeners.forEach((listener) => listener());
   };
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: insets.bottom + 56 }]}>

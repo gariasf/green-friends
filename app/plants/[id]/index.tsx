@@ -81,8 +81,11 @@ export default function PlantScreen() {
   const offset = useScrollOffset(scroll);
   const reduced = useReducedMotion();
   const turn = heroHeight - insets.top - 44;
-  const stretchStyle = useAnimatedStyle(() => heroStretch(offset.value, heroHeight, reduced));
-  const driftStyle = useAnimatedStyle(() => heroDrift(offset.value, reduced));
+  const variant = motion;
+  const stretchStyle = useAnimatedStyle(() =>
+    heroStretch(offset.value, heroHeight, reduced, variant),
+  );
+  const driftStyle = useAnimatedStyle(() => heroDrift(offset.value, reduced, variant));
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(offset.value, [turn - 48, turn], [0, 1], 'clamp'),
   }));

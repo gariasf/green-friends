@@ -8,7 +8,7 @@ import { seedSpecies } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { migrate } from '@/src/db/migrate';
 import { TextButton } from '@/src/ui/Form';
-import { MotionSwitcher } from '@/src/ui/MotionPrototype';
+import { MotionSwitcher, useMotionGeneration } from '@/src/ui/MotionPrototype';
 import { colors, headerFonts, navigationTheme } from '@/src/ui/theme';
 import { useDigests } from '@/src/ui/useDigests';
 import { useSync } from '@/src/ui/useSync';
@@ -50,9 +50,12 @@ const TAB_TITLES: Record<string, string> = {
 export default function RootLayout() {
   useDigests();
   useSync();
+  // PROTOTYPE: a new motion variant remounts every screen.
+  const generation = useMotionGeneration();
   return (
     <ThemeProvider value={navigationTheme(useColorScheme())}>
       <Stack
+        key={generation}
         screenOptions={{
           ...headerFonts,
           contentStyle: { backgroundColor: colors.background },
