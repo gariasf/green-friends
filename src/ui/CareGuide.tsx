@@ -149,7 +149,7 @@ export function CareGroup({
         </Text>
         <Text style={[text.footnote, styles.grow, styles.end]}>{seasonLine(season, today)}</Text>
       </View>
-      <View style={group.box}>
+      <View style={[group.box, styles.outlined]}>
         {profile ? (
           <>
             <Row
@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
   steps: { flexDirection: 'row', gap: space.xs },
   step: { flex: 1, height: 6, borderRadius: radius.pill, backgroundColor: colors.fill },
   stepMarked: { backgroundColor: colors.sun },
+  outlined: { borderWidth: 1, borderColor: colors.outline },
   card: {
     gap: space.s,
     marginHorizontal: space.l,

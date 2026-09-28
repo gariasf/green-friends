@@ -1,6 +1,6 @@
 /*
  * The app's colours, mirrored from src/ui/theme.ts, which stays their source: change one there,
- * then here. --outline, --hero-*, --now and --pill-* are the Web view's own.
+ * then here. --hero-*, --now and --pill-* are the Web view's own.
  *
  * One reason per surface (spec #76): an outline groups, a fill selects, a tint is now, and each
  * page's one hero (the Care card, Today's cards, the Garden's search) is raised on a firmer

@@ -61,6 +61,8 @@ export const colors = {
     light: 'rgba(70, 56, 24, 0.12)',
     dark: 'rgba(255, 240, 210, 0.10)',
   }),
+  /** Around a group that needs holding together on the ground (spec #76): the Care card. */
+  outline: DynamicColorIOS({ light: 'rgba(70, 56, 24, 0.16)', dark: 'rgba(255, 240, 210, 0.14)' }),
   /** Behind a chip, a field, or a pressed row: warm, as the separator. */
   fill: DynamicColorIOS({ light: 'rgba(120, 100, 60, 0.09)', dark: 'rgba(255, 240, 210, 0.07)' }),
   tint: DynamicColorIOS(MEDICI),
