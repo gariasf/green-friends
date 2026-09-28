@@ -28,6 +28,11 @@
       "<rootDir>/src/**/*.test.ts"
     ]
   },
+  "reanimated": {
+    "staticFeatureFlags": {
+      "IOS_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
+    }
+  },
   "dependencies": {
     "@expo-google-fonts/nunito-sans": "^0.4.2",
     "@expo-google-fonts/young-serif": "^0.4.0",
