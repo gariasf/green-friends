@@ -77,7 +77,7 @@ A care type with no Dormant interval during the Dormant season: nothing is due a
 _Avoid_: disabled, skipped
 
 **Care Event**:
-A dated record that care happened (or, for a Note, that something was observed) on a plant. Dated by calendar day, never by time of day (ADR-0005). May be backdated, edited, or deleted. A repot event also records the new pot size and soil.
+A dated record that care happened on a plant (or, for a Note, that something was observed; for a Soil check, that the soil wasn't dry yet). Dated by calendar day, never by time of day (ADR-0005). May be backdated, edited, or deleted. A repot event also records the new pot size and soil.
 _Avoid_: task completion, check-in
 
 **Care Log**:
@@ -92,12 +92,16 @@ _Avoid_: last repot, derived pot
 A free-text, dated Care Event for observations — diseases, pests, anything. The only disease tracking in v1.
 _Avoid_: comment, disease record
 
+**Soil check**:
+A Care Event recording that a plant's soil wasn't dry yet, so its Due watering waits: watering comes Due again a quarter of its interval after the check (ADR-0011). Watering only; nothing else on it.
+_Avoid_: snooze, skip, postpone
+
 **Due**:
-A care type on a plant whose next due date has been reached. Next due is the last matching Care Event (or the plant's creation, if never logged) plus the interval for today's Season, but never earlier than the first day of today's Season. Repotting has no Season and is never held back to one.
+A care type on a plant whose next due date has been reached. Next due is the last matching Care Event (or the plant's creation, if never logged) plus the interval for today's Season, but never earlier than the first day of today's Season. Watering is also never earlier than a quarter of that interval after a Soil check. Repotting has no Season and is never held back to one.
 _Avoid_: pending
 
 **Overdue**:
-Due, and the due date has passed. Overdue items persist until the care is logged; there is no snooze.
+Due, and the due date has passed. Overdue care persists until it is logged, or for watering until a Soil check moves it on; there is no snooze.
 _Avoid_: late, missed
 
 **Needs Attention**:
@@ -105,7 +109,7 @@ A plant with at least one care type Due or Overdue today. Defines the daily view
 _Avoid_: todo, urgent
 
 **Daily Digest**:
-The one notification of a day, at the user's chosen time, sent only on a day when at least one plant Needs Attention. Nothing due, no notification; Overdue care keeps it firing daily until logged.
+The one notification of a day, at the user's chosen time, sent only on a day when at least one plant Needs Attention. Nothing due, no notification; Overdue care keeps it firing daily until it is logged or, for watering, checked.
 _Avoid_: alert, push, per-plant reminder
 
 **Export**:
