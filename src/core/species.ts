@@ -20,14 +20,37 @@ export function listSpecies(db: Db): Species[] {
 }
 
 /**
+ * The other names a Species goes by, folded as searchSpecies compares them, by Species ID: its
+ * former scientific names and the curated aliases (second common names) from the name index,
+ * assets/species-index.json (ADR-0007), such as "Sansevieria trifasciata" and "Mother-in-law's
+ * tongue" for the snake plant.
+ */
+export type OtherNames = Map<string, string[]>;
+
+/** OtherNames from the name index's `names`, a name → the Species ID it belongs to. */
+export function otherNames(names: Record<string, string>): OtherNames {
+  const bySpecies: OtherNames = new Map();
+  for (const [name, id] of Object.entries(names)) {
+    const known = bySpecies.get(id);
+    if (known) known.push(fold(name));
+    else bySpecies.set(id, [fold(name)]);
+  }
+  return bySpecies;
+}
+
+/**
  * The Species whose names match a search, best first: colloquial names starting with it, then
  * those with a word starting with it, then scientific names with a word starting with it, then
- * names containing it anywhere. Within each, shorter names come first.
+ * names containing it anywhere. Within each, shorter names come first. Where none matches, the
+ * Species with one of its `others` names having a word starting with it, those with more such
+ * names first, as "Sansevieria" finds the snake plant before the corn plant, which has one stray
+ * synonym in that genus.
  */
-export function searchSpecies(db: Db, query: string): Species[] {
+export function searchSpecies(db: Db, query: string, others?: OtherNames): Species[] {
   const needle = fold(query);
   if (!needle) return [];
-  const rank = (s: Species) => {
+  const catalog = listSpecies(db);
+  const found = ranked(catalog, (s) => {
     const colloquial = fold(s.colloquialName);
     const scientific = fold(s.scientificName);
     if (colloquial.startsWith(needle)) return 0;
@@ -35,8 +58,17 @@ export function searchSpecies(db: Db, query: string): Species[] {
     if (` ${scientific}`.includes(` ${needle}`)) return 2;
     if (colloquial.includes(needle) || scientific.includes(needle)) return 3;
     return null;
-  };
-  return listSpecies(db)
+  });
+  if (found.length > 0 || !others) return found;
+  return ranked(catalog, (s) => {
+    const hits = (others.get(s.id) ?? []).filter((name) => ` ${name}`.includes(` ${needle}`));
+    return hits.length > 0 ? -hits.length : null;
+  });
+}
+
+/** The Species `rank` keeps (not null), lowest rank first, then shorter colloquial names. */
+function ranked(catalog: Species[], rank: (s: Species) => number | null): Species[] {
+  return catalog
     .map((s) => ({ s, rank: rank(s) }))
     .filter((match): match is { s: Species; rank: number } => match.rank !== null)
     .sort((a, b) => a.rank - b.rank || a.s.colloquialName.length - b.s.colloquialName.length)

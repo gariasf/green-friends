@@ -21,9 +21,12 @@
  *   unknown (null), which the app shows as no pet badge at all.
  * - GBIF Backbone Taxonomy, CC BY 4.0 (GBIF Secretariat, https://doi.org/10.15468/39omei). Only
  *   the name index, assets/species-index.json, draws on it: each Species' GBIF keys, accepted name
- *   and synonyms, so Identify (ADR-0007) can map Pl@ntNet's candidates to the catalog on the phone.
- *   Wikidata's GBIF taxon ID (P14607; P846 is retired) comes first, else GBIF's match on the P225
- *   name. Aliases in curated.json cover names where Pl@ntNet's taxonomy and GBIF's disagree.
+ *   and synonyms, so Identify (ADR-0007) can map Pl@ntNet's candidates to the catalog on the phone,
+ *   and the Species search can find a plant by a former name ("Sansevieria", #98). Wikidata's GBIF
+ *   taxon ID (P14607; P846 is retired) comes first, else GBIF's match on the P225 name. Aliases in
+ *   curated.json cover names where Pl@ntNet's taxonomy and GBIF's disagree, and second common
+ *   names the search falls back to, only where no other catalog Species goes by the name
+ *   ("Mother-in-law's tongue" for the snake plant, never "Umbrella plant", also Cyperus's).
  * - No Perenual data: its terms forbid redistribution. Open Plantbook thresholds are not bundled
  *   because nothing in v1 reads them; openplantbook-coverage.ts runs the coverage spot-check.
  *
@@ -83,7 +86,7 @@ const SOURCES = [
 ];
 
 type BundledDataset = SpeciesDataset & { sources: typeof SOURCES };
-/** curated.json: the dataset plus Identify's aliases, a Pl@ntNet or GBIF name → QID. */
+/** curated.json: the dataset plus the name index's aliases, a Pl@ntNet or GBIF name, or a second common name → QID. */
 type Curated = SpeciesDataset & { aliases: Record<string, string> };
 
 async function main(): Promise<void> {
@@ -122,7 +125,8 @@ async function main(): Promise<void> {
 }
 
 /**
- * Identify's name index (ADR-0007): every name and GBIF key a Species goes by → its QID. A Species'
+ * The name index (ADR-0007), through which Identify maps Pl@ntNet's candidates and to whose names the
+ * Species search falls back: every name and GBIF key a Species goes by → its QID. A Species'
  * own names and keys (curated, accepted, its name's match) beat another's synonyms; a name or key
  * two Species claim alike fails the build, naming both QIDs: an alias names the one a name belongs
  * to, and a GBIF key clash has no such way out, since aliases are names.

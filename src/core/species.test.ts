@@ -1,3 +1,4 @@
+import index from '../../assets/species-index.json';
 import bundled from '../../assets/species.json';
 import { openTestDb } from '../test/db';
 import { createPlant, getPlant, updatePlant } from './plants';
@@ -6,6 +7,7 @@ import {
   getSpecies,
   getSpeciesDatasetVersion,
   listSpecies,
+  otherNames,
   searchSpecies,
   seedSpecies,
   type Species,
@@ -197,6 +199,46 @@ describe('searching the catalog', () => {
     expect(calamondin).toBeGreaterThan(0);
     expect(found.slice(0, calamondin)).toEqual(
       expect.arrayContaining(['Mini monstera', 'Chinese money plant']),
+    );
+  });
+  test('where no name matches, a name a Species goes by does, those with more such names first', () => {
+    const db = catalogOf(
+      ['Snake plant', 'Dracaena trifasciata'],
+      ['Corn plant', 'Dracaena fragrans'],
+    );
+    const others = otherNames({
+      'sansevieria trifasciata': 'Q1',
+      'sansevieria laurentii': 'Q1',
+      "mother-in-law's tongue": 'Q1',
+      'sansevieria fragrans': 'Q2',
+    });
+
+    expect(colloquialNames(searchSpecies(db, 'Sansevieria', others))).toEqual([
+      'Snake plant',
+      'Corn plant',
+    ]);
+    expect(colloquialNames(searchSpecies(db, 'laurentii', others))).toEqual(['Snake plant']);
+    expect(colloquialNames(searchSpecies(db, 'mother in law', others))).toEqual(['Snake plant']);
+    expect(searchSpecies(db, 'fragrans tongue', others)).toEqual([]);
+  });
+
+  test('a search that finds a name lists nothing from the names Species go by', () => {
+    const db = catalogOf(['Pothos', 'Epipremnum aureum'], ['Satin pothos', 'Scindapsus pictus']);
+    const others = otherNames({ 'scindapsus aureus': 'Q1' });
+
+    expect(colloquialNames(searchSpecies(db, 'scindapsus', others))).toEqual(['Satin pothos']);
+    expect(colloquialNames(searchSpecies(db, 'scindapsus aureus', others))).toEqual(['Pothos']);
+  });
+
+  test('"Sansevieria", on a snake plant\'s shop label, finds it through the bundled name index', () => {
+    const db = openTestDb();
+    seedSpecies(db, bundled);
+    const others = otherNames(index.names);
+
+    expect(colloquialNames(searchSpecies(db, 'Sansevieria', others))[0]).toBe('Snake plant');
+    expect(colloquialNames(searchSpecies(db, 'mother-in-law', others))).toEqual(['Snake plant']);
+    expect(colloquialNames(searchSpecies(db, 'schefflera', others))).toContain(
+      'Dwarf umbrella tree',
     );
   });
 });

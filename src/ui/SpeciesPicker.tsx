@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { searchSpecies, type Species } from '@/src/core/species';
+import speciesIndex from '@/assets/species-index.json';
+import { otherNames, searchSpecies, type OtherNames, type Species } from '@/src/core/species';
 import { db } from '@/src/db/client';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { Field, TextButton } from '@/src/ui/Form';
@@ -17,9 +18,17 @@ import {
   text,
 } from '@/src/ui/theme';
 
+let others: OtherNames | undefined;
+
+/** The name index's other names (otherNames), folded once, when a picker first opens. */
+function indexNames(): OtherNames {
+  return (others ??= otherNames(speciesIndex.names));
+}
+
 /**
  * A Species search, as New plant and Edit plant pick one: a search field, the matches best first
- * (searchSpecies), and beneath them the way out, `fallback`, which the empty result offers too.
+ * (searchSpecies, which falls back to the names a Species went by), and beneath them the way out,
+ * `fallback`, which the empty result offers too.
  */
 export function SpeciesSearch({
   onPick,
@@ -29,7 +38,7 @@ export function SpeciesSearch({
   fallback: { label: string; line: string; onPress: () => void };
 }) {
   const [query, setQuery] = useState('');
-  const matches = useMemo(() => searchSpecies(db, query), [query]);
+  const matches = useMemo(() => searchSpecies(db, query, indexNames()), [query]);
   return (
     <>
       <Field
