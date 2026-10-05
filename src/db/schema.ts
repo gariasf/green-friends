@@ -87,8 +87,11 @@ export const plants = sqliteTable('plants', {
 
 /** The schedulable kinds of care (CONTEXT.md, Care Type) ... */
 export const CARE_TYPES = ['water', 'fertilize', 'repot'] as const;
-/** ... plus Notes, which are Care Events but not a care type. */
-export const CARE_EVENT_TYPES = [...CARE_TYPES, 'note'] as const;
+/**
+ * ... plus Notes and Soil checks, which are Care Events but not care types; a Soil check
+ * (`soilCheck`) holds watering back a while (CONTEXT.md, ADR-0011).
+ */
+export const CARE_EVENT_TYPES = [...CARE_TYPES, 'note', 'soilCheck'] as const;
 
 /** A Care Event (CONTEXT.md) in a plant's Care Log; all derived state comes from these rows. */
 export const careEvents = sqliteTable('care_events', {

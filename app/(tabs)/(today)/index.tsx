@@ -32,6 +32,7 @@ import { useAfterWritesOrForeground } from '@/src/ui/useAfterWrites';
 import {
   nextCareLine,
   nextCareWhen,
+  notDryYetLine,
   plantsNeedYou,
   plural,
   scientificBeneath,
@@ -41,9 +42,10 @@ import {
  * Today (spec #8, prototype #6; spec #22): the day and how many plants need you, then one card per
  * plant that Needs Attention, most Overdue first, with a row per Due care type whose circle logs it
  * as done today in one tap; below, everything else in the garden with its next care. Tapping a
- * plant opens its Plant screen, and a card's ⋯ opens a menu of what else there is to do. With no
- * plant in care, as on a fresh install, it offers to add one. Cards and rows fade in and out as
- * care is logged or falls Due, and the rest move into place.
+ * plant opens its Plant screen, and a card's ⋯ opens a menu of what else there is to do, Not dry
+ * yet among it while watering is Due (spec #96). With no plant in care, as on a fresh install, it
+ * offers to add one. Cards and rows fade in and out as care is logged or falls Due, and the rest
+ * move into place.
  */
 export default function TodayScreen() {
   const [{ today, plants }, refresh] = usePlantCare();
@@ -58,6 +60,15 @@ export default function TodayScreen() {
         : `Logged everything for ${plant.displayName}`,
       eventIds,
     );
+  };
+
+  // A Soil check (ADR-0011): watering waits, and the toast says how long.
+  const notDry = (plant: PlantCare) => {
+    const event = logCareEvent(db, { plantId: plant.id, type: 'soilCheck' });
+    tickHaptic();
+    const water = evaluateCare(db, today).find((after) => after.id === plant.id)?.care.water;
+    refresh();
+    undo.offer(notDryYetLine(plant.displayName, water, today), [event.id]);
   };
 
   const needingAttention = plants.filter(needsAttention);
@@ -81,7 +92,13 @@ export default function TodayScreen() {
         {/* What is there when Today opens is simply there; only later changes animate. */}
         <LayoutAnimationConfig skipEntering>
           {needingAttention.map((plant, index) => (
-            <CareCard key={plant.id} plant={plant} onLog={log} hero={index === 0} />
+            <CareCard
+              key={plant.id}
+              plant={plant}
+              onLog={log}
+              onNotDry={notDry}
+              hero={index === 0}
+            />
           ))}
           {needingAttention.length === 0 && plants.length > 0 && (
             <Animated.View entering={FadeIn}>
@@ -127,10 +144,11 @@ function openPlant(plant: PlantCare) {
   router.push({ pathname: '/plants/[id]', params: { id: plant.id } });
 }
 
-/** What a card's ⋯ offers besides the one-tap log. */
+/** What a card's ⋯ offers besides the one-tap log; Not dry yet only while watering is Due. */
 const MORE = [
   // The sheet's own words (spec #92); it opens on Today, a tap from any other day.
   { id: 'log', title: 'Log care…', image: 'calendar' },
+  { id: 'notDry', title: CARE_COPY.soilCheck.label, image: 'drop.halffull' },
   { id: 'note', title: 'Add note', image: 'note.text' },
   { id: 'edit', title: 'Edit plant', image: 'pencil' },
 ] as const;
@@ -153,18 +171,22 @@ function openPicked({ id }: PlantCare, action: string) {
  * per Due care type, whose circle ticks with a haptic and logs the care a beat later, as its row
  * folds away; and Log all while more than one is Due. With one Due care type it's all one row: the
  * care under the plant's name, then ⋯ and the circle (spec #84). Only the `hero`, the first and most
- * Overdue, is raised; the rest are outlined on the surface.
+ * Overdue, is raised; the rest are outlined on the surface. While watering is Due, ⋯ offers Not dry
+ * yet, `onNotDry`.
  */
 function CareCard({
   plant,
   onLog,
+  onNotDry,
   hero,
 }: {
   plant: PlantCare;
   onLog: (plant: PlantCare, types: CareType[]) => void;
+  onNotDry: (plant: PlantCare) => void;
   hero: boolean;
 }) {
   const due = dueCare(plant);
+  const waterDue = due.some((care) => care.type === 'water');
   const [ticked, setTicked] = useState<CareType[]>([]);
   const raised = useRaised();
   const scientific = scientificBeneath(plant.displayName, plant.scientificName);
@@ -200,12 +222,12 @@ function CareCard({
         modifiers={[accessibilityLabel(`More for ${plant.displayName}`)]}
       >
         <Section title={plant.displayName}>
-          {MORE.map(({ id, title, image }) => (
+          {MORE.filter(({ id }) => id !== 'notDry' || waterDue).map(({ id, title, image }) => (
             <Button
               key={id}
               label={title}
               systemImage={image}
-              onPress={() => openPicked(plant, id)}
+              onPress={() => (id === 'notDry' ? onNotDry(plant) : openPicked(plant, id))}
             />
           ))}
         </Section>

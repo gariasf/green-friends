@@ -109,6 +109,78 @@ describe('due-ness from the Care Log', () => {
   });
 });
 
+describe('Soil checks', () => {
+  /**
+   * A Monstera (watered every 7 days, 14 in the Dormant season, fed every 30), created on Sep 1 and
+   * watered on `watered`, its soil checked on each of `checked`.
+   */
+  function checkedMonstera(watered: string, ...checked: string[]) {
+    const db = gardenDb();
+    const plant = createPlant(db, { speciesId: MONSTERA }, noon(2026, 9, 1));
+    const later = noon(2027, 12, 31);
+    logCareEvent(db, { plantId: plant.id, type: 'water', occurredOn: watered }, later);
+    for (const day of checked) {
+      logCareEvent(db, { plantId: plant.id, type: 'soilCheck', occurredOn: day }, later);
+    }
+    return db;
+  }
+
+  test('one on the day watering is Due holds it back a quarter of the interval, rounded up', () => {
+    // Growing: 7 days, so 2 more after the check.
+    const growing = checkedMonstera('2026-09-22', '2026-09-29');
+    expect(careOn(growing, '2026-09-30').water).toEqual({ state: 'upcoming', dueOn: '2026-10-01' });
+    expect(careOn(growing, '2026-10-01').water).toEqual({
+      state: 'due',
+      dueOn: '2026-10-01',
+      daysOverdue: 0,
+    });
+    // Dormant: 14 days, so 4 more.
+    const dormant = checkedMonstera('2026-11-02', '2026-11-16');
+    expect(careOn(dormant, '2026-11-16').water).toEqual({ state: 'upcoming', dueOn: '2026-11-20' });
+  });
+
+  test('the newest one counts, and Overdue days count from the day it moved watering to', () => {
+    const db = checkedMonstera('2026-09-22', '2026-10-02', '2026-09-29');
+
+    expect(careOn(db, '2026-10-06').water).toEqual({
+      state: 'due',
+      dueOn: '2026-10-04',
+      daysOverdue: 2,
+    });
+  });
+
+  test('one from before the last watering, or its day, changes nothing', () => {
+    const db = checkedMonstera('2026-09-22', '2026-09-21', '2026-09-22');
+
+    expect(careOn(db, '2026-09-28').water).toEqual({ state: 'upcoming', dueOn: '2026-09-29' });
+  });
+
+  test('feeding and repotting go on as if there were none', () => {
+    const db = checkedMonstera('2026-09-22', '2026-09-29');
+
+    expect(careOn(db, '2026-09-30')).toMatchObject({
+      fertilize: { state: 'upcoming', dueOn: '2026-10-01' },
+      repot: { state: 'upcoming', dueOn: '2028-09-01' },
+    });
+  });
+
+  test("a Paused watering stays Paused, then comes Due on the Growing season's first day", () => {
+    const db = gardenDb();
+    const schedule: CareSchedule = { ...NO_SCHEDULE, wateringGrowingDays: 7 };
+    const plant = createPlant(db, { nickname: 'Cactus', schedule }, noon(2026, 9, 1));
+    const later = noon(2027, 12, 31);
+    logCareEvent(db, { plantId: plant.id, type: 'water', occurredOn: '2026-10-20' }, later);
+    logCareEvent(db, { plantId: plant.id, type: 'soilCheck', occurredOn: '2026-10-27' }, later);
+
+    expect(careOn(db, '2026-12-01').water).toEqual({ state: 'paused', until: '2027-03-01' });
+    expect(careOn(db, '2027-03-01').water).toEqual({
+      state: 'due',
+      dueOn: '2027-03-01',
+      daysOverdue: 0,
+    });
+  });
+});
+
 describe('seasons', () => {
   test('the Dormant interval applies from the first day of the Dormant season', () => {
     const db = gardenDb();

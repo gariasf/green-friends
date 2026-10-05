@@ -72,6 +72,18 @@ test("past days hold that day's Care Events but no Notes, and watering every 4 d
   });
 });
 
+test('a Soil check is no care done, and holds the coming watering a quarter of its interval after it', async () => {
+  const db = await fern({ wateringGrowingDays: 8 }, ['2026-09-20'], {}, (db, plantId) =>
+    logCareEvent(db, { plantId, type: 'soilCheck', occurredOn: '2026-09-28' }, noon(2026, 12, 31)),
+  );
+
+  // Due on Sep 28 by the watering, then 2 days after the check, a quarter of 8.
+  expect(planned(db, '2026-09-29', '2026-09-28')).toEqual({
+    '2026-09-30': ['coming water Fern'],
+    '2026-10-08': ['coming water Fern'],
+  });
+});
+
 test('Overdue care sits on today with its days, and its repeats count from today', async () => {
   const db = await fern({ wateringGrowingDays: 4 }, ['2026-09-24']);
 

@@ -11,6 +11,7 @@ import { CircleIcon } from 'phosphor-react-native/src/icons/Circle';
 import { ClockCounterClockwiseIcon } from 'phosphor-react-native/src/icons/ClockCounterClockwise';
 import { DotsThreeIcon } from 'phosphor-react-native/src/icons/DotsThree';
 import { DropIcon } from 'phosphor-react-native/src/icons/Drop';
+import { DropHalfIcon } from 'phosphor-react-native/src/icons/DropHalf';
 import { FlaskIcon } from 'phosphor-react-native/src/icons/Flask';
 import { LeafIcon } from 'phosphor-react-native/src/icons/Leaf';
 import { LightbulbIcon } from 'phosphor-react-native/src/icons/Lightbulb';
@@ -35,6 +36,7 @@ const ICONS = {
   fertilize: FlaskIcon,
   repot: ShovelIcon,
   note: NotePencilIcon,
+  notDry: DropHalfIcon,
   leaf: LeafIcon,
   archive: ArchiveIcon,
   check: CheckIcon,
@@ -58,8 +60,8 @@ const ICONS = {
 
 export type IconName = keyof typeof ICONS;
 
-/** Care types draw filled, in their hue: the one place colour carries meaning. */
-const FILLED = new Set<IconName>(['water', 'fertilize', 'repot', 'note']);
+/** Care Events draw filled, in their hue: the one place colour carries meaning. */
+const FILLED = new Set<IconName>(['water', 'fertilize', 'repot', 'note', 'notDry']);
 
 /**
  * An icon beside its own words, so VoiceOver skips it: an icon-only control labels its Pressable

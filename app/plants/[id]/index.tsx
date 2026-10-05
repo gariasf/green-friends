@@ -392,7 +392,10 @@ function CareTile({
   );
 }
 
-/** A Care Event on the timeline, a dot in its hue; a tap opens it to be edited or deleted. */
+/**
+ * A Care Event on the timeline, a dot in its hue (a Soil check's an outline, as nothing was poured);
+ * a tap opens it to be edited or deleted.
+ */
 function TimelineEntry({ event, today, last }: { event: CareEvent; today: string; last: boolean }) {
   const copy = CARE_COPY[event.type];
   const day = dayLabel(event.occurredOn, today);
@@ -408,7 +411,14 @@ function TimelineEntry({ event, today, last }: { event: CareEvent; today: string
       style={({ pressed }) => [styles.entry, pressed && pressedStyle.button]}
     >
       <View style={styles.rail}>
-        <View style={[styles.dot, { backgroundColor: copy.hue }]} />
+        <View
+          style={[
+            styles.dot,
+            event.type === 'soilCheck'
+              ? [styles.dotOutline, { borderColor: copy.hue }]
+              : { backgroundColor: copy.hue },
+          ]}
+        />
         {!last && <View style={styles.line} />}
       </View>
       <View style={styles.entryBody}>
@@ -498,6 +508,7 @@ const styles = StyleSheet.create({
   entry: { flexDirection: 'row', gap: space.m },
   rail: { alignItems: 'center', width: 12 },
   dot: { width: 12, height: 12, borderRadius: radius.pill, marginTop: space.xs },
+  dotOutline: { borderWidth: 2 },
   line: { flex: 1, width: 2, marginVertical: 2, backgroundColor: colors.separator },
   entryBody: { flex: 1, paddingBottom: space.l },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.s, padding: space.xl },

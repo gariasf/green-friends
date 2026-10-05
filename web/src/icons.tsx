@@ -1,6 +1,7 @@
 import {
   BugIcon,
   CaretRightIcon,
+  DropHalfIcon,
   DropIcon,
   FlaskIcon,
   LeafIcon,
@@ -30,6 +31,7 @@ const CARE_ICONS: Record<CareEventType, PhosphorIcon> = {
   fertilize: FlaskIcon,
   repot: ShovelIcon,
   note: NotePencilIcon,
+  soilCheck: DropHalfIcon,
 };
 
 /**

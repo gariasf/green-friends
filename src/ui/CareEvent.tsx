@@ -19,6 +19,7 @@ export const CARE_COPY: Record<
   fertilize: { symbol: 'fertilize', hue: colors.fertilize, ...CARE_WORDS.fertilize },
   repot: { symbol: 'repot', hue: colors.repot, ...CARE_WORDS.repot },
   note: { symbol: 'note', hue: colors.note, ...CARE_WORDS.note },
+  soilCheck: { symbol: 'notDry', hue: colors.water, ...CARE_WORDS.soilCheck },
 };
 
 /**

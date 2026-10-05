@@ -12,7 +12,24 @@ export const CARE_WORDS: Record<CareEventType, { label: string; done: string }> 
   fertilize: { label: 'Fertilize', done: 'Fertilized' },
   repot: { label: 'Repot', done: 'Repotted' },
   note: { label: 'Note', done: 'Note' },
+  // A Soil check (ADR-0011): the answer to a Due watering, and what the Care Log says of it.
+  soilCheck: { label: 'Not dry yet', done: 'Not dry yet' },
 };
+
+/**
+ * The undo toast after a Soil check, with when the watering comes back: "Not dry yet: water Monsti
+ * in 2 days", "…tomorrow"; just "Not dry yet: Monsti" where watering isn't coming (no schedule).
+ */
+export function notDryYetLine(name: string, water: CareStatus | undefined, today: string): string {
+  const { label } = CARE_WORDS.soilCheck;
+  if (water?.state !== 'upcoming') return `${label}: ${name}`;
+  const when = nextCareWhen({
+    type: 'water',
+    days: daysBetween(today, water.dueOn),
+    paused: false,
+  });
+  return `${label}: water ${name} ${when}`;
+}
 
 /**
  * A plant's scientific name for the line beneath its name, or none where it would repeat the name,

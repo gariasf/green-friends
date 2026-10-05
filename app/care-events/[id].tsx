@@ -25,6 +25,7 @@ const DELETE_LINE = {
   fertilize: 'Due dates then count from the rest of the log.',
   repot: "Due dates then count from the rest of the log. The plant's pot stays as it is.",
   note: undefined,
+  soilCheck: 'Due dates then count from the rest of the log.',
 };
 
 /**

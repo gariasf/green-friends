@@ -44,7 +44,9 @@ export function planDays(db: Db, today: string, start: string, days: number): Pl
 
   for (const plant of forecast(today)) {
     for (const event of listCareEvents(db, plant.id)) {
-      if (event.type !== 'note' && event.occurredOn >= start && event.occurredOn < today) {
+      // A Note or a Soil check is no care done.
+      if (event.type === 'note' || event.type === 'soilCheck') continue;
+      if (event.occurredOn >= start && event.occurredOn < today) {
         add(event.occurredOn, { plant, type: event.type, kind: 'done', daysOverdue: 0 });
       }
     }

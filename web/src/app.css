@@ -435,6 +435,11 @@ a {
   --hue: var(--note);
 }
 
+/* A Soil check, half a drop, in the water hue. */
+.care-icon.soilCheck {
+  --hue: var(--water);
+}
+
 .thumb {
   flex: none;
   width: 40px;

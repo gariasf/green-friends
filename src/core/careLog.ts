@@ -129,9 +129,9 @@ export function editCareEvent(
 
 /**
  * What every stored Care Event satisfies: a known type, a real calendar day, trimmed text, text on
- * a Note, and a pot size or soil only on a repot, the size positive. Logging and editing also keep
- * the day out of the future; an Import doesn't, since an Export from a timezone ahead may carry a
- * day that is still tomorrow here.
+ * a Note and none on a Soil check, and a pot size or soil only on a repot, the size positive.
+ * Logging and editing also keep the day out of the future; an Import doesn't, since an Export from
+ * a timezone ahead may carry a day that is still tomorrow here.
  */
 export function validateCareEvent(event: CareEvent): void {
   if (!CARE_EVENT_TYPES.includes(event.type)) {
@@ -141,6 +141,9 @@ export function validateCareEvent(event: CareEvent): void {
   checkTrimmed('Note', event.note);
   checkTrimmed('Soil', event.soil);
   if (event.type === 'note' && event.note === null) throw new Error('A Note needs some text');
+  if (event.type === 'soilCheck' && event.note !== null) {
+    throw new Error('A Soil check records only its day');
+  }
   if (event.type !== 'repot' && (event.potSizeCm !== null || event.soil !== null)) {
     throw new Error(`Only a repot records a pot size or soil, not a ${event.type}`);
   }

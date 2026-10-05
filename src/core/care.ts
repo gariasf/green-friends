@@ -93,8 +93,10 @@ export function forecastCare(db: Db): (day: string) => PlantCare[] {
       // A care type never logged anchors to the local day of creation (ADR-0005).
       const anchor = localDay(new Date(plant.createdAt));
       const dueDays = {} as Record<CareType, DueBySeason>;
+      const checked = lastDone.get(`${plant.id}/soilCheck`);
       for (const type of CARE_TYPES) {
-        dueDays[type] = dueBySeason(type, schedule, lastDone.get(`${plant.id}/${type}`) ?? anchor);
+        const last = lastDone.get(`${plant.id}/${type}`) ?? anchor;
+        dueDays[type] = dueBySeason(type, schedule, last, type === 'water' ? checked : undefined);
       }
       return {
         plant: {
@@ -210,13 +212,20 @@ export function effectiveSchedule(plant: CareSchedule, species: CareSchedule | n
  * effective schedule, before the clamp to the Season's first day: repotting on one day, watering
  * and fertilizing on one day per Season, a null Dormant day meaning Paused; null for no schedule.
  * All of due-ness that does not depend on the day evaluated, so a forecast works it out once.
+ * Watering also waits for its `checked` day, the last Soil check's, plus checkedFor that Season's
+ * interval (ADR-0011); a check before the last watering never wins, as checkedFor is never more.
  */
 type DueBySeason =
   | { seasonal: false; on: string }
   | { seasonal: true; growing: string; dormant: string | null }
   | null;
 
-function dueBySeason(type: CareType, schedule: CareSchedule, lastDone: string): DueBySeason {
+function dueBySeason(
+  type: CareType,
+  schedule: CareSchedule,
+  lastDone: string,
+  checked: string | undefined,
+): DueBySeason {
   if (type === 'repot') {
     const months = schedule.repottingMonths;
     return months === null ? null : { seasonal: false, on: shiftMonths(lastDone, months) };
@@ -225,12 +234,24 @@ function dueBySeason(type: CareType, schedule: CareSchedule, lastDone: string): 
   const growingDays = schedule[growing];
   const dormantDays = schedule[dormant];
   if (growingDays === null) return null;
+  const after = (days: number) => {
+    const due = shiftDays(lastDone, days);
+    const again = checked === undefined ? due : shiftDays(checked, checkedFor(days));
+    return again > due ? again : due;
+  };
   return {
     seasonal: true,
-    growing: shiftDays(lastDone, growingDays),
-    dormant: dormantDays === null ? null : shiftDays(lastDone, dormantDays),
+    growing: after(growingDays),
+    dormant: dormantDays === null ? null : after(dormantDays),
   };
 }
+
+/**
+ * How many days after a Soil check watering comes Due again: a quarter of the Season's interval,
+ * rounded up, so 2 for a week, 4 for a fortnight and 8 for a month (ADR-0011).
+ */
+// ponytail: a quarter is a guess made without data; tune it after real use.
+const checkedFor = (days: number) => Math.ceil(days / 4);
 
 /**
  * Due (CONTEXT.md): next due is the last matching Care Event (or the creation anchor) plus the

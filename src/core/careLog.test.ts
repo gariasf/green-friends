@@ -75,12 +75,18 @@ describe('logging care', () => {
     expect(listCareEvents(db, plant.id)).toEqual([]);
   });
 
-  test('a Note needs text; only a repot carries a pot', () => {
+  test('a Note needs text and a Soil check takes none; only a repot carries a pot', () => {
     const db = gardenDb();
     const plant = createPlant(db, { speciesId: MONSTERA }, NOON_SEP_22);
 
     expect(() => logCareEvent(db, { plantId: plant.id, type: 'note', note: '  ' })).toThrow(
       /text/i,
+    );
+    expect(() =>
+      logCareEvent(db, { plantId: plant.id, type: 'soilCheck', note: 'Still wet' }),
+    ).toThrow(/only its day/i);
+    expect(() => logCareEvent(db, { plantId: plant.id, type: 'soilCheck', soil: 'Peat' })).toThrow(
+      /repot/i,
     );
     expect(() => logCareEvent(db, { plantId: plant.id, type: 'water', potSizeCm: 21 })).toThrow(
       /repot/i,
