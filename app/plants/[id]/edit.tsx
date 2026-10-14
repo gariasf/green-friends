@@ -2,11 +2,14 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { setPlantPhoto } from '@/src/core/photos';
 import {
   archivePlant,
   deletePlant,
   getDisplayName,
   getPlant,
+  listArchivedPlants,
+  listPlants,
   unarchivePlant,
   updatePlant,
 } from '@/src/core/plants';
@@ -22,7 +25,7 @@ import {
   TextButton,
   useConfirmDiscard,
 } from '@/src/ui/Form';
-import { photoFiles } from '@/src/ui/Photo';
+import { PhotoRow, photoFiles, photoUri, usePhotoPicker, useStagedPhoto } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
@@ -38,6 +41,12 @@ export default function EditPlantScreen() {
   const { id } = useLocalSearchParams<'/plants/[id]/edit'>();
   const [plant] = useState(() => getPlant(db, id));
   const [displayName] = useState(() => getDisplayName(db, id));
+  /** Its photo as filed; a photo picked here shows in its place until Save files it (#103). */
+  const [filed] = useState(() =>
+    [...listPlants(db), ...listArchivedPlants(db)].find((candidate) => candidate.id === id),
+  );
+  const staged = useStagedPhoto();
+  const photoPicker = usePhotoPicker(staged.stage);
   /** The plant's Species as the catalog knows it: null without one, or for an imported unknown one. */
   const [species, setSpecies] = useState<Species | null>(() =>
     plant.speciesId ? getSpecies(db, plant.speciesId) : null,
@@ -52,6 +61,7 @@ export default function EditPlantScreen() {
     nickname !== (plant.nickname ?? '') ||
     potSizeCm !== (plant.potSizeCm?.toString() ?? '') ||
     soil !== (plant.soil ?? '') ||
+    staged.picked !== null ||
     schedule.changed;
   const leave = useConfirmDiscard(changed, 'Discard your changes?');
 
@@ -70,6 +80,9 @@ export default function EditPlantScreen() {
         soil,
         ...schedule.overrides,
       });
+      if (staged.picked) {
+        setPlantPhoto(db, photoFiles, plant.id, staged.picked.prepared, staged.picked.focus);
+      }
       return true;
     } catch (error) {
       alertError('Could not save the plant', error);
@@ -163,6 +176,13 @@ export default function EditPlantScreen() {
       <Text accessibilityRole="header" style={styles.heading}>
         About this plant
       </Text>
+      <PhotoRow
+        uri={staged.picked?.prepared ?? photoUri(filed?.photo ?? null)}
+        focus={staged.picked?.focus ?? filed?.focus}
+        name={nickname || species?.colloquialName || displayName}
+        onChoose={photoPicker.choose}
+      />
+      {photoPicker.framing}
       <Field
         label="Nickname"
         // Blank, the plant goes by its species' name (CONTEXT.md, Display Name).

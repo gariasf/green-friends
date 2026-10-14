@@ -130,6 +130,8 @@ export const colors = {
    */
   onPhoto: '#ffffff',
   onPhotoQuiet: 'rgba(255, 255, 255, 0.85)',
+  /** Behind a control over a photo, the hero's camera (#103): onPhoto reads on it over any photo. */
+  onPhotoButton: 'rgba(0, 0, 0, 0.45)',
   /** Beneath the name over a photo: a gradient, not a blur, so Reduce Transparency changes nothing. */
   scrim:
     'linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.7) 100%)',

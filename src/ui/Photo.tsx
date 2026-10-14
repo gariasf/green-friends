@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,7 @@ import {
   Image,
   Modal,
   PanResponder,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -27,7 +28,7 @@ import {
 } from '@/src/core/photos';
 import { db } from '@/src/db/client';
 import { alertError, TextButton } from '@/src/ui/Form';
-import { colors, font, radius, space, text } from '@/src/ui/theme';
+import { colors, font, pressedStyle, radius, space, text } from '@/src/ui/theme';
 
 /** Photo files live in the documents directory, which the system never clears, under photos/ (ADR-0001). */
 const folder = new Directory(Paths.document, 'photos');
@@ -152,6 +153,57 @@ async function choosePhoto(onFound: (found: Found) => void): Promise<void> {
     if (prepared) deleteIfThere(new File(prepared));
     alertError('Could not add the photo', error);
   }
+}
+
+/**
+ * A photo a form has picked and prepared but not filed yet (New plant, Edit plant). A newer pick,
+ * or leaving the form, deletes its prepared file; once filed, setPlantPhoto has moved it away.
+ */
+export function useStagedPhoto(): { picked: Picked | null; stage: (next: Picked) => void } {
+  const [picked, setPicked] = useState<Picked | null>(null);
+  const staged = useRef<Picked | null>(null);
+  useEffect(
+    () => () => {
+      if (staged.current) deleteIfThere(new File(staged.current.prepared));
+    },
+    [],
+  );
+  const stage = useCallback((next: Picked) => {
+    if (staged.current) deleteIfThere(new File(staged.current.prepared));
+    staged.current = next;
+    setPicked(next);
+  }, []);
+  return { picked, stage };
+}
+
+/**
+ * A form's photo (New plant, Edit plant): the square, which picks one too, and Add photo or
+ * Replace photo beside it, the one button VoiceOver hears.
+ */
+export function PhotoRow({
+  uri,
+  focus,
+  name,
+  onChoose,
+}: {
+  uri: string | null;
+  focus?: Focus | null;
+  name: string;
+  onChoose: () => void;
+}) {
+  const label = uri ? 'Replace photo' : 'Add photo';
+  return (
+    <View style={styles.photoRow}>
+      <Pressable
+        accessible={false}
+        onPress={onChoose}
+        style={({ pressed }) => pressed && pressedStyle.button}
+      >
+        <PlantPhoto uri={uri} focus={focus} size={64} name={name} />
+      </Pressable>
+      <TextButton label={label} onPress={onChoose} />
+    </View>
+  );
 }
 
 /** The tallest the whole photo stands in Frame photo, as a share of the screen's height. */
@@ -380,6 +432,7 @@ const styles = StyleSheet.create({
     paddingTop: space.s,
   },
   hint: { marginTop: space.s, marginBottom: space.l, marginHorizontal: space.l },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   whole: { borderRadius: radius.inner, borderCurve: 'continuous', overflow: 'hidden' },
   marker: {
     position: 'absolute',

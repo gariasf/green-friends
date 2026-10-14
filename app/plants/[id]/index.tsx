@@ -64,7 +64,7 @@ import { dayLabel, scientificBeneath, tileLine, tileValue, whoseSchedule } from 
 
 /**
  * A plant's screen, where tapping a plant anywhere leads (spec #22, the prototype's variant B): its
- * photo, which a tap replaces, its names and pet toxicity; a tile per care type with when it's next
+ * photo, which a tap replaces, its camera saying so (#103), its names and pet toxicity; a tile per care type with when it's next
  * Due, when it was last done and, once Due, Done; its Care Log as a timeline; its Current Pot and
  * whose schedule it follows. Under the tiles, its Care group (spec #48): how to water, feed and place it
  * in today's Season, its Care Guide and the Symptoms. An Archived plant is out of care, so it has no
@@ -161,9 +161,9 @@ export default function PlantScreen() {
         {uri ? (
           <>
             <View style={{ height: heroHeight }}>
+              {/* The photo replaces itself on a tap too; VoiceOver hears the camera instead. */}
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Replace photo"
+                accessible={false}
                 onPress={pickPhoto}
                 style={({ pressed }) => [StyleSheet.absoluteFill, pressed && pressedStyle.button]}
               >
@@ -181,19 +181,32 @@ export default function PlantScreen() {
               {/* Over the photo but outside its button, so VoiceOver reads the name as the
                   screen's header, apart from Replace photo. */}
               <View style={styles.scrim}>
-                <Text accessibilityRole="header" style={[text.title1, styles.onPhoto]}>
-                  {plant.displayName}
-                </Text>
-                {scientific && (
-                  <Text style={[styles.scientific, styles.onPhotoQuiet]}>{scientific}</Text>
-                )}
+                <View style={styles.names}>
+                  <Text accessibilityRole="header" style={[text.title1, styles.onPhoto]}>
+                    {plant.displayName}
+                  </Text>
+                  {scientific && (
+                    <Text style={[styles.scientific, styles.onPhotoQuiet]}>{scientific}</Text>
+                  )}
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Replace photo"
+                  onPress={pickPhoto}
+                  style={({ pressed }) => [styles.photoButton, pressed && pressedStyle.button]}
+                >
+                  <View style={styles.photoButtonDisc}>
+                    <Icon name="photo" size={20} color={colors.onPhoto} />
+                  </View>
+                </Pressable>
               </View>
             </View>
             {/* Kept without a badge too, or the tiles meet the photo's edge. */}
             <View style={styles.underHero}>{badge}</View>
           </>
         ) : (
-          // A plant without a photo: its initial beside its names, which a tap turns into Add photo.
+          // A plant without a photo: its initial beside its names, which a tap turns into Add photo,
+          // as the camera on its corner says (#103).
           <View style={styles.compact}>
             <Pressable
               accessibilityRole="button"
@@ -202,6 +215,9 @@ export default function PlantScreen() {
               style={({ pressed }) => pressed && pressedStyle.button}
             >
               <PlantPhoto uri={null} size={64} name={plant.displayName} />
+              <View style={styles.addPhoto}>
+                <Icon name="photo" size={14} color={colors.onTint} />
+              </View>
             </Pressable>
             <View style={styles.names}>
               <Text accessibilityRole="header" style={text.title1}>
@@ -440,13 +456,46 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    gap: space.xs,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: space.m,
     paddingHorizontal: space.xl,
     paddingTop: space.xxxl * 3,
     paddingBottom: space.l,
     experimental_backgroundImage: colors.scrim,
   },
   onPhoto: { color: colors.onPhoto },
+  // The camera over the photo: a 44 pt target around a smaller disc, level with the name's foot.
+  photoButton: {
+    width: 44,
+    height: 44,
+    marginRight: -space.s,
+    marginBottom: -space.s,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoButtonDisc: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.onPhotoButton,
+  },
+  // The camera on an initial's corner, ringed in the ground so it stands off the square.
+  addPhoto: {
+    position: 'absolute',
+    right: -space.xs,
+    bottom: -space.xs,
+    width: 26,
+    height: 26,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.tint,
+  },
   onPhotoQuiet: { color: colors.onPhotoQuiet },
   underHero: { paddingHorizontal: space.xl, paddingTop: space.s, paddingBottom: space.m },
   compact: {

@@ -4,6 +4,7 @@ import { ArchiveIcon } from 'phosphor-react-native/src/icons/Archive';
 import { BookOpenIcon } from 'phosphor-react-native/src/icons/BookOpen';
 import { BugIcon } from 'phosphor-react-native/src/icons/Bug';
 import { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
+import { CameraIcon } from 'phosphor-react-native/src/icons/Camera';
 import { CaretRightIcon } from 'phosphor-react-native/src/icons/CaretRight';
 import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
@@ -56,6 +57,7 @@ const ICONS = {
   soil: StackIcon,
   fact: LightbulbIcon,
   schedule: CalendarBlankIcon,
+  photo: CameraIcon,
 } satisfies Record<string, PhosphorIcon>;
 
 export type IconName = keyof typeof ICONS;

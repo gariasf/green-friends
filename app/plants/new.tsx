@@ -24,7 +24,7 @@ import {
   useConfirmDiscard,
   WhenPicker,
 } from '@/src/ui/Form';
-import { PlantPhoto, photoFiles, usePhotoPicker, type Picked } from '@/src/ui/Photo';
+import { PhotoRow, photoFiles, usePhotoPicker, useStagedPhoto, type Picked } from '@/src/ui/Photo';
 import { scientificBeneath } from '@/src/ui/words';
 import { PickedSpecies, SpeciesSearch } from '@/src/ui/SpeciesPicker';
 import { colors, group, pressedStyle, space, text } from '@/src/ui/theme';
@@ -51,7 +51,8 @@ export default function NewPlantScreen() {
   const [potSizeCm, setPotSizeCm] = useState('');
   const [soil, setSoil] = useState('');
   /** The prepared photo and its Focal point, filed with the plant once it is added. */
-  const [picked, setPicked] = useState<Picked | null>(null);
+  const staged = useStagedPhoto();
+  const picked = staged.picked;
   const prepared = picked?.prepared ?? null;
   const identify = useIdentify();
   // Without a Species, a plant's Overrides are its whole schedule (ADR-0003).
@@ -103,7 +104,7 @@ export default function NewPlantScreen() {
   // Suggestions belong to the photo they came from.
   const photoPicker = usePhotoPicker((next: Picked) => {
     identify.clear();
-    setPicked(next);
+    staged.stage(next);
   });
 
   return (
@@ -161,23 +162,12 @@ export default function NewPlantScreen() {
       <Text accessibilityRole="header" style={styles.heading}>
         About this plant
       </Text>
-      <View style={styles.photoRow}>
-        {/* The square picks a photo too, as on the Plant screen. */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={prepared ? 'Replace photo' : 'Add photo'}
-          onPress={photoPicker.choose}
-          style={({ pressed }) => pressed && pressedStyle.button}
-        >
-          <PlantPhoto
-            uri={prepared}
-            focus={picked?.focus}
-            size={64}
-            name={nickname || species?.colloquialName || ''}
-          />
-        </Pressable>
-        <TextButton label={prepared ? 'Replace photo' : 'Add photo'} onPress={photoPicker.choose} />
-      </View>
+      <PhotoRow
+        uri={prepared}
+        focus={picked?.focus}
+        name={nickname || species?.colloquialName || ''}
+        onChoose={photoPicker.choose}
+      />
       {photoPicker.framing}
       {IDENTIFY_SHOWN && prepared && (
         <IdentifyFromPhoto
@@ -342,7 +332,6 @@ function whyNotYet(
 const styles = StyleSheet.create({
   screen: { padding: space.l, gap: space.m, paddingBottom: space.xxxl },
   heading: { ...group.header, marginTop: space.s },
-  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   identify: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.s },
   identifyLabel: { ...text.body, color: colors.tint },
   identifyRunning: { color: colors.tertiaryLabel },
