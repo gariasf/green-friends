@@ -64,8 +64,11 @@ export type Sync = {
   status(): SyncStatus;
   /** After a burst of writes: an upload once none follows for the delay. */
   afterWrites(): void;
-  /** At launch and back in the foreground: an upload, if writes are still to reach the relay. */
-  foreground(): void;
+  /**
+   * An upload now, if writes are still to reach the relay: at launch, back in the foreground, and
+   * as the app leaves the foreground, before iOS suspends it (spec #99).
+   */
+  flush(): void;
   /** An upload now, whether or not anything changed. */
   syncNow(): Promise<void>;
   turnOn(): Promise<void>;
@@ -180,7 +183,7 @@ export function createSync({
       clearTimeout(timer);
       timer = setTimeout(run, delayMs);
     },
-    foreground() {
+    flush() {
       if (status.on && status.unsynced) void run();
     },
     syncNow() {

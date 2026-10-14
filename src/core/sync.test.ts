@@ -126,7 +126,7 @@ describe('Sync', () => {
     const { puts, syncer } = sync({ unsynced: true });
 
     syncer.afterWrites();
-    syncer.foreground();
+    syncer.flush();
     await syncer.syncNow();
     await jest.advanceTimersByTimeAsync(DELAY);
 
@@ -160,15 +160,16 @@ describe('Sync', () => {
     expect(syncer.status()).toMatchObject({ on: false, syncedAt: null });
   });
 
-  test('back in the foreground, uploads only what has not reached the relay', async () => {
+  test('a flush (launch, foreground, leaving it) uploads at once only what has not reached the relay', async () => {
     const { puts, syncer } = sync({ on: true });
 
-    syncer.foreground();
+    syncer.flush();
     await jest.advanceTimersByTimeAsync(0);
     expect(puts).toHaveLength(0);
 
+    // Leaving the foreground right after a write: the upload doesn't wait out the delay.
     syncer.afterWrites();
-    syncer.foreground();
+    syncer.flush();
     await jest.advanceTimersByTimeAsync(0);
     expect(puts).toHaveLength(1);
     // The waiting upload went out early; the delay brings no second one.
@@ -189,7 +190,7 @@ describe('Sync', () => {
     });
 
     relay.failing = false;
-    syncer.foreground();
+    syncer.flush();
     await jest.advanceTimersByTimeAsync(0);
     expect(puts).toHaveLength(1);
     expect(syncer.status()).toMatchObject({ problem: null, unsynced: false });

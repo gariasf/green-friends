@@ -8,7 +8,7 @@ import {
   digest,
   getRandomBytes,
 } from 'expo-crypto';
-import { File, Paths } from 'expo-file-system';
+import { File, Paths, UploadType } from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useSyncExternalStore } from 'react';
@@ -109,14 +109,27 @@ async function keys(): Promise<SyncKeys> {
 export const APP_TOKEN = process.env.EXPO_PUBLIC_APP_TOKEN ?? '';
 
 const relay: SyncRelay = {
+  /**
+   * From a file, through iOS's background transfer, so an upload started as the app leaves the
+   * foreground still lands once iOS suspends it (spec #99).
+   */
+  // ponytail: an app ended mid-upload leaves its file in Caches, which iOS purges in time.
   async put(gardenId, writeToken, snapshot) {
-    const response = await fetch(`${RELAY_URL}/gardens/${gardenId}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${writeToken}`, 'X-App-Token': APP_TOKEN },
-      // Sealed by expo-crypto into a plain ArrayBuffer, never a shared one.
-      body: snapshot as Uint8Array<ArrayBuffer>,
-    });
-    if (!response.ok) throw new Error(`The relay refused the Snapshot (HTTP ${response.status})`);
+    const file = new File(Paths.cache, `snapshot-${Date.now()}.bin`);
+    file.write(snapshot);
+    try {
+      const { status } = await file.upload(`${RELAY_URL}/gardens/${gardenId}`, {
+        httpMethod: 'PUT',
+        uploadType: UploadType.BINARY_CONTENT,
+        headers: { Authorization: `Bearer ${writeToken}`, 'X-App-Token': APP_TOKEN },
+        sessionType: 'background',
+      });
+      if (status < 200 || status > 299) {
+        throw new Error(`The relay refused the Snapshot (HTTP ${status})`);
+      }
+    } finally {
+      if (file.exists) file.delete();
+    }
   },
   async days(gardenId) {
     return (await read(`/gardens/${gardenId}/snapshots`)).json();
@@ -248,7 +261,7 @@ function openLink(url: string | null): void {
 /**
  * Takes the Pairing links opened in the app, and keeps the Snapshot on the relay up to date while
  * Sync is on, from the root layout: the moments the Daily Digests are planned again (useDigests),
- * after every burst of writes, at launch and back in the foreground.
+ * after every burst of writes, at launch and back in the foreground, and as the app leaves it.
  */
 export function useSync(): void {
   useAfterWrites(sync.afterWrites);
@@ -258,10 +271,11 @@ export function useSync(): void {
     return () => links.remove();
   }, []);
   useEffect(() => {
-    sync.foreground();
-    const foreground = AppState.addEventListener('change', (state) => {
-      if (state === 'active') sync.foreground();
+    sync.flush();
+    // Leaving the foreground too: a waiting upload starts before iOS suspends the app.
+    const moves = AppState.addEventListener('change', (state) => {
+      if (state === 'active' || state === 'background') sync.flush();
     });
-    return () => foreground.remove();
+    return () => moves.remove();
   }, []);
 }
