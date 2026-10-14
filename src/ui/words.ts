@@ -248,6 +248,23 @@ export function agoLine(day: string, today: string): string {
   return `${plural(count, unit)} ago`;
 }
 
+/**
+ * How long ago a Snapshot reached the relay, as of `now` (spec #99): "just now", "2 min ago",
+ * "3 h ago", "4 days ago". Settings' Last synced and the Web view's Synced both say it.
+ */
+export function syncedAgo(at: Date | string, now: Date): string {
+  const minutes = Math.floor((now.getTime() - new Date(at).getTime()) / 60_000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)} h ago`;
+  return `${plural(Math.floor(minutes / (24 * 60)), 'day')} ago`;
+}
+
+/** Words said mid-sentence ("due in 3 days", "just now"), as a line of their own. */
+export function sentence(words: string): string {
+  return words[0].toUpperCase() + words.slice(1);
+}
+
 const LIGHT_LEVEL = {
   low: 'Low light',
   medium: 'Medium light',

@@ -10,6 +10,8 @@ import {
   plural,
   scheduleLine,
   seasonLine,
+  sentence,
+  syncedAgo,
   tileLine,
   tileValue,
 } from './words';
@@ -211,5 +213,24 @@ describe('next care', () => {
     expect(nextCareLine({ type: 'fertilize', days: 1, paused: false })).toBe('Fertilize tomorrow');
     expect(nextCareLine({ type: 'water', days: 40, paused: true })).toBe('Resting');
     expect(nextCareLine(null)).toBe('No schedule');
+  });
+});
+
+describe('Synced, how long ago', () => {
+  const now = new Date('2026-10-14T16:00:00Z');
+  const ago = (ms: number) => syncedAgo(new Date(now.getTime() - ms), now);
+  it('counts minutes, then hours, then days, each rounded down', () => {
+    expect(ago(59_000)).toBe('just now');
+    expect(ago(60_000)).toBe('1\u00a0min ago');
+    expect(ago(59 * 60_000 + 59_000)).toBe('59\u00a0min ago');
+    expect(ago(60 * 60_000)).toBe('1\u00a0h ago');
+    expect(ago(24 * 60 * 60_000 - 1)).toBe('23\u00a0h ago');
+    expect(ago(24 * 60 * 60_000)).toBe('1\u00a0day ago');
+    expect(ago(9 * 24 * 60 * 60_000)).toBe('9\u00a0days ago');
+  });
+  it("takes the status file's ISO string, and a clock behind the relay's reads as just now", () => {
+    expect(syncedAgo('2026-10-14T15:57:30Z', now)).toBe('2\u00a0min ago');
+    expect(ago(-90_000)).toBe('just now');
+    expect(sentence(ago(0))).toBe('Just now');
   });
 });

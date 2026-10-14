@@ -28,7 +28,7 @@ import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
 import { useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, StyleSheet } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, StyleSheet } from 'react-native';
 
 import { shareExport, type ShareSheet } from '@/src/core/export';
 import { importExport } from '@/src/core/import';
@@ -52,6 +52,7 @@ import {
   sync,
   useSyncStatus,
 } from '@/src/ui/useSync';
+import { sentence, syncedAgo } from '@/src/ui/words';
 
 // The Form on the app's warm ground, its rows on the surface, as the groups React Native draws.
 const FORM = [scrollContentBackground('hidden'), background(colors.background)];
@@ -80,13 +81,7 @@ const APP_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 /** When the last Snapshot reached the relay, as Settings' Last synced row words it. */
 function syncedLabel(syncedAt: string | null, now: Date): string {
-  if (syncedAt === null) return 'Never';
-  const minutes = Math.floor((now.getTime() - Date.parse(syncedAt)) / 60_000);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)} h ago`;
-  const days = Math.floor(minutes / (24 * 60));
-  return days === 1 ? '1 day ago' : `${days} days ago`;
+  return syncedAt === null ? 'Never' : sentence(syncedAgo(syncedAt, now));
 }
 
 /**
@@ -121,13 +116,21 @@ export default function SettingsScreen() {
 
   const syncStatus = useSyncStatus();
   const link = syncStatus.on ? pairingLink() : null;
-  // Last synced is relative to now: read again every half minute while Sync is on. A sync newer
-  // than the last tick reads as Just now.
+  // Last synced is relative to now: read again every half minute while Sync is on, and at once
+  // back in the foreground rather than at the next tick. A sync newer than the last tick reads as
+  // Just now.
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     if (!syncStatus.on) return;
-    const tick = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(tick);
+    const read = () => setNow(new Date());
+    const tick = setInterval(read, 30_000);
+    const foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active') read();
+    });
+    return () => {
+      clearInterval(tick);
+      foreground.remove();
+    };
   }, [syncStatus.on]);
 
   // The row shows the zip being made until the share sheet is up. A second tap until the sheet is

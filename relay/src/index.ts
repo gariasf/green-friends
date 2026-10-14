@@ -23,8 +23,10 @@ export default {
     const ip = request.headers.get('CF-Connecting-IP');
     const limited = ip !== null && !(await env.LIMITER.limit({ key: ip })).success;
     const res = limited ? status(429) : await route(request, env);
-    // Reads are simple GETs with no custom headers, so the Web view needs no preflight.
+    // Reads are simple GETs and HEADs with no custom headers, so the Web view needs no preflight.
     res.headers.set('Access-Control-Allow-Origin', env.ALLOWED_ORIGIN);
+    // Nothing is kept by a browser: a kept Snapshot would show an older Garden (spec #99).
+    res.headers.set('Cache-Control', 'no-store');
     return res;
   },
 } satisfies ExportedHandler<Env>;
@@ -41,12 +43,14 @@ async function route(request: Request, env: Env): Promise<Response> {
   const listing = pathname.endsWith('/snapshots');
   const bucket = env.SNAPSHOTS;
 
-  if (request.method === 'GET') {
-    if (day) return snapshot(await bucket.get(`${id}/${day}`));
+  if (request.method === 'GET' || request.method === 'HEAD') {
+    // A HEAD reads only the Snapshot's date, for the Web view to check for a newer one (spec #99).
+    const read = (key: string) => (request.method === 'HEAD' ? bucket.head(key) : bucket.get(key));
+    if (day) return snapshot(await read(`${id}/${day}`));
     const days = await listDays(bucket, id);
     if (listing) return Response.json(days);
     const latest = days.at(-1);
-    return snapshot(latest ? await bucket.get(`${id}/${latest}`) : null);
+    return snapshot(latest ? await read(`${id}/${latest}`) : null);
   }
 
   if (day || listing) return status(405);
@@ -175,12 +179,19 @@ async function listDays(bucket: R2Bucket, id: string): Promise<string[]> {
   return objects.map((o) => o.key.slice(id.length + 1)).filter((d) => DAY.test(d));
 }
 
-function snapshot(object: R2ObjectBody | null): Response {
+/**
+ * A Snapshot, or for a HEAD (an object without its body) just its date and ETag. The ETag names
+ * each upload exactly, where two uploads within a second share a Last-Modified, so the Web view
+ * reads it to tell a newer Snapshot (spec #99).
+ */
+function snapshot(object: R2Object | null): Response {
   if (!object) return status(404);
-  return new Response(object.body, {
+  return new Response('body' in object ? (object as R2ObjectBody).body : null, {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Last-Modified': object.uploaded.toUTCString(),
+      ETag: object.httpEtag,
+      'Access-Control-Expose-Headers': 'ETag',
     },
   });
 }

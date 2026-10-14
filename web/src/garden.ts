@@ -9,8 +9,11 @@ import { migrate } from '../../src/db/migrate';
 import * as schema from '../../src/db/schema';
 import type { Db } from '../../src/db/types';
 
-/** A Snapshot's Garden, opened in the browser: the database the core reads, and the photos' bytes. */
-export type Garden = { db: Db; photo(filename: string): Uint8Array | undefined };
+/**
+ * A Snapshot's Garden, opened in the browser: the database the core reads, and the photos' bytes.
+ * `close` frees its database once a newer Snapshot's Garden has taken its place (spec #99).
+ */
+export type Garden = { db: Db; photo(filename: string): Uint8Array | undefined; close(): void };
 
 /**
  * Opens the Export in `zip` as the phone would import it (spec #35): into an in-memory SQLite,
@@ -18,7 +21,8 @@ export type Garden = { db: Db; photo(filename: string): Uint8Array | undefined }
  * held in memory. Throws importExport's errors, NewerExportError for a newer phone's.
  */
 export function openGarden(SQL: SqlJsStatic, zip: Uint8Array): Garden {
-  const db = drizzle(new SQL.Database(), { schema });
+  const database = new SQL.Database();
+  const db = drizzle(database, { schema });
   migrate(db);
   seedSpecies(db, species as SpeciesDataset);
   const photos = new Map<string, Uint8Array>();
@@ -41,5 +45,5 @@ export function openGarden(SQL: SqlJsStatic, zip: Uint8Array): Garden {
   } finally {
     scratch.close();
   }
-  return { db, photo: (filename) => photos.get(filename) };
+  return { db, photo: (filename) => photos.get(filename), close: () => database.close() };
 }

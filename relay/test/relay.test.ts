@@ -50,6 +50,30 @@ describe('the relay', () => {
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe(env.ALLOWED_ORIGIN);
   });
 
+  it('answers HEAD with the latest Snapshot’s date alone, and lets nothing be kept', async () => {
+    const id = gardenId();
+    await put(id, 'sealed-1');
+
+    const got = await relay(`/gardens/${id}`);
+    const head = await relay(`/gardens/${id}`, { method: 'HEAD' });
+    expect(await got.text()).toBe('sealed-1');
+    expect(head.status).toBe(200);
+    expect(head.body).toBeNull();
+    expect(head.headers.get('Last-Modified')).toBe(got.headers.get('Last-Modified'));
+    expect(head.headers.get('ETag')).toBe(got.headers.get('ETag'));
+    expect(head.headers.get('Access-Control-Expose-Headers')).toBe('ETag');
+    expect(head.headers.get('Access-Control-Allow-Origin')).toBe(env.ALLOWED_ORIGIN);
+    for (const res of [got, head, await relay(`/gardens/${id}/snapshots`)]) {
+      expect(res.headers.get('Cache-Control')).toBe('no-store');
+    }
+    expect((await relay(`/gardens/${gardenId()}`, { method: 'HEAD' })).status).toBe(404);
+
+    // A second upload the same second keeps the date, but not the ETag.
+    await put(id, 'sealed-2');
+    const later = await relay(`/gardens/${id}`, { method: 'HEAD' });
+    expect(later.headers.get('ETag')).not.toBe(head.headers.get('ETag'));
+  });
+
   it('lets only the token that claimed a garden write to it', async () => {
     const id = gardenId();
     await put(id, 'sealed-1');

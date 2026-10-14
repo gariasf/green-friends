@@ -1,29 +1,45 @@
-import initSqlJs from 'sql.js';
+import initSqlJs, { type SqlJsStatic } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { evaluateCare, needsAttention } from '../../src/core/care';
 import { localDay } from '../../src/core/dates';
 import { NewerExportError } from '../../src/core/import';
 import { listPlants } from '../../src/core/plants';
-import { plantsNeedYou, plural } from '../../src/ui/words';
+import { plantsNeedYou, plural, syncedAgo } from '../../src/ui/words';
 import { openGarden, type Garden } from './garden';
 import { AppMark } from './icons';
 import type { PlantView } from './guide';
 import { GardenPage, PlantDetail, Today, type PhotoUrl } from './screens';
 import { APP_PAIRING_LINK, keyFromFragment, toBase64url } from '../../src/core/sync';
-import { loadSnapshot, storeKey, storedKey } from './snapshot';
+import { loadSnapshot, snapshotVersion, storeKey, storedKey } from './snapshot';
 
 type State =
   | { kind: 'loading' }
   | { kind: 'message'; title: string; line: string }
-  | { kind: 'garden'; garden: Garden; takenAt: Date | null; pairKey: Uint8Array };
+  | {
+      kind: 'garden';
+      garden: Garden;
+      takenAt: Date | null;
+      /** Which upload the shown Snapshot is (snapshotVersion), to tell a newer one. */
+      version: string | null;
+      pairKey: Uint8Array;
+    };
 
 const UNPAIRED = {
   kind: 'message',
   title: 'Not paired yet',
   line: "Open the Pairing link from Green Friends' Settings on your phone.",
 } as const;
+
+const NO_GARDEN = {
+  kind: 'message',
+  title: 'No Garden found',
+  line: "Nothing has synced with this Pairing link, or Sync was reset since. Turn Sync on in Green Friends' Settings, or open the Pairing link it shows now.",
+} as const;
+
+/** sql.js, compiled once for every Snapshot the page opens; tried again after a failure. */
+let sqlJs: Promise<SqlJsStatic> | undefined;
 
 /**
  * The key from a Pairing link just opened, kept and cleared from the address bar, or the one kept
@@ -44,36 +60,93 @@ async function pairingKey(): Promise<Uint8Array | undefined> {
   return fromLink;
 }
 
+/** The latest Snapshot under `key`, opened; throws as loadSnapshot and openGarden do. */
+async function open(key: Uint8Array): Promise<State> {
+  const snapshot = await loadSnapshot(key);
+  if (!snapshot) return NO_GARDEN;
+  sqlJs ??= initSqlJs({ locateFile: () => wasmUrl }).catch((error) => {
+    sqlJs = undefined;
+    throw error;
+  });
+  return {
+    kind: 'garden',
+    garden: openGarden(await sqlJs, snapshot.zip),
+    takenAt: snapshot.takenAt,
+    version: snapshot.version,
+    pairKey: key,
+  };
+}
+
+/** What the page says of a Snapshot it can't open. */
+function cantOpen(error: unknown): State {
+  if (error instanceof NewerExportError) {
+    return {
+      kind: 'message',
+      title: 'Update needed',
+      line: 'Your phone has a newer Green Friends. This page needs an update.',
+    };
+  }
+  const reason = error instanceof Error ? error.message : String(error);
+  return { kind: 'message', title: 'Could not open your Garden', line: reason };
+}
+
 async function load(): Promise<State> {
   const key = await pairingKey();
   if (!key) return UNPAIRED;
-  try {
-    const snapshot = await loadSnapshot(key);
-    if (!snapshot) {
-      return {
-        kind: 'message',
-        title: 'No Garden found',
-        line: "Nothing has synced with this Pairing link, or Sync was reset since. Turn Sync on in Green Friends' Settings, or open the Pairing link it shows now.",
-      };
-    }
-    const SQL = await initSqlJs({ locateFile: () => wasmUrl });
-    return {
-      kind: 'garden',
-      garden: openGarden(SQL, snapshot.zip),
-      takenAt: snapshot.takenAt,
-      pairKey: key,
+  return open(key).catch(cantOpen);
+}
+
+/** How often an open page asks the relay whether a newer Snapshot came (spec #99). */
+const CHECK_MS = 30_000;
+
+/**
+ * Keeps the shown Garden the latest Snapshot's (spec #99): when the tab comes back into view or
+ * the browser back online, and every CHECK_MS while it shows, it asks the relay which upload the
+ * latest Snapshot is (a HEAD, so nothing downloads) and opens a newer one in place of the shown. Each
+ * check moves `now` on, for Synced's "2 min ago" and Today's day; `failed` holds until one passes.
+ */
+function useFollow(state: State, setState: (state: State) => void) {
+  const [now, setNow] = useState(() => new Date());
+  const [failed, setFailed] = useState(false);
+  const shown = state.kind === 'garden' ? state : null;
+  useEffect(() => {
+    if (!shown) return;
+    let busy = false;
+    let left = false;
+    const check = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      setNow(new Date());
+      try {
+        const latest = await snapshotVersion(shown.pairKey);
+        const next = latest === shown.version ? null : await open(shown.pairKey);
+        if (left) {
+          if (next?.kind === 'garden') next.garden.close();
+          return;
+        }
+        if (next) setState(next);
+        setFailed(false);
+      } catch (error) {
+        // A newer Snapshot that won't open says why, as at load; a relay out of reach keeps the
+        // Garden shown, noted beside Synced.
+        if (left) return;
+        if (error instanceof NewerExportError) setState(cantOpen(error));
+        else setFailed(true);
+      } finally {
+        busy = false;
+      }
     };
-  } catch (error) {
-    if (error instanceof NewerExportError) {
-      return {
-        kind: 'message',
-        title: 'Update needed',
-        line: 'Your phone has a newer Green Friends. This page needs an update.',
-      };
-    }
-    const reason = error instanceof Error ? error.message : String(error);
-    return { kind: 'message', title: 'Could not open your Garden', line: reason };
-  }
+    const timer = setInterval(check, CHECK_MS);
+    document.addEventListener('visibilitychange', check);
+    addEventListener('online', check);
+    return () => {
+      left = true;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', check);
+      removeEventListener('online', check);
+    };
+  }, [shown, setState]);
+  return { now, failed };
 }
 
 type Route = { tab: 'today' } | { tab: 'garden' } | { tab: 'plant'; id: string; view: PlantView };
@@ -112,6 +185,16 @@ export function App() {
     return () => removeEventListener('hashchange', onHashChange);
   }, []);
 
+  const { now, failed } = useFollow(state, setState);
+  // A Garden a newer Snapshot replaced is closed once the new one shows. A ref rather than an
+  // effect's cleanup, which StrictMode runs on a Garden still shown.
+  const shownGarden = useRef<Garden | null>(null);
+  useEffect(() => {
+    const garden = state.kind === 'garden' ? state.garden : null;
+    if (shownGarden.current && shownGarden.current !== garden) shownGarden.current.close();
+    shownGarden.current = garden;
+  }, [state]);
+
   if (state.kind === 'loading') return <main aria-busy="true" />;
   if (state.kind === 'message') {
     return (
@@ -127,6 +210,8 @@ export function App() {
       takenAt={state.takenAt}
       pairKey={state.pairKey}
       screen={screen}
+      now={now}
+      failed={failed}
     />
   );
 }
@@ -135,19 +220,24 @@ const SYNCED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeSty
 
 /**
  * The Garden's screens in the shell (spec #41): a sidebar with the app's mark and name, Today and
- * Garden with their counts, and when the Snapshot was taken at its foot; below 60rem, a top bar.
- * Beside it one page (spec #72): Today, the Garden, or a plant at its own address.
+ * Garden with their counts, and how long ago the Snapshot was taken at its foot, as of `now`
+ * (spec #99); below 60rem, a top bar. Beside it one page (spec #72): Today, the Garden, or a plant
+ * at its own address.
  */
 function GardenView({
   garden,
   takenAt,
   pairKey,
   screen,
+  now,
+  failed,
 }: {
   garden: Garden;
   takenAt: Date | null;
   pairKey: Uint8Array;
   screen: Route;
+  now: Date;
+  failed: boolean;
 }) {
   const photoUrl = usePhotoUrls(garden);
   // The day each navigation draws, as Today's (screens.tsx).
@@ -198,7 +288,15 @@ function GardenView({
         <a className="open-app" href={`${APP_PAIRING_LINK}#k=${toBase64url(pairKey)}`}>
           Open in Green Friends
         </a>
-        {takenAt && <p className="synced">Synced {SYNCED.format(takenAt)}</p>}
+        {takenAt && (
+          <p className="synced">
+            Synced{' '}
+            <time dateTime={takenAt.toISOString()} title={SYNCED.format(takenAt)}>
+              {syncedAgo(takenAt, now)}
+            </time>
+            {failed && " · couldn't check for changes"}
+          </p>
+        )}
       </header>
       <main className="page">
         {screen.tab === 'today' && <Today garden={garden} photoUrl={photoUrl} />}
@@ -211,10 +309,12 @@ function GardenView({
   );
 }
 
-/** Each plant's photo's address in this page, the Web view showing only plants in care. */
+/**
+ * Each plant's photo's address in this page, the Web view showing only plants in care. A newer
+ * Snapshot's Garden brings its own, and the old ones are revoked once those show.
+ */
 function usePhotoUrls(garden: Garden): PhotoUrl {
-  return useMemo(() => {
-    // ponytail: never revoked; the page holds one Garden for its whole life.
+  const urls = useMemo(() => {
     const urls = new Map<string, string>();
     for (const { photo } of listPlants(garden.db)) {
       const bytes = photo && garden.photo(photo);
@@ -222,6 +322,12 @@ function usePhotoUrls(garden: Garden): PhotoUrl {
       const blob = bytes && new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'image/jpeg' });
       if (blob) urls.set(photo, URL.createObjectURL(blob));
     }
-    return (filename) => (filename ? urls.get(filename) : undefined);
+    return urls;
   }, [garden]);
+  const shown = useRef(urls);
+  useEffect(() => {
+    if (shown.current !== urls) shown.current.forEach((url) => URL.revokeObjectURL(url));
+    shown.current = urls;
+  }, [urls]);
+  return useMemo(() => (filename) => (filename ? urls.get(filename) : undefined), [urls]);
 }

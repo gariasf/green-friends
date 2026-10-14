@@ -43,6 +43,7 @@ import {
   scientificBeneath,
   SEARCH_PLANTS,
   seasonLine,
+  sentence,
   SOMETHING_WRONG,
   tileValue,
   whoseSchedule,
@@ -484,9 +485,4 @@ function Empty({ title, line }: { title: string; line?: string }) {
 /** A pot's size and soil, those it has: "21 cm pot · Aroid mix". */
 function potLine(sizeCm: number | null, soil: string | null): string {
   return [sizeCm !== null && `${sizeCm} cm pot`, soil].filter(Boolean).join(' · ');
-}
-
-/** Words said mid-sentence ("due in 3 days"), as a line of their own. */
-function sentence(words: string): string {
-  return words[0].toUpperCase() + words.slice(1);
 }
