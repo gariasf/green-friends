@@ -47,18 +47,87 @@ export type SyncKeys = {
   open(snapshot: Uint8Array): Promise<Uint8Array>;
 };
 
+/**
+ * Why an upload didn't happen (spec #99): no connection, the relay in trouble, or something else
+ * on the phone, which Sync tries again by itself; or the relay refusing this phone, or a Snapshot
+ * too big, which wait for the owner.
+ */
+export type SyncProblemKind = 'offline' | 'relay' | 'other' | 'refused' | 'tooBig';
+
 /** Sync's state on this device; never Garden data, so never in an Export. */
 export type SyncStatus = {
   on: boolean;
   /** When a Snapshot last reached the relay (ISO), or null for never. */
   syncedAt: string | null;
-  /** Why the last upload didn't happen, until one does: too big, or the error. */
+  /** Why the last upload didn't happen, in the owner's words, until one does. */
   problem: string | null;
+  problemKind: SyncProblemKind | null;
+  /** When uploads began failing (ISO), until one gets through. */
+  failingSince: string | null;
   /** Whether writes since the last upload have yet to reach the relay. */
   unsynced: boolean;
+  /** Whether an upload is on its way, for Settings' "Syncing…". Never kept across launches. */
+  syncing: boolean;
 };
 
-export const SYNC_OFF: SyncStatus = { on: false, syncedAt: null, problem: null, unsynced: false };
+export const SYNC_OFF: SyncStatus = {
+  on: false,
+  syncedAt: null,
+  problem: null,
+  problemKind: null,
+  failingSince: null,
+  unsynced: false,
+  syncing: false,
+};
+
+/** No problem: what an upload that gets through, a new key or a pairing leaves. */
+const NO_PROBLEM = { problem: null, problemKind: null, failingSince: null } as const;
+
+/** What the relay adapter throws for an answer other than success, with its HTTP status. */
+export class RelayError extends Error {
+  constructor(readonly status: number) {
+    super(`The relay answered HTTP ${status}`);
+  }
+}
+
+/** The waits before trying a failed upload again, in minutes: then every 15, while the app is open. */
+const RETRY_MINUTES = [1, 2, 4, 8, 15];
+
+/** How long uploads may keep failing, retried, before Sync asks for the owner. */
+const PATIENCE_MS = 60 * 60_000;
+
+/**
+ * Whether Sync needs the owner, for the Settings tab's badge (spec #99): the relay refused this
+ * phone, or the Snapshot is too big, which no retry mends; or uploads have failed for over an hour.
+ */
+export function syncNeedsOwner(status: SyncStatus, now: Date): boolean {
+  if (!status.on || status.problemKind === null) return false;
+  if (status.problemKind === 'refused' || status.problemKind === 'tooBig') return true;
+  return (
+    status.failingSince !== null && now.getTime() - Date.parse(status.failingSince) > PATIENCE_MS
+  );
+}
+
+/** A failed put, as the owner reads it and as Sync treats it. */
+function putProblem(error: unknown): { problemKind: SyncProblemKind; problem: string } {
+  if (!(error instanceof RelayError)) {
+    return {
+      problemKind: 'offline',
+      problem: 'Not synced: no connection. Sync tries again by itself.',
+    };
+  }
+  const { status: code } = error;
+  if (code === 408 || code === 429 || code >= 500) {
+    return {
+      problemKind: 'relay',
+      problem: `Not synced: the relay is having trouble (HTTP ${code}). Sync tries again by itself.`,
+    };
+  }
+  return {
+    problemKind: 'refused',
+    problem: `Sync stopped: the relay refused this iPhone's Snapshot (HTTP ${code}).`,
+  };
+}
 
 export type Sync = {
   status(): SyncStatus;
@@ -124,31 +193,57 @@ export function createSync({
   let status = initial;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let queue = Promise.resolve();
+  /** Failed uploads in a row, for the wait before the next try. */
+  let failures = 0;
 
   const set = (patch: Partial<SyncStatus>) => {
     status = { ...status, ...patch };
     onStatus(status);
   };
 
+  /**
+   * An upload that didn't happen: kept with its words, and tried again after a growing wait where
+   * that can help. A refusal or a Snapshot too big waits for the next change or Sync now instead,
+   * since each try sends the whole Garden.
+   */
+  const fail = (problemKind: SyncProblemKind, problem: string, unsynced = true) => {
+    const failingSince = status.failingSince ?? now().toISOString();
+    set({ problem, problemKind, failingSince, unsynced, syncing: false });
+    if (problemKind === 'refused' || problemKind === 'tooBig') return;
+    failures += 1;
+    clearTimeout(timer);
+    timer = setTimeout(run, RETRY_MINUTES[Math.min(failures, RETRY_MINUTES.length) - 1] * 60_000);
+  };
+
   const upload = async () => {
     if (!status.on || !status.unsynced) return;
     // Cleared before the Export is built: a write from here on marks it unsynced again.
-    set({ unsynced: false });
+    set({ unsynced: false, syncing: true });
     try {
       const { gardenId, writeToken, seal } = await keys();
       const snapshot = await seal(buildExport(db, files, appVersion, now()));
       if (snapshot.length > SNAPSHOT_CAP_BYTES) {
         // Rounded up, so a Snapshot just over the cap never reads as 25.0 MB.
         const mb = (Math.ceil((snapshot.length / 1024 / 1024) * 10) / 10).toFixed(1);
-        return set({ problem: `Too big to sync: ${mb} MB, over the 25 MB a Snapshot can hold` });
+        return fail(
+          'tooBig',
+          `Too big to sync: ${mb} MB, over the 25 MB a Snapshot can hold`,
+          false,
+        );
       }
       // Turned off while the Snapshot was being made: nothing leaves.
-      if (!status.on) return;
-      await relay.put(gardenId, writeToken, snapshot);
-      set({ syncedAt: now().toISOString(), problem: null });
+      if (!status.on) return set({ syncing: false });
+      try {
+        await relay.put(gardenId, writeToken, snapshot);
+      } catch (error) {
+        const { problemKind, problem } = putProblem(error);
+        return fail(problemKind, problem);
+      }
+      failures = 0;
+      set({ syncedAt: now().toISOString(), ...NO_PROBLEM, syncing: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      set({ unsynced: true, problem: `Could not sync: ${message}` });
+      fail('other', `Could not sync: ${message}`);
     }
   };
 
@@ -196,6 +291,7 @@ export function createSync({
     },
     turnOff() {
       clearTimeout(timer);
+      failures = 0;
       set({ on: false });
     },
     days,
@@ -206,7 +302,7 @@ export function createSync({
         const { gardenId, writeToken } = await keys();
         await relay.remove(gardenId, writeToken);
         await newKey();
-        set({ syncedAt: null, problem: null, unsynced: true });
+        set({ syncedAt: null, ...NO_PROBLEM, unsynced: true });
       });
       void run();
     },
@@ -217,7 +313,7 @@ export function createSync({
         const latest = empty ? (await days()).at(-1) : undefined;
         if (latest && (await offer(latest))) await restore(latest, withScratch);
       } finally {
-        set({ on: true, syncedAt: null, problem: null, unsynced: !empty });
+        set({ on: true, syncedAt: null, ...NO_PROBLEM, unsynced: !empty });
       }
       if (!empty) await run();
     },

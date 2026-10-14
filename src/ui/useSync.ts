@@ -19,6 +19,7 @@ import { isGardenEmpty } from '@/src/core/plants';
 import {
   APP_PAIRING_LINK,
   RELAY_URL,
+  RelayError,
   SNAPSHOT_LAYOUT,
   SYNC_OFF,
   createSync,
@@ -59,11 +60,13 @@ const statusFile = new File(Paths.document, 'sync.json');
  * The status as last kept, or Sync off. Off, too, where the status came back without the key: an
  * iCloud or new-phone restore brings Documents/ back but never the key, and Sync under a new key
  * would leave the saved Pairing link behind without a word. A file cut short reads as off as well.
+ * An upload the app's end cut off may not have landed, so it goes again.
  */
 function storedStatus(): SyncStatus {
   try {
     if (!statusFile.exists || SecureStore.getItem(KEY_ITEM, KEYCHAIN) === null) return SYNC_OFF;
-    return { ...SYNC_OFF, ...JSON.parse(statusFile.textSync()) };
+    const stored: SyncStatus = { ...SYNC_OFF, ...JSON.parse(statusFile.textSync()) };
+    return { ...stored, syncing: false, unsynced: stored.unsynced || stored.syncing };
   } catch {
     return SYNC_OFF;
   }
@@ -124,9 +127,7 @@ const relay: SyncRelay = {
         headers: { Authorization: `Bearer ${writeToken}`, 'X-App-Token': APP_TOKEN },
         sessionType: 'background',
       });
-      if (status < 200 || status > 299) {
-        throw new Error(`The relay refused the Snapshot (HTTP ${status})`);
-      }
+      if (status < 200 || status > 299) throw new RelayError(status);
     } finally {
       if (file.exists) file.delete();
     }

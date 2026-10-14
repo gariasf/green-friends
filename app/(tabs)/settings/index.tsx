@@ -14,11 +14,13 @@ import {
   Toggle,
 } from '@expo/ui/swift-ui';
 import {
+  accessibilityHidden,
   accessibilityValue,
   background,
   datePickerStyle,
   disabled,
   environment,
+  foregroundStyle,
   listRowBackground,
   pickerStyle,
   scrollContentBackground,
@@ -315,10 +317,25 @@ export default function SettingsScreen() {
           {syncStatus.on && (
             <>
               <LabeledContent label="Last synced">
-                <Text>{syncedLabel(syncStatus.syncedAt, now)}</Text>
+                {syncStatus.syncing ? (
+                  // While an upload is on its way (spec #99); the spinner alone reads as "1".
+                  <HStack spacing={8}>
+                    <ProgressView modifiers={[accessibilityHidden()]} />
+                    <Text>Syncing…</Text>
+                  </HStack>
+                ) : (
+                  <Text>{syncedLabel(syncStatus.syncedAt, now)}</Text>
+                )}
               </LabeledContent>
-              {syncStatus.problem !== null && <Text>{syncStatus.problem}</Text>}
-              <Button label="Sync now" onPress={() => void sync.syncNow()} />
+              {syncStatus.problem !== null && (
+                // Words only, in caution, as overdue care is (#34).
+                <Text modifiers={[foregroundStyle(colors.caution)]}>{syncStatus.problem}</Text>
+              )}
+              <Button
+                label="Sync now"
+                onPress={() => void sync.syncNow()}
+                modifiers={[disabled(syncStatus.syncing)]}
+              />
               <Button
                 onPress={restoreFromSync}
                 modifiers={[

@@ -10,12 +10,14 @@ import { buildExport } from './export';
 import { importExport } from './import';
 import { createPlant, listPlantRows } from './plants';
 import {
+  RelayError,
   SNAPSHOT_CAP_BYTES,
   SNAPSHOT_LAYOUT,
   SYNC_OFF,
   createSync,
   deriveSyncKeys,
   fromBase64url,
+  syncNeedsOwner,
   toBase64url,
   type SyncKeys,
   type SyncStatus,
@@ -33,7 +35,8 @@ const NOW = new Date(2026, 8, 24, 8);
 
 /**
  * A Sync over a fake relay, whose puts land in `puts` (the Snapshot unzipped, since the fake seal
- * hands over the Export as it is) or fail while `failing` is set. The relay's Snapshots by day are
+ * hands over the Export as it is), fail as unreachable while `failing` is set, or answer the HTTP
+ * status in `refusing`. The relay's Snapshots by day are
  * in `snapshots`, and every call to it, and every new key, in `calls`, in order.
  */
 function sync(status: Partial<SyncStatus> = {}, seal: SyncKeys['seal'] = async (zip) => zip) {
@@ -44,12 +47,14 @@ function sync(status: Partial<SyncStatus> = {}, seal: SyncKeys['seal'] = async (
   const key = { gardenId: 'garden', writeToken: 'token' };
   const relay = {
     failing: false,
+    refusing: undefined as number | undefined,
     /** Runs while a put is on its way, once. */
     during: undefined as (() => void) | undefined,
     snapshots: new Map<string, Uint8Array>(),
     async put(gardenId: string, token: string, snapshot: Uint8Array) {
       calls.push(`put ${gardenId}`);
       if (relay.failing) throw new Error('Network request failed');
+      if (relay.refusing) throw new RelayError(relay.refusing);
       const json = JSON.parse(strFromU8(unzipSync(snapshot)['export.json']));
       puts.push({ gardenId, token, plants: json.plants });
       const during = relay.during;
@@ -115,10 +120,9 @@ describe('Sync', () => {
       },
     ]);
     expect(syncer.status()).toEqual({
+      ...SYNC_OFF,
       on: true,
       syncedAt: '2026-09-23T20:00:00.000Z',
-      problem: null,
-      unsynced: false,
     });
   });
 
@@ -183,9 +187,12 @@ describe('Sync', () => {
 
     await syncer.syncNow();
     expect(syncer.status()).toEqual({
+      ...SYNC_OFF,
       on: true,
       syncedAt: '2026-09-20T00:00:00.000Z',
-      problem: 'Could not sync: Network request failed',
+      problem: 'Not synced: no connection. Sync tries again by itself.',
+      problemKind: 'offline',
+      failingSince: '2026-09-23T20:00:00.000Z',
       unsynced: true,
     });
 
@@ -193,7 +200,12 @@ describe('Sync', () => {
     syncer.flush();
     await jest.advanceTimersByTimeAsync(0);
     expect(puts).toHaveLength(1);
-    expect(syncer.status()).toMatchObject({ problem: null, unsynced: false });
+    expect(syncer.status()).toMatchObject({
+      problem: null,
+      problemKind: null,
+      failingSince: null,
+      unsynced: false,
+    });
   });
 
   test('a write during an upload brings another upload after it', async () => {
@@ -219,13 +231,115 @@ describe('Sync', () => {
     expect(puts).toHaveLength(0);
     expect(syncer.status()).toMatchObject({
       problem: 'Too big to sync: 25.1 MB, over the 25 MB a Snapshot can hold',
+      problemKind: 'tooBig',
       unsynced: false,
     });
+    // It waits for a change: no try by itself, whose Snapshot would be as big.
+    await jest.advanceTimersByTimeAsync(60 * 60_000);
+    expect(puts).toHaveLength(0);
 
     size = SNAPSHOT_CAP_BYTES;
     syncer.afterWrites();
     await jest.advanceTimersByTimeAsync(DELAY);
     expect(puts).toHaveLength(1);
+  });
+
+  test('tries a failed upload again by itself, waiting longer each time, until one gets through', async () => {
+    const { relay, puts, calls, syncer } = sync({ on: true });
+    const tries = () => calls.filter((call) => call.startsWith('put')).length;
+    relay.failing = true;
+
+    await syncer.syncNow();
+    for (const [minutes, expected] of [
+      [1, 2],
+      [2, 3],
+      [4, 4],
+      [8, 5],
+      [15, 6],
+      [15, 7],
+    ]) {
+      await jest.advanceTimersByTimeAsync(minutes * 60_000 - 1);
+      expect(tries()).toBe(expected - 1);
+      await jest.advanceTimersByTimeAsync(1);
+      expect(tries()).toBe(expected);
+    }
+
+    relay.failing = false;
+    await jest.advanceTimersByTimeAsync(15 * 60_000);
+    expect(puts).toHaveLength(1);
+    expect(syncer.status()).toMatchObject({ problem: null, failingSince: null });
+    // Through: nothing more until the next change.
+    await jest.advanceTimersByTimeAsync(60 * 60_000);
+    expect(tries()).toBe(8);
+  });
+
+  test('says why an upload failed, in words, by kind', async () => {
+    const { relay, syncer } = sync({ on: true });
+    const after = async (setUp: () => void) => {
+      setUp();
+      await syncer.syncNow();
+      const { problem, problemKind } = syncer.status();
+      return { problem, problemKind };
+    };
+
+    expect(await after(() => (relay.failing = true))).toEqual({
+      problem: 'Not synced: no connection. Sync tries again by itself.',
+      problemKind: 'offline',
+    });
+    expect(await after(() => ((relay.failing = false), (relay.refusing = 503)))).toEqual({
+      problem: 'Not synced: the relay is having trouble (HTTP 503). Sync tries again by itself.',
+      problemKind: 'relay',
+    });
+    expect(await after(() => (relay.refusing = 403))).toEqual({
+      problem: "Sync stopped: the relay refused this iPhone's Snapshot (HTTP 403).",
+      problemKind: 'refused',
+    });
+  });
+
+  test('a refusal waits for a change or Sync now, since a try by itself would be refused too', async () => {
+    const { relay, puts, calls, syncer } = sync({ on: true });
+    relay.refusing = 403;
+
+    await syncer.syncNow();
+    await jest.advanceTimersByTimeAsync(60 * 60_000);
+    expect(calls.filter((call) => call.startsWith('put'))).toHaveLength(1);
+
+    relay.refusing = undefined;
+    syncer.afterWrites();
+    await jest.advanceTimersByTimeAsync(DELAY);
+    expect(puts).toHaveLength(1);
+  });
+
+  test('says an upload is on its way while one is, whether it gets through or not', async () => {
+    const { relay, syncer } = sync({ on: true });
+    let during: boolean | undefined;
+    relay.during = () => (during = syncer.status().syncing);
+
+    await syncer.syncNow();
+    expect(during).toBe(true);
+    expect(syncer.status().syncing).toBe(false);
+
+    relay.failing = true;
+    await syncer.syncNow();
+    expect(syncer.status().syncing).toBe(false);
+  });
+
+  test('needs the owner at once for a refusal or a Snapshot too big, and for other failures after an hour', () => {
+    const failing = (problemKind: SyncStatus['problemKind'], minutes: number) => ({
+      ...SYNC_OFF,
+      on: true,
+      problem: 'words',
+      problemKind,
+      failingSince: new Date(NOW.getTime() - minutes * 60_000).toISOString(),
+    });
+
+    expect(syncNeedsOwner(failing('refused', 0), NOW)).toBe(true);
+    expect(syncNeedsOwner(failing('tooBig', 0), NOW)).toBe(true);
+    expect(syncNeedsOwner(failing('offline', 60), NOW)).toBe(false);
+    expect(syncNeedsOwner(failing('offline', 61), NOW)).toBe(true);
+    expect(syncNeedsOwner(failing('relay', 61), NOW)).toBe(true);
+    expect(syncNeedsOwner({ ...failing('refused', 0), on: false }, NOW)).toBe(false);
+    expect(syncNeedsOwner({ ...SYNC_OFF, on: true }, NOW)).toBe(false);
   });
 
   test('hands every change of status to be kept on the device', async () => {
