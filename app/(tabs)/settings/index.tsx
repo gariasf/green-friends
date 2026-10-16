@@ -5,6 +5,7 @@ import {
   Host,
   HStack,
   LabeledContent,
+  Link,
   Picker,
   ProgressView,
   Section,
@@ -54,6 +55,7 @@ import {
   snapshotLabel,
   sync,
   useSyncStatus,
+  WEB_VIEW,
 } from '@/src/ui/useSync';
 import { sentence, syncedAgo } from '@/src/ui/words';
 
@@ -429,6 +431,8 @@ export default function SettingsScreen() {
           <LabeledContent label="Species catalog">
             <Text>{`Version ${catalogVersion}`}</Text>
           </LabeledContent>
+          {/* App Review asks for the privacy policy inside the app too (spec #106). */}
+          <Link label="Privacy policy" destination={`${WEB_VIEW}/privacy`} />
         </Section>
       </Form>
     </Host>

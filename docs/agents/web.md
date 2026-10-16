@@ -24,6 +24,8 @@ npm run web:deploy           # vite build, then wrangler deploy, by hand (no CI 
 
 It lives at `https://green-friends.gariasf.workers.dev` (first deployed 2026-09-26): static assets on a Worker, `web/wrangler.toml`. Spec #35 planned `*.pages.dev`, but Cloudflare now backs a new Pages project with Workers static assets on the account's `workers.dev` subdomain. That origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`); change all three together, then deploy the relay.
 
+The same origin serves the App Store's privacy policy (`/privacy`) and support page (`/support`), spec #106. They're plain HTML in `web/public/` with `pages.css`, copied into `dist/` as they are, and Workers static assets answer `/privacy` with `privacy.html`. About links to `/privacy` through `WEB_VIEW`, and App Store Connect holds both addresses, so a new origin means new URLs there too. Every app version keeps its link, so the old pages stay up.
+
 ## House rules
 
 - `react` and `react-dom` are pinned to the root's version; bump all four together.

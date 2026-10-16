@@ -1,0 +1,84 @@
+/*
+ * The privacy policy and the support page (spec #106): plain pages beside the Web view, served as
+ * they are, not built by Vite. Their colours repeat a few of web/src/app.css's, which mirror
+ * src/ui/theme.ts.
+ */
+:root {
+  color-scheme: light dark;
+  --background: #f5f2e9;
+  --label: #1f1c16;
+  --secondary-label: #675f51;
+  --separator: rgb(70 56 24 / 0.12);
+  --tint: #417777;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a1713;
+    --label: #efe9dc;
+    --secondary-label: rgb(239 233 220 / 0.64);
+    --separator: rgb(255 240 210 / 0.1);
+    --tint: #7fb8b8;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--label);
+  font:
+    17px/1.55 -apple-system,
+    system-ui,
+    sans-serif;
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.app,
+h1 {
+  font-family: ui-serif, Georgia, serif;
+}
+
+.app {
+  margin: 0;
+  color: var(--secondary-label);
+}
+
+h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+h2 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+p,
+li {
+  margin: 0 0 0.75rem;
+}
+
+ul {
+  padding-left: 1.25rem;
+}
+
+.updated {
+  color: var(--secondary-label);
+}
+
+a {
+  color: var(--tint);
+}
+
+.more {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--separator);
+}

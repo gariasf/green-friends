@@ -37,8 +37,11 @@ import { photoFiles } from '@/src/ui/Photo';
 import { useAfterWrites } from '@/src/ui/useAfterWrites';
 import { dateLabel } from '@/src/ui/words';
 
-/** The Web view (web/), whose origin the relay lets read. */
-const WEB_VIEW = 'https://green-friends.gariasf.workers.dev';
+/**
+ * The Web view (web/), whose origin the relay lets read. It also serves the privacy policy and the
+ * support page, which About links to in every build (spec #106).
+ */
+export const WEB_VIEW = 'https://green-friends.gariasf.workers.dev';
 
 /**
  * Sync's key, in the keychain on this device only: never in an iCloud backup nor on a new phone,
