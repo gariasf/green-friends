@@ -22,9 +22,17 @@ npm --prefix web run dev     # vite; it reads the deployed relay, whose CORS all
 npm run web:deploy           # vite build, then wrangler deploy, by hand (no CI deploys)
 ```
 
-It lives at `https://green-friends.gariasf.workers.dev` (first deployed 2026-09-26): static assets on a Worker, `web/wrangler.toml`. Spec #35 planned `*.pages.dev`, but Cloudflare now backs a new Pages project with Workers static assets on the account's `workers.dev` subdomain. That origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`); change all three together, then deploy the relay.
+It lives at `https://your-green-friends.com`: static assets on a Worker (`web/wrangler.toml`), first deployed 2026-09-26.
+- **The domain** is a Cloudflare Registrar zone on the same account. Since 2026-10-16 it's a custom domain on that Worker, declared in `routes`.
+- **The workers.dev address stays on** (`workers_dev = true`): `https://green-friends.gariasf.workers.dev` serves the same files. Build 1.0.0 (2)'s About link and every Pairing link made before the move point there.
+- **Why workers.dev at all:** spec #35 planned `*.pages.dev`, but Cloudflare now backs a new Pages project with Workers static assets on the account's `workers.dev` subdomain.
 
-The same origin serves the App Store's privacy policy (`/privacy`) and support page (`/support`), spec #106. They're plain HTML in `web/public/` with `pages.css`, copied into `dist/` as they are, and Workers static assets answer `/privacy` with `privacy.html`. About links to `/privacy` through `WEB_VIEW`, and App Store Connect holds both addresses, so a new origin means new URLs there too. Every app version keeps its link, so the old pages stay up.
+The origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`). Change all three together, then deploy the relay. A browser paired at the old origin has to open a new Pairing link: the key is kept per origin, and the relay answers only one.
+
+The same origin serves the App Store's privacy policy (`/privacy`) and support page (`/support`), spec #106.
+- **The files:** plain HTML in `web/public/` with `pages.css`, copied into `dist/` as they are. Workers static assets answer `/privacy` with `privacy.html`.
+- **The links:** About links to `/privacy` through `WEB_VIEW`, and App Store Connect holds both addresses, so a new origin means new URLs there too.
+- **Old addresses:** every app version keeps its link, so the old origin's pages stay up.
 
 ## House rules
 

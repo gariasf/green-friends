@@ -1,6 +1,10 @@
 # The Web view (spec #35): static files only, served from the same account as the relay.
 name = "green-friends"
 compatibility_date = "2026-08-22"
+# The public address since 2026-10-16 (spec #106): the Web view, and the App Store's privacy and
+# support pages. workers.dev stays on, since build 1.0.0 (2)'s About link points there.
+workers_dev = true
+routes = [{ pattern = "your-green-friends.com", custom_domain = true }]
 
 [assets]
 directory = "./dist"

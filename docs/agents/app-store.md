@@ -52,4 +52,8 @@ These are the choices behind the listing (spec #106), so a change to the app kee
   - Northern-hemisphere storefronts only, while the growing-month range defaults to March–October.
   - No Mac and no Apple Vision Pro, since neither is tested.
   - iPhone only (`supportsTablet: false`) on iOS 26 or later (`ios.deploymentTarget`).
+- **Listing URLs:**
+  - The Privacy Policy URL is `https://your-green-friends.com/privacy`, set under App Privacy, and it can change at any time.
+  - The Support URL is `https://your-green-friends.com/support`. It's part of each version, so a change waits for the next one.
+  - Build 1.0.0 (2) links About to the workers.dev address, which stays up for it (docs/agents/web.md).
 - **Releases** are manual. Phased release only applies to updates (1.0 reaches everyone at once), so each update after 1.0 turns it on. Crash reports come from Xcode Organizer.

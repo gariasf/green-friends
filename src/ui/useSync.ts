@@ -39,9 +39,10 @@ import { dateLabel } from '@/src/ui/words';
 
 /**
  * The Web view (web/), whose origin the relay lets read. It also serves the privacy policy and the
- * support page, which About links to in every build (spec #106).
+ * support page, which About links to in every build (spec #106). Since 2026-10-16 it's the app's
+ * own domain; the Worker's workers.dev address stays on for build 1.0.0 (2), which links there.
  */
-export const WEB_VIEW = 'https://green-friends.gariasf.workers.dev';
+export const WEB_VIEW = 'https://your-green-friends.com';
 
 /**
  * Sync's key, in the keychain on this device only: never in an iCloud backup nor on a new phone,
