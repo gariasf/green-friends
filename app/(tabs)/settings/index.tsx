@@ -415,7 +415,13 @@ export default function SettingsScreen() {
         <Section
           modifiers={ROWS}
           title="About"
-          footer={<Text>Species IDs and scientific names come from Wikidata, under CC0.</Text>}
+          footer={
+            <Text>
+              Species IDs and scientific names come from Wikidata, under CC0, and former scientific
+              names from the GBIF Backbone Taxonomy, under CC BY 4.0. Pet toxicity follows published
+              references, such as the ASPCA plant lists, and is no substitute for a vet.
+            </Text>
+          }
         >
           <LabeledContent label="Version">
             <Text>{APP_VERSION}</Text>

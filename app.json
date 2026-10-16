@@ -8,8 +8,13 @@
     "scheme": "greenfriends",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.gariasf.greenfriends",
+      "buildNumber": "1",
+      "deploymentTarget": "26.0",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "icon": {
         "light": "./assets/icon.png",
         "dark": "./assets/icon-dark.png",
