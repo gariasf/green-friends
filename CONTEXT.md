@@ -135,3 +135,11 @@ _Avoid_: invite, login, join code
 **Web view**:
 The read-only browser client: Today, the Garden and each Plant screen, computed from the latest Snapshot for the browser's own day.
 _Avoid_: web app, dashboard, desktop app
+
+**Usage data**:
+Counts of what the app was used for, such as a plant added or a care logged, sent to the developer only while the user shares usage. Never a name, Note, photo, anything typed, a time of day, or anything that tells one phone from another.
+_Avoid_: analytics, telemetry, tracking
+
+**Crash report**:
+An error and the place in the app's code where it happened, sent to the developer only while the user shares crash reports, with nothing the user typed or keeps in the Garden.
+_Avoid_: bug report, diagnostics, log
