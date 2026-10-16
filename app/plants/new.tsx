@@ -230,7 +230,9 @@ export default function NewPlantScreen() {
 
 /**
  * Whether New plant offers Identify from photo. Hidden for now at the owner's call (2026-09-27);
- * the relay route and the name index stay, so turning this back on is the whole change.
+ * the relay route and the name index stay, so turning this back on is the whole change. Back on
+ * means `HAS_APP_TOKEN` (src/ui/useSync.ts), never `true`: the App Store build can't reach the
+ * relay (ADR-0012).
  */
 const IDENTIFY_SHOWN = false;
 

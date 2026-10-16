@@ -59,12 +59,15 @@ const statusFile = new File(Paths.document, 'sync.json');
 /**
  * The status as last kept, or Sync off. Off, too, where the status came back without the key: an
  * iCloud or new-phone restore brings Documents/ back but never the key, and Sync under a new key
- * would leave the saved Pairing link behind without a word. A file cut short reads as off as well.
- * An upload the app's end cut off may not have landed, so it goes again.
+ * would leave the saved Pairing link behind without a word. A file cut short reads as off as well,
+ * and so does every status in a build without the app token (ADR-0012). An upload the app's end
+ * cut off may not have landed, so it goes again.
  */
 function storedStatus(): SyncStatus {
   try {
-    if (!statusFile.exists || SecureStore.getItem(KEY_ITEM, KEYCHAIN) === null) return SYNC_OFF;
+    if (!HAS_APP_TOKEN || !statusFile.exists || SecureStore.getItem(KEY_ITEM, KEYCHAIN) === null) {
+      return SYNC_OFF;
+    }
     const stored: SyncStatus = { ...SYNC_OFF, ...JSON.parse(statusFile.textSync()) };
     return { ...stored, syncing: false, unsynced: stored.unsynced || stored.syncing };
   } catch {
@@ -110,6 +113,13 @@ async function keys(): Promise<SyncKeys> {
  * use Identify. `EXPO_PUBLIC_APP_TOKEN` in the git-ignored `.env.local`, inlined at bundle time.
  */
 export const APP_TOKEN = process.env.EXPO_PUBLIC_APP_TOKEN ?? '';
+
+/**
+ * Whether this build reaches the relay at all. The App Store build never carries the app token
+ * (ADR-0012, docs/agents/app-store.md), so it has no Sync and takes no Pairing link; the owner's
+ * own builds carry it.
+ */
+export const HAS_APP_TOKEN = APP_TOKEN !== '';
 
 const relay: SyncRelay = {
   /**
@@ -251,9 +261,9 @@ async function pair(key: Uint8Array): Promise<void> {
   if (restored) Alert.alert('Garden restored');
 }
 
-/** A link opened in the app, taken as a Pairing link if it is one. */
+/** A link opened in the app, taken as a Pairing link if it is one and this build syncs. */
 function openLink(url: string | null): void {
-  if (!url?.startsWith(APP_PAIRING_LINK)) return;
+  if (!HAS_APP_TOKEN || !url?.startsWith(APP_PAIRING_LINK)) return;
   const key = keyFromFragment(url.slice(url.indexOf('#')));
   if (!key) return Alert.alert('This Pairing link is damaged', 'Open it again from the Web view.');
   pair(key).catch((error) => alertError('Could not pair', error));

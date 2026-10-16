@@ -25,3 +25,7 @@ Sync's Cloudflare Worker in `relay/`: routes, commands, deploys and never commit
 ### Web view
 
 Sync's read-only Web view in `web/`: how it runs `src/core` over sql.js, commands, deploys. See `docs/agents/web.md`.
+
+### App Store
+
+Store builds and releases: the archive that carries no app token (ADR-0012), its token check, upload, and the listing's choices. See `docs/agents/app-store.md`.

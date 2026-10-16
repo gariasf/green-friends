@@ -47,6 +47,7 @@ import { alertError } from '@/src/ui/Form';
 import { photoFiles } from '@/src/ui/Photo';
 import { colors } from '@/src/ui/theme';
 import {
+  HAS_APP_TOKEN,
   pairingLink,
   resetSync,
   restoreSnapshot,
@@ -299,60 +300,63 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        <Section
-          modifiers={ROWS}
-          title="Sync"
-          footer={
-            <Text>
-              Keeps an encrypted copy of your Garden off this iPhone, uploaded after every change.
-              The relay that holds it has no way to read it.
-            </Text>
-          }
-        >
-          <Toggle
-            label="Sync"
-            isOn={syncStatus.on}
-            onIsOnChange={(on) => (on ? void sync.turnOn() : sync.turnOff())}
-          />
-          {syncStatus.on && (
-            <>
-              <LabeledContent label="Last synced">
-                {syncStatus.syncing ? (
-                  // While an upload is on its way (spec #99); the spinner alone reads as "1".
-                  <HStack spacing={8}>
-                    <ProgressView modifiers={[accessibilityHidden()]} />
-                    <Text>Syncing…</Text>
-                  </HStack>
-                ) : (
-                  <Text>{syncedLabel(syncStatus.syncedAt, now)}</Text>
+        {/* Only a build carrying the app token syncs: the App Store build has no Sync (ADR-0012). */}
+        {HAS_APP_TOKEN && (
+          <Section
+            modifiers={ROWS}
+            title="Sync"
+            footer={
+              <Text>
+                Keeps an encrypted copy of your Garden off this iPhone, uploaded after every change.
+                The relay that holds it has no way to read it.
+              </Text>
+            }
+          >
+            <Toggle
+              label="Sync"
+              isOn={syncStatus.on}
+              onIsOnChange={(on) => (on ? void sync.turnOn() : sync.turnOff())}
+            />
+            {syncStatus.on && (
+              <>
+                <LabeledContent label="Last synced">
+                  {syncStatus.syncing ? (
+                    // While an upload is on its way (spec #99); the spinner alone reads as "1".
+                    <HStack spacing={8}>
+                      <ProgressView modifiers={[accessibilityHidden()]} />
+                      <Text>Syncing…</Text>
+                    </HStack>
+                  ) : (
+                    <Text>{syncedLabel(syncStatus.syncedAt, now)}</Text>
+                  )}
+                </LabeledContent>
+                {syncStatus.problem !== null && (
+                  // Words only, in caution, as overdue care is (#34).
+                  <Text modifiers={[foregroundStyle(colors.caution)]}>{syncStatus.problem}</Text>
                 )}
-              </LabeledContent>
-              {syncStatus.problem !== null && (
-                // Words only, in caution, as overdue care is (#34).
-                <Text modifiers={[foregroundStyle(colors.caution)]}>{syncStatus.problem}</Text>
-              )}
-              <Button
-                label="Sync now"
-                onPress={() => void sync.syncNow()}
-                modifiers={[disabled(syncStatus.syncing)]}
-              />
-              <Button
-                onPress={restoreFromSync}
-                modifiers={[
-                  disabled(restoring),
-                  ...(restoring ? [accessibilityValue('Restoring')] : []),
-                ]}
-              >
-                <HStack>
-                  <Text>Restore from sync…</Text>
-                  <Spacer />
-                  {restoring && <ProgressView />}
-                </HStack>
-              </Button>
-              <Button label="Reset sync" role="destructive" onPress={reset} />
-            </>
-          )}
-        </Section>
+                <Button
+                  label="Sync now"
+                  onPress={() => void sync.syncNow()}
+                  modifiers={[disabled(syncStatus.syncing)]}
+                />
+                <Button
+                  onPress={restoreFromSync}
+                  modifiers={[
+                    disabled(restoring),
+                    ...(restoring ? [accessibilityValue('Restoring')] : []),
+                  ]}
+                >
+                  <HStack>
+                    <Text>Restore from sync…</Text>
+                    <Spacer />
+                    {restoring && <ProgressView />}
+                  </HStack>
+                </Button>
+                <Button label="Reset sync" role="destructive" onPress={reset} />
+              </>
+            )}
+          </Section>
+        )}
 
         {link !== null && (
           <Section
