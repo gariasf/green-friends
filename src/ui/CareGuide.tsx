@@ -206,7 +206,7 @@ function NoCareGuide() {
 
 /**
  * The full Care Guide: the profile and today's Season, then a Growing | Dormant switch opening on
- * today's, and a card each for watering, fertiliser, light and warmth, and soil, the first two
+ * today's, and a card each for watering, fertilizer, light and warmth, and soil, the first two
  * with the plant's real schedule; then its care notes, Something wrong? and its Fun fact.
  */
 export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; today: string }) {
@@ -236,7 +236,7 @@ export function GuideBody({ id, guide, today }: { id: string; guide: CareGuide; 
         <YourSchedule line={yourSchedule(schedule.water, allYear)} />
       </Card>
 
-      <Card symbol={FEED.symbol} tint={FEED.hue} title="Fertiliser">
+      <Card symbol={FEED.symbol} tint={FEED.hue} title="Fertilizer">
         <Text style={text.headline}>{profile.fertilizer.type}</Text>
         <Text style={text.body}>{profile.fertilizer[season]}</Text>
         {npk && <Text style={text.footnote}>{npk}</Text>}

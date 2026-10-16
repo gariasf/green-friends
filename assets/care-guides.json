@@ -9,14 +9,14 @@
         "dormant": "Let the top half of the soil dry before watering. Growth slows and the roots rot easily in cold, wet soil."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 3-1-2 or 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 3-1-2 or 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil, never on dry roots.",
         "dormant": "Stop feeding. The plant can't use it, and the salts build up in the soil."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east window, or a metre or two back from a south or west one. Morning sun is fine; hot midday sun scorches the leaves. It likes warmth (above 15 °C) and more humidity than most homes have, so keep it away from radiators and cold draughts."
+        "text": "Bright, indirect light: an east window, or a meter or two back from a south or west one. Morning sun is fine; hot midday sun scorches the leaves. It likes warmth (above 15 °C) and more humidity than most homes have, so keep it away from radiators and cold draughts."
       },
       "soil": "A chunky, airy mix: about half houseplant compost with bark and perlite. Roots need air as much as water.",
       "causes": {
@@ -36,7 +36,7 @@
         "dormant": "Water very little, just enough to stop the leaves from wrinkling. Cold, wet soil is what kills succulents in winter."
       },
       "fertilizer": {
-        "type": "Cactus and succulent fertiliser, low in nitrogen (N-P-K roughly 1-2-2)",
+        "type": "Cactus and succulent fertilizer, low in nitrogen (N-P-K roughly 1-2-2)",
         "growing": "Feed at a quarter to half the strength on the label, a few times across the Growing season, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -63,7 +63,7 @@
         "dormant": "Let the top 2 cm of soil dry before watering, but never let the whole pot dry out."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -89,14 +89,14 @@
         "dormant": "Water a little less, letting just the surface dry, but keep the root ball moist."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Feed at a quarter to half the strength on the label: ferns are light feeders and their roots burn easily.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "medium",
         "directSun": "none",
-        "text": "Medium to bright, indirect light: a north or east window, or a few metres back from a south or west one. Direct sun crisps the fronds. Most want more humidity than a heated room has, so a bright bathroom or kitchen suits them, away from radiators."
+        "text": "Medium to bright, indirect light: a north or east window, or a few meters back from a south or west one. Direct sun crisps the fronds. Most want more humidity than a heated room has, so a bright bathroom or kitchen suits them, away from radiators."
       },
       "soil": "A light, moisture-holding mix: peat-free houseplant compost with some bark or coir, and perlite for air.",
       "causes": {
@@ -115,14 +115,14 @@
         "dormant": "Let a little more of the soil dry, about the top third, before watering."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 3-1-2 or 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 3-1-2 or 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east or west window, or a metre or two back from a south one. A little morning sun keeps coloured leaves bright; too little light makes them pale and leggy. Keep it above 15 °C and away from radiators and cold draughts."
+        "text": "Bright, indirect light: an east or west window, or a meter or two back from a south one. A little morning sun keeps colored leaves bright; too little light makes them pale and leggy. Keep it above 15 °C and away from radiators and cold draughts."
       },
       "soil": "Peat-free houseplant compost with a handful of perlite for drainage. Pinch out the growing tips in the Growing season to keep it bushy.",
       "causes": {
@@ -141,7 +141,7 @@
         "dormant": "Let the top half of the soil dry before watering."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -167,7 +167,7 @@
         "dormant": "Water a little less, letting the top 2 cm dry. Most keep flowering in a warm, bright room."
       },
       "fertilizer": {
-        "type": "Flowering houseplant fertiliser (N-P-K roughly 1-2-1)",
+        "type": "Flowering houseplant fertilizer (N-P-K roughly 1-2-1)",
         "growing": "Feed at a quarter to half the strength on the label, on moist soil.",
         "dormant": "Feed at a quarter of the strength while it's flowering; otherwise stop."
       },
@@ -193,14 +193,14 @@
         "dormant": "Let the top half of the soil dry before watering. Cold, wet roots are the usual reason an indoor tree drops its leaves in winter."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 3-1-2)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 3-1-2)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "some",
-        "text": "Bright light with a few hours of sun: close to an east or west window, or a metre or two back from a south one. Pick its spot and leave it there: most indoor trees drop leaves after a move. Keep it above 15 °C, away from radiators, draughts and doors."
+        "text": "Bright light with a few hours of sun: close to an east or west window, or a meter or two back from a south one. Pick its spot and leave it there: most indoor trees drop leaves after a move. Keep it above 15 °C, away from radiators, draughts and doors."
       },
       "soil": "Peat-free houseplant compost with some bark and perlite, in a heavy pot that won't tip. Repot one size up only when the roots fill the pot.",
       "causes": {
@@ -214,12 +214,12 @@
       "id": "tough-foliage",
       "name": "Tough foliage",
       "watering": {
-        "how": "Soak the soil until water runs from the drainage holes, then let it drain completely. Keep water out of the centre of the leaves.",
+        "how": "Soak the soil until water runs from the drainage holes, then let it drain completely. Keep water out of the center of the leaves.",
         "growing": "Water only when the soil has dried almost to the bottom of the pot. Push a finger or a wooden skewer deep: if it's still damp, wait.",
         "dormant": "Water very little: only when the soil is dry right through, and less still in a cool room. Far more of these die of water than of neglect."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label a couple of times across the Growing season.",
         "dormant": "Stop feeding."
       },
@@ -245,14 +245,14 @@
         "dormant": "Let the top half of the soil dry before watering."
       },
       "fertilizer": {
-        "type": "Palm fertiliser, or a balanced one with magnesium (N-P-K roughly 3-1-3)",
+        "type": "Palm fertilizer, or a balanced one with magnesium (N-P-K roughly 3-1-3)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east or west window, or a metre or two back from a south one. Most indoor palms burn in hot midday sun, and some cope with a shadier corner. Keep it above 13 °C, away from radiators, and raise the humidity if the tips brown."
+        "text": "Bright, indirect light: an east or west window, or a meter or two back from a south one. Most indoor palms burn in hot midday sun, and some cope with a shadier corner. Keep it above 13 °C, away from radiators, and raise the humidity if the tips brown."
       },
       "soil": "A free-draining mix: houseplant compost with bark and perlite. Palms like snug pots and hate root disturbance, so repot only when the roots lift the plant.",
       "causes": {
@@ -271,14 +271,14 @@
         "dormant": "Water less, letting the bark dry right through. Many orchids rest after flowering."
       },
       "fertilizer": {
-        "type": "Orchid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Orchid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Feed at a quarter to half the strength on the label, and flush the bark with plain water now and then.",
         "dormant": "Stop feeding, or feed at a quarter of the strength if it's still growing."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east window, or a metre back from a south or west one behind a sheer curtain. Mid-green leaves mean the light is right: dark green means too little, yellowish too much. Keep it above 15 °C; nights a few degrees cooler help it flower."
+        "text": "Bright, indirect light: an east window, or a meter back from a south or west one behind a sheer curtain. Mid-green leaves mean the light is right: dark green means too little, yellowish too much. Keep it above 15 °C; nights a few degrees cooler help it flower."
       },
       "soil": "Never soil: an orchid bark mix in a clear pot with holes, so air reaches the roots and you can see them. Repot into fresh bark after flowering once the old bark breaks down.",
       "causes": {
@@ -297,14 +297,14 @@
         "dormant": "Keep the soil on the dry side, and the cup only a little wet, or empty in a cool room."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), or an orchid one",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1), or an orchid one",
         "growing": "Feed at a quarter of the strength on the label, on the soil or misted on the leaves.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east or west window, or back from a south one. Soft, green-leaved kinds burn in hot sun; stiff, grey ones take more. It likes warmth (above 15 °C) and humid air."
+        "text": "Bright, indirect light: an east or west window, or back from a south one. Soft, green-leaved kinds burn in hot sun; stiff, gray ones take more. It likes warmth (above 15 °C) and humid air."
       },
       "soil": "A light, airy mix: orchid bark with some houseplant compost, in a small pot. The rosette slowly dies after flowering: pot up the pups that grow around it.",
       "causes": {
@@ -317,18 +317,18 @@
       "name": "Air plant",
       "watering": {
         "how": "Soak the whole plant in rain or filtered water for 20 to 30 minutes, shake it out, and let it dry upside down within a few hours. Water trapped at the base rots it.",
-        "growing": "Soak it whenever the leaves feel less firm and look greyer, or start to curl. Mist it in between if the air is dry.",
+        "growing": "Soak it whenever the leaves feel less firm and look grayer, or start to curl. Mist it in between if the air is dry.",
         "dormant": "Soak it less often and more briefly in a cool room, and dry it well."
       },
       "fertilizer": {
-        "type": "Bromeliad or orchid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Bromeliad or orchid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Now and then, add a quarter of the strength on the label to the soaking water.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: close to an east or west window, or back from a south one. Grey, fuzzy kinds take some direct sun; green, smooth ones prefer shade. Air must move around it, so never keep it in a closed glass container."
+        "text": "Bright, indirect light: close to an east or west window, or back from a south one. Gray, fuzzy kinds take some direct sun; green, smooth ones prefer shade. Air must move around it, so never keep it in a closed glass container."
       },
       "soil": "No soil: set it on wood, stone or a stand, or in a shell or dish that doesn't hold water.",
       "causes": {
@@ -346,14 +346,14 @@
         "dormant": "Water sparingly: let the soil dry right through, then water lightly."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1)",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1)",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east or west window, or a metre back from a south one. A few hours of gentle sun keep it compact and help hoyas flower; deep shade makes it leggy. Keep it above 12 °C."
+        "text": "Bright, indirect light: an east or west window, or a meter back from a south one. A few hours of gentle sun keep it compact and help hoyas flower; deep shade makes it leggy. Keep it above 12 °C."
       },
       "soil": "An airy, fast-draining mix: houseplant compost with plenty of perlite and bark, in a small pot: the roots rot in a big one.",
       "causes": {
@@ -373,7 +373,7 @@
         "dormant": "Keep it almost dry: water only if it starts to shrivel. A cool, dry rest is what makes most cacti flower."
       },
       "fertilizer": {
-        "type": "Cactus fertiliser, low in nitrogen (N-P-K roughly 1-2-2)",
+        "type": "Cactus fertilizer, low in nitrogen (N-P-K roughly 1-2-2)",
         "growing": "Feed at a quarter to half the strength on the label, a few times across the Growing season, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -400,7 +400,7 @@
         "dormant": "Keep it cooler and drier, letting the top half of the soil dry. This rest sets the next flower buds."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), or a bloom one once buds form",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1), or a bloom one once buds form",
         "growing": "Feed at half the strength on the label, on moist soil.",
         "dormant": "Stop feeding."
       },
@@ -426,14 +426,14 @@
         "dormant": "Keep the soil moist but not standing in water. Most kinds from cool climates need a cold rest (below 10 °C), in an unheated bright room or outdoors."
       },
       "fertilizer": {
-        "type": "No fertiliser",
-        "growing": "Don't feed it, and don't give it meat: the traps feed the plant, and fertiliser burns its roots.",
+        "type": "No fertilizer",
+        "growing": "Don't feed it, and don't give it meat: the traps feed the plant, and fertilizer burns its roots.",
         "dormant": "Don't feed it."
       },
       "light": {
         "level": "direct",
         "directSun": "all-day",
-        "text": "Full sun: a south or west windowsill, or a sunny balcony in summer. Weak colour and floppy traps mean too little light."
+        "text": "Full sun: a south or west windowsill, or a sunny balcony in summer. Weak color and floppy traps mean too little light."
       },
       "soil": "Nutrient-free: peat-free carnivorous plant mix, or sphagnum moss with perlite or lime-free horticultural sand. Never ordinary compost.",
       "causes": {
@@ -451,14 +451,14 @@
         "dormant": "Let the surface dry a little more between waterings. It needs no cold rest: keep it warm."
       },
       "fertilizer": {
-        "type": "No fertiliser, or orchid fertiliser (N-P-K roughly 1-1-1) at a quarter strength",
-        "growing": "It feeds itself through its pitchers. If it grows no new pitchers, drop a pinch of quarter-strength orchid fertiliser into one or two of them, never onto the soil.",
+        "type": "No fertilizer, or orchid fertilizer (N-P-K roughly 1-1-1) at a quarter strength",
+        "growing": "It feeds itself through its pitchers. If it grows no new pitchers, drop a pinch of quarter-strength orchid fertilizer into one or two of them, never onto the soil.",
         "dormant": "Don't feed it."
       },
       "light": {
         "level": "bright-indirect",
         "directSun": "morning",
-        "text": "Bright, indirect light: an east window, or a metre back from a south or west one. Morning sun is fine; hot midday sun burns it. It needs warmth (above 15 °C) and humid air, or it stops making pitchers."
+        "text": "Bright, indirect light: an east window, or a meter back from a south or west one. Morning sun is fine; hot midday sun burns it. It needs warmth (above 15 °C) and humid air, or it stops making pitchers."
       },
       "soil": "Nutrient-free and airy: sphagnum moss with perlite and orchid bark, in a hanging pot so the pitchers can dangle. Never ordinary compost.",
       "causes": {
@@ -476,7 +476,7 @@
         "dormant": "Water only when the soil is nearly dry right through. Wet roots in winter kill these more often than cold does."
       },
       "fertilizer": {
-        "type": "Low-nitrogen fertiliser (N-P-K roughly 1-2-2), or none",
+        "type": "Low-nitrogen fertilizer (N-P-K roughly 1-2-2), or none",
         "growing": "Feed lightly, at a quarter to half the strength on the label, a few times across the Growing season. Rich soil makes them soft and less fragrant.",
         "dormant": "Stop feeding."
       },
@@ -502,7 +502,7 @@
         "dormant": "Water less, letting the surface dry. Many die back or run to seed in the cold; tender ones like basil need a warm, bright windowsill indoors."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), organic if you eat the leaves",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1), organic if you eat the leaves",
         "growing": "Feed lightly, at half the strength on the label: too much makes big leaves with little flavour.",
         "dormant": "Stop feeding."
       },
@@ -529,7 +529,7 @@
         "dormant": "Water only when the soil is dry a good way down. Outdoors, rain may be enough; indoors in a cool, bright room, water sparingly."
       },
       "fertilizer": {
-        "type": "Balanced liquid fertiliser (N-P-K roughly 1-1-1), or a high-potash one (N-P-K roughly 1-1-2) for flowering kinds",
+        "type": "Balanced liquid fertilizer (N-P-K roughly 1-1-1), or a high-potash one (N-P-K roughly 1-1-2) for flowering kinds",
         "growing": "Feed at the strength on the label, on moist soil.",
         "dormant": "Stop feeding, so new growth can toughen up before the cold."
       },
@@ -555,7 +555,7 @@
         "dormant": "Let the top half of the soil dry before watering. A cool, bright spot (5 to 12 °C) suits it better than a warm, dark room."
       },
       "fertilizer": {
-        "type": "Citrus fertiliser with iron and magnesium (N-P-K roughly 3-1-2)",
+        "type": "Citrus fertilizer with iron and magnesium (N-P-K roughly 3-1-2)",
         "growing": "Feed at the strength on the label, on moist soil.",
         "dormant": "Stop feeding, or feed at half the strength if it's kept warm and still growing."
       },
@@ -581,7 +581,7 @@
         "dormant": "Water when the top 2 cm of soil are dry, and don't let the root ball dry out while buds are forming."
       },
       "fertilizer": {
-        "type": "Ericaceous fertiliser for acid-loving plants (N-P-K roughly 1-1-1)",
+        "type": "Ericaceous fertilizer for acid-loving plants (N-P-K roughly 1-1-1)",
         "growing": "Feed at the strength on the label, on moist soil, from the end of flowering through the Growing season.",
         "dormant": "Stop feeding."
       },
@@ -634,7 +634,7 @@
         "dormant": "Once flowering ends and the leaves yellow, water less, and stop once they've died back. Keep the resting bulb dry and cool until new shoots appear, then start again."
       },
       "fertilizer": {
-        "type": "High-potash liquid fertiliser (N-P-K roughly 1-1-2)",
+        "type": "High-potash liquid fertilizer (N-P-K roughly 1-1-2)",
         "growing": "Feed at half the strength on the label from the first flowers until the leaves start to yellow: this refills the bulb for next time.",
         "dormant": "Don't feed a resting bulb."
       },
@@ -676,7 +676,7 @@
       "fix": "Move it away from heat sources, group plants together, or stand the pot on a tray of wet pebbles. Misting does little."
     },
     "salts": {
-      "name": "Fertiliser or tap-water salts",
+      "name": "Fertilizer or tap-water salts",
       "tell": "A white crust on the soil or the pot's rim, and tips browning even though watering is right.",
       "fix": "Flush the soil: run plenty of water through it and let it drain. Feed at half strength, and use rain or filtered water if your tap water is hard.",
       "fact": "fertilizing"
@@ -764,8 +764,8 @@
     },
     "nitrogen": {
       "name": "Too much nitrogen",
-      "tell": "Plenty of lush leaves but few or no flowers, after feeding with a general or leafy-plant fertiliser.",
-      "fix": "Switch to a high-potash or flowering fertiliser at the strength on the label, and give it more sun.",
+      "tell": "Plenty of lush leaves but few or no flowers, after feeding with a general or leafy-plant fertilizer.",
+      "fix": "Switch to a high-potash or flowering fertilizer at the strength on the label, and give it more sun.",
       "fact": "fertilizing"
     },
     "hunger": {
@@ -777,11 +777,11 @@
     "hard-water": {
       "name": "Lime in hard water",
       "tell": "New leaves turn yellow while their veins stay green, on a plant that likes acid soil or gets hard tap water.",
-      "fix": "Water with rain or filtered water, feed with a fertiliser for acid-loving plants that has iron in it, and repot into lime-free compost if it doesn't improve."
+      "fix": "Water with rain or filtered water, feed with a fertilizer for acid-loving plants that has iron in it, and repot into lime-free compost if it doesn't improve."
     },
     "aphids": {
       "name": "Aphids",
-      "tell": "Clusters of small green, black or grey insects on shoot tips and flower buds, with sticky leaves below them.",
+      "tell": "Clusters of small green, black or gray insects on shoot tips and flower buds, with sticky leaves below them.",
       "fix": "Rub them off with your fingers or wash them off with a jet of water, then spray with insecticidal soap until no more appear. On a balcony, ladybirds eat them.",
       "petWarning": true
     },
@@ -1003,7 +1003,7 @@
     },
     "Q135235": {
       "profile": "succulent",
-      "funFact": "The rosette stays compact, around half a metre across, yet its spike of cream flowers can shoot up to 4 m. It comes from the Chihuahuan Desert of northern Mexico and rarely makes offsets, so most plants are raised from seed.",
+      "funFact": "The rosette stays compact, around half a meter across, yet its spike of cream flowers can shoot up to 4 m. It comes from the Chihuahuan Desert of northern Mexico and rarely makes offsets, so most plants are raised from seed.",
       "funFactSource": "https://en.wikipedia.org/wiki/Agave_victoriae-reginae"
     },
     "Q11684614": {
@@ -1062,7 +1062,7 @@
     "Q15314264": {
       "profile": "tropical-aroid",
       "careNotes": "It often drops its leaves and rests in winter, going back to its corm. Keep it barely moist and warm, and it regrows in the Growing season.",
-      "funFact": "Sold as purple sword, silver sword or baroque sword, it holds its leaves pointing upwards, up to about 1.5 metres. Wild plants come from northern New Guinea and the Bismarck Archipelago.",
+      "funFact": "Sold as purple sword, silver sword or baroque sword, it holds its leaves pointing upwards, up to about 1.5 meters. Wild plants come from northern New Guinea and the Bismarck Archipelago.",
       "funFactSource": "https://en.wikipedia.org/wiki/Alocasia_lauterbachiana"
     },
     "Q1484310": {
@@ -1092,7 +1092,7 @@
     "Q2125255": {
       "profile": "tropical-aroid",
       "careNotes": "It often drops its leaves and rests in winter, going back to its corm. Keep it barely moist and warm, and it regrows in the Growing season.",
-      "funFact": "Plants sold under this name seem not to be the true New Guinea species, a small green-leaved plant, but a sterile hybrid bred in France before 1897. Its name, 'Uhinki', was misspelled 'whinkii' in catalogues, which may be how the mix-up began.",
+      "funFact": "Plants sold under this name seem not to be the true New Guinea species, a small green-leaved plant, but a sterile hybrid bred in France before 1897. Its name, 'Uhinki', was misspelled 'whinkii' in catalogs, which may be how the mix-up began.",
       "funFactSource": "https://en.wikipedia.org/wiki/Alocasia_wentii"
     },
     "Q15314868": {
@@ -1170,7 +1170,7 @@
     },
     "Q1746442": {
       "profile": "tropical-aroid",
-      "funFact": "Along with Anthurium andraeanum, it is the only anthurium with naturally bright red spathes, which is why so many colourful hybrids descend from these two.",
+      "funFact": "Along with Anthurium andraeanum, it is the only anthurium with naturally bright red spathes, which is why so many colorful hybrids descend from these two.",
       "funFactSource": "https://en.wikipedia.org/wiki/Anthurium"
     },
     "Q12835882": {
@@ -1236,7 +1236,7 @@
     "Q1399941": {
       "profile": "leafy-tropical",
       "careNotes": "Its tuberous roots store water, so it copes with a dry spell. It sheds needles in dry air.",
-      "funFact": "Despite the name, it is not a fern at all but a member of the asparagus family. Its feathery foliage is made of leaf-like cladodes, each barely a tenth of a millimetre thick, growing in clusters along barbed stems.",
+      "funFact": "Despite the name, it is not a fern at all but a member of the asparagus family. Its feathery foliage is made of leaf-like cladodes, each barely a tenth of a millimeter thick, growing in clusters along barbed stems.",
       "funFactSource": "https://en.wikipedia.org/wiki/Asparagus_setaceus"
     },
     "Q3239567": {
@@ -1253,7 +1253,7 @@
     },
     "Q132514": {
       "profile": "cactus",
-      "funFact": "Nicknamed sand dollar and sea urchin cactus, it is a squat, spineless disc only a few centimetres high. Bees pollinate it, and one species, Diadasia rinconis, does the job best.",
+      "funFact": "Nicknamed sand dollar and sea urchin cactus, it is a squat, spineless disc only a few centimeters high. Bees pollinate it, and one species, Diadasia rinconis, does the job best.",
       "funFactSource": "https://en.wikipedia.org/wiki/Astrophytum_asterias"
     },
     "Q637364": {
@@ -1263,7 +1263,7 @@
     },
     "Q133127": {
       "profile": "cactus",
-      "funFact": "The largest and tallest of its genus, it can reach 2 metres high on Mexico's Central Plateau. The white woolly flecks it grows over its skin help protect it from the sun.",
+      "funFact": "The largest and tallest of its genus, it can reach 2 meters high on Mexico's Central Plateau. The white woolly flecks it grows over its skin help protect it from the sun.",
       "funFactSource": "https://en.wikipedia.org/wiki/Astrophytum_ornatum"
     },
     "Q783868": {
@@ -1323,7 +1323,7 @@
     "Q2921547": {
       "profile": "sun-shrub",
       "careNotes": "It flowers best a little pot-bound and on the dry side. Bring it into a bright, cool room before frost.",
-      "funFact": "The bright colour is not petals at all. The true flowers are small, white and easy to miss, and each cluster is framed by showy modified leaves called bracts in white, red, mauve, purple or orange.",
+      "funFact": "The bright color is not petals at all. The true flowers are small, white and easy to miss, and each cluster is framed by showy modified leaves called bracts in white, red, mauve, purple or orange.",
       "funFactSource": "https://en.wikipedia.org/wiki/Bougainvillea_spectabilis"
     },
     "Q140288": {
@@ -1352,7 +1352,7 @@
     },
     "Q145930": {
       "profile": "balcony-annual",
-      "funFact": "Both marigold and Mary's gold were names given in honour of the Virgin Mary. The edible petals are still scattered over salads for colour or used in place of saffron, and were once a dye for cloth, food and cosmetics.",
+      "funFact": "Both marigold and Mary's gold were names given in honour of the Virgin Mary. The edible petals are still scattered over salads for color or used in place of saffron, and were once a dye for cloth, food and cosmetics.",
       "funFactSource": "https://en.wikipedia.org/wiki/Calendula_officinalis"
     },
     "Q1693148": {
@@ -1387,7 +1387,7 @@
     "Q15249818": {
       "profile": "indoor-tree",
       "careNotes": "Usually sold as a bonsai: keep it bright, with some sun, and never let its shallow pot dry out. It likes humid air.",
-      "funFact": "Also called the Philippine tea tree, it grows wild from India and Japan all the way to Cape York in Australia. In China it is a favourite plant for penjing.",
+      "funFact": "Also called the Philippine tea tree, it grows wild from India and Japan all the way to Cape York in Australia. In China it is a favorite plant for penjing.",
       "funFactSource": "https://en.wikipedia.org/wiki/Ehretia_microphylla"
     },
     "Q221543": {
@@ -1434,7 +1434,7 @@
     "Q660200": {
       "profile": "palm",
       "careNotes": "It copes with lower light than most palms, even a north window.",
-      "funFact": "It became a Victorian favourite because it could survive the dark, often unheated British homes of the day. Unusually for a palm, it can flower when barely 30 cm tall.",
+      "funFact": "It became a Victorian favorite because it could survive the dark, often unheated British homes of the day. Unusually for a palm, it can flower when barely 30 cm tall.",
       "funFactSource": "https://en.wikipedia.org/wiki/Chamaedorea_elegans"
     },
     "Q2948042": {
@@ -1507,13 +1507,13 @@
     "Q149094": {
       "profile": "bulb",
       "careNotes": "Not a true bulb: it's evergreen. A cool, drier rest (about 10 °C) in winter makes it flower; water again once the flower stalk is a hand high.",
-      "funFact": "The genus honours Lady Charlotte Clive, Duchess of Northumberland, who first grew it in England and supplied the flowers used to describe it. Miniata refers to cinnabar, the red of red lead, after the flower colour.",
+      "funFact": "The genus honours Lady Charlotte Clive, Duchess of Northumberland, who first grew it in England and supplied the flowers used to describe it. Miniata refers to cinnabar, the red of red lead, after the flower color.",
       "funFactSource": "https://en.wikipedia.org/wiki/Clivia_miniata"
     },
     "Q1345646": {
       "profile": "indoor-tree",
-      "careNotes": "It needs more light than most to keep its colours, including a few hours of direct sun, and drops leaves in draughts or when moved.",
-      "funFact": "Its leaves vary so wildly in shape and colour that botanists kept naming it afresh, and one variety alone has about 250 synonyms. Growers have added more than 300 cultivars on top.",
+      "careNotes": "It needs more light than most to keep its colors, including a few hours of direct sun, and drops leaves in draughts or when moved.",
+      "funFact": "Its leaves vary so wildly in shape and color that botanists kept naming it afresh, and one variety alone has about 250 synonyms. Growers have added more than 300 cultivars on top.",
       "funFactSource": "https://en.wikipedia.org/wiki/Codiaeum_variegatum"
     },
     "Q47685": {
@@ -1553,7 +1553,7 @@
     "Q41611": {
       "profile": "leafy-herb",
       "careNotes": "It runs to seed quickly in heat and dry soil: keep it moist, in part shade in summer, and sow again for a fresh supply.",
-      "funFact": "Its name may go back to the ancient Greek word for a bed bug, after its smell. About half a litre of its seeds was found in Tutankhamun's tomb, and since it does not grow wild in Egypt, that hints the Egyptians farmed it.",
+      "funFact": "Its name may go back to the ancient Greek word for a bed bug, after its smell. About half a liter of its seeds was found in Tutankhamun's tomb, and since it does not grow wild in Egypt, that hints the Egyptians farmed it.",
       "funFactSource": "https://en.wikipedia.org/wiki/Coriander"
     },
     "Q2716378": {
@@ -1568,7 +1568,7 @@
     },
     "Q2705184": {
       "profile": "succulent",
-      "funFact": "Round, grey, red-rimmed leaves shaped like coins or biscuits give it nicknames such as silver dollar plant and cookie plant. Wild plants grow on dry, rocky ground in South Africa's Succulent Karoo.",
+      "funFact": "Round, gray, red-rimmed leaves shaped like coins or biscuits give it nicknames such as silver dollar plant and cookie plant. Wild plants grow on dry, rocky ground in South Africa's Succulent Karoo.",
       "funFactSource": "https://en.wikipedia.org/wiki/Crassula_arborescens"
     },
     "Q5182516": {
@@ -1588,7 +1588,7 @@
     },
     "Q1404147": {
       "profile": "succulent",
-      "funFact": "Known as buttons on a string, rosary vine and bead vine, it has pairs of fleshy, powdery leaves fused together at the base. In strong sun it takes on a reddish colour.",
+      "funFact": "Known as buttons on a string, rosary vine and bead vine, it has pairs of fleshy, powdery leaves fused together at the base. In strong sun it takes on a reddish color.",
       "funFactSource": "https://en.wikipedia.org/wiki/Crassula_rupestris"
     },
     "Q165077": {
@@ -1724,7 +1724,7 @@
     },
     "Q5274269": {
       "profile": "fern",
-      "funFact": "Its genus, Didymochlaena, is so distinct that botanists give it a fern family all of its own, Didymochlaenaceae. Its members grow from upright, scaly rhizomes and can reach 3 metres tall.",
+      "funFact": "Its genus, Didymochlaena, is so distinct that botanists give it a fern family all of its own, Didymochlaenaceae. Its members grow from upright, scaly rhizomes and can reach 3 meters tall.",
       "funFactSource": "https://en.wikipedia.org/wiki/Didymochlaena"
     },
     "Q141806": {
@@ -1802,18 +1802,18 @@
     },
     "Q65936984": {
       "profile": "tough-foliage",
-      "funFact": "It appears on the porch in Grant Wood's 1930 painting American Gothic. Another of its names, viper's bowstring hemp, recalls the tough leaf fibre that was once twisted into bowstrings.",
+      "funFact": "It appears on the porch in Grant Wood's 1930 painting American Gothic. Another of its names, viper's bowstring hemp, recalls the tough leaf fiber that was once twisted into bowstrings.",
       "funFactSource": "https://en.wikipedia.org/wiki/Dracaena_trifasciata"
     },
     "Q1570130": {
       "profile": "carnivorous",
       "careNotes": "A sundew from the Cape: it needs no cold rest and keeps growing through winter on a sunny windowsill.",
-      "funFact": "When an insect lands, the whole leaf slowly curls around it, bending through more than 180 degrees. The glue on its tentacles is so sticky that fresh strands can be drawn out to a metre long.",
+      "funFact": "When an insect lands, the whole leaf slowly curls around it, bending through more than 180 degrees. The glue on its tentacles is so sticky that fresh strands can be drawn out to a meter long.",
       "funFactSource": "https://en.wikipedia.org/wiki/Drosera_capensis"
     },
     "Q1535705": {
       "profile": "palm",
-      "funFact": "The name butterfly palm comes from its fronds, which arch up from many stems like wings. In Madagascar it was once a source of fibre for fishing nets, and one of its Malagasy names means fibre tree.",
+      "funFact": "The name butterfly palm comes from its fronds, which arch up from many stems like wings. In Madagascar it was once a source of fiber for fishing nets, and one of its Malagasy names means fiber tree.",
       "funFactSource": "https://en.wikipedia.org/wiki/Chrysalidocarpus_lutescens"
     },
     "Q2413000": {
@@ -1823,12 +1823,12 @@
     },
     "Q2783756": {
       "profile": "succulent",
-      "funFact": "Its genus honours Atanasio Echeverría y Godoy, an illustrator who worked on Flora Mexicana, and 'elegans' means graceful. The rosettes stay only 5 to 10 cm high but can spread to half a metre across.",
+      "funFact": "Its genus honours Atanasio Echeverría y Godoy, an illustrator who worked on Flora Mexicana, and 'elegans' means graceful. The rosettes stay only 5 to 10 cm high but can spread to half a meter across.",
       "funFactSource": "https://en.wikipedia.org/wiki/Echeveria_elegans"
     },
     "Q5332386": {
       "profile": "succulent",
-      "funFact": "Lilacina means lilac-coloured, and its genus honours Atanasio Echeverría y Godoy, an 18th-century Mexican botanist famous for painting plants. It grows wild on high rocky ground in Nuevo León.",
+      "funFact": "Lilacina means lilac-colored, and its genus honours Atanasio Echeverría y Godoy, an 18th-century Mexican botanist famous for painting plants. It grows wild on high rocky ground in Nuevo León.",
       "funFactSource": "https://en.wikipedia.org/wiki/Echeveria_lilacina"
     },
     "Q10269958": {
@@ -1848,7 +1848,7 @@
     },
     "Q142776": {
       "profile": "cactus",
-      "funFact": "Its sweet-scented flowers, as long as 25 cm, sit at the end of long tubes, open at dusk and on hot days wilt by the following afternoon. In the 19th century it was crossed with other cacti to breed many big, colourful hybrids.",
+      "funFact": "Its sweet-scented flowers, as long as 25 cm, sit at the end of long tubes, open at dusk and on hot days wilt by the following afternoon. In the 19th century it was crossed with other cacti to breed many big, colorful hybrids.",
       "funFactSource": "https://en.wikipedia.org/wiki/Echinopsis_oxygona"
     },
     "Q151275": {
@@ -1908,8 +1908,8 @@
     },
     "Q208253": {
       "profile": "leafy-tropical",
-      "careNotes": "Keep it above 15 °C and out of draughts, and let the top of the soil dry between waterings. Its red \"petals\" are leaves, which colour again only after long, fully dark nights from early autumn.",
-      "funFact": "The red 'petals' are really leaves called bracts, and they only colour up after long nights of darkness. The Aztecs called the plant cuetlaxōchitl and used it to make a red dye.",
+      "careNotes": "Keep it above 15 °C and out of draughts, and let the top of the soil dry between waterings. Its red \"petals\" are leaves, which color again only after long, fully dark nights from early autumn.",
+      "funFact": "The red 'petals' are really leaves called bracts, and they only color up after long nights of darkness. The Aztecs called the plant cuetlaxōchitl and used it to make a red dye.",
       "funFactSource": "https://en.wikipedia.org/wiki/Poinsettia"
     },
     "Q883685": {
@@ -1970,7 +1970,7 @@
     },
     "Q11888321": {
       "profile": "indoor-tree",
-      "funFact": "In the wet forests from southern Thailand to Borneo, the wild species is a strangler fig that can reach 30 metres tall. The compact 'Alii' sold as a houseplant is one of its cultivars.",
+      "funFact": "In the wet forests from southern Thailand to Borneo, the wild species is a strangler fig that can reach 30 meters tall. The compact 'Alii' sold as a houseplant is one of its cultivars.",
       "funFactSource": "https://en.wikipedia.org/wiki/Ficus_binnendykii"
     },
     "Q36146": {
@@ -1992,7 +1992,7 @@
     "Q1498748": {
       "profile": "indoor-tree",
       "careNotes": "Wipe the big leaves now and then so they catch more light, and turn the pot a quarter when you water so it grows straight.",
-      "funFact": "Its leaves are wide at the tip and pinched in the middle, like a lyre or fiddle, which also gives it names such as banjo fig. Outdoors it can grow into a tree up to 12 metres tall.",
+      "funFact": "Its leaves are wide at the tip and pinched in the middle, like a lyre or fiddle, which also gives it names such as banjo fig. Outdoors it can grow into a tree up to 12 meters tall.",
       "funFactSource": "https://en.wikipedia.org/wiki/Ficus_lyrata"
     },
     "Q714180": {
@@ -2072,7 +2072,7 @@
     },
     "Q50841675": {
       "profile": "prayer-plant",
-      "funFact": "It is grown for its fiery yellow-orange flower heads, held on straight stems just above the leaves, which give it the names eternal flame and saffron-coloured calathea. It comes from eastern Brazil.",
+      "funFact": "It is grown for its fiery yellow-orange flower heads, held on straight stems just above the leaves, which give it the names eternal flame and saffron-colored calathea. It comes from eastern Brazil.",
       "funFactSource": "https://en.wikipedia.org/wiki/Goeppertia_crocata"
     },
     "Q90458733": {
@@ -2092,7 +2092,7 @@
     },
     "Q50841689": {
       "profile": "prayer-plant",
-      "funFact": "According to Marantaceae expert Helen Kennedy, most 'pinstripe calatheas' on sale are other species. The true one dropped out of cultivation before the mid-1990s, and the colour of its flowers is still unknown.",
+      "funFact": "According to Marantaceae expert Helen Kennedy, most 'pinstripe calatheas' on sale are other species. The true one dropped out of cultivation before the mid-1990s, and the color of its flowers is still unknown.",
       "funFactSource": "https://en.wikipedia.org/wiki/Goeppertia_ornata"
     },
     "Q50841692": {
@@ -2142,13 +2142,13 @@
     },
     "Q137994": {
       "profile": "cactus",
-      "careNotes": "The coloured top has no chlorophyll: it lives only grafted onto the green cactus below. Give it bright light, but not harsh midday sun.",
-      "funFact": "The bright red, orange or yellow moon cactus is a mutant with no chlorophyll at all, so it cannot feed itself and must be grafted onto a green cactus that does the work. The wild species is a small grey-green cactus from Paraguay and Bolivia.",
+      "careNotes": "The colored top has no chlorophyll: it lives only grafted onto the green cactus below. Give it bright light, but not harsh midday sun.",
+      "funFact": "The bright red, orange or yellow moon cactus is a mutant with no chlorophyll at all, so it cannot feed itself and must be grafted onto a green cactus that does the work. The wild species is a small gray-green cactus from Paraguay and Bolivia.",
       "funFactSource": "https://en.wikipedia.org/wiki/Gymnocalycium_mihanovichii"
     },
     "Q9268236": {
       "profile": "leafy-tropical",
-      "funFact": "Soft purple hairs cover its leaves and stems, which is what gives it a velvety feel. The name aurantiaca means orange, after the usual colour of its flowers.",
+      "funFact": "Soft purple hairs cover its leaves and stems, which is what gives it a velvety feel. The name aurantiaca means orange, after the usual color of its flowers.",
       "funFactSource": "https://en.wikipedia.org/wiki/Gynura_aurantiaca"
     },
     "Q247743": {
@@ -2189,7 +2189,7 @@
     },
     "Q106906298": {
       "profile": "indoor-tree",
-      "funFact": "Actinophyllum means 'with radiating leaves'. In Australian rainforests its red flower spikes, up to 2 metres long, feed nectar-eating birds, and its leaves are a favourite food of Bennett's tree-kangaroo.",
+      "funFact": "Actinophyllum means 'with radiating leaves'. In Australian rainforests its red flower spikes, up to 2 meters long, feed nectar-eating birds, and its leaves are a favorite food of Bennett's tree-kangaroo.",
       "funFactSource": "https://en.wikipedia.org/wiki/Heptapleurum_actinophyllum"
     },
     "Q65940871": {
@@ -2229,7 +2229,7 @@
     "Q134347": {
       "profile": "semi-succulent",
       "careNotes": "Don't cut off the short spurs where flowers grew: it flowers again on the same ones.",
-      "funFact": "The thick, star-shaped flowers look as if they were moulded from wax or porcelain, which gives the plant both its common names. They can make so much nectar that it drips.",
+      "funFact": "The thick, star-shaped flowers look as if they were molded from wax or porcelain, which gives the plant both its common names. They can make so much nectar that it drips.",
       "funFactSource": "https://en.wikipedia.org/wiki/Hoya_carnosa"
     },
     "Q1632094": {
@@ -2301,7 +2301,7 @@
     "Q159219": {
       "profile": "acid-lover",
       "careNotes": "An outdoor shrub, and a thirsty one in summer. It wants part shade and shelter from hot afternoon sun; in acid soil, blue kinds stay blue.",
-      "funFact": "Blue, purple, pink and red flowers all come from one single pigment. In acid soil the plant takes up aluminium, which pulls the colour towards blue, while alkaline soil gives pink or even red.",
+      "funFact": "Blue, purple, pink and red flowers all come from one single pigment. In acid soil the plant takes up aluminum, which pulls the color towards blue, while alkaline soil gives pink or even red.",
       "funFactSource": "https://en.wikipedia.org/wiki/Hydrangea_macrophylla"
     },
     "Q5959593": {
@@ -2312,13 +2312,13 @@
     "Q2391577": {
       "profile": "balcony-annual",
       "careNotes": "It takes more sun than busy Lizzie but prefers morning sun and afternoon shade: an east-facing balcony. It wilts fast when dry.",
-      "funFact": "First collected in Papua in 1884, it quickly became a greenhouse favourite. Botanists later found that fifteen other New Guinea impatiens gathered after it were all just forms of this one species.",
+      "funFact": "First collected in Papua in 1884, it quickly became a greenhouse favorite. Botanists later found that fifteen other New Guinea impatiens gathered after it were all just forms of this one species.",
       "funFactSource": "https://en.wikipedia.org/wiki/Impatiens_hawkeri"
     },
     "Q654064": {
       "profile": "balcony-annual",
       "careNotes": "Unlike most balcony flowers, it wants shade or morning sun only: a north- or east-facing balcony. It wilts fast when dry.",
-      "funFact": "Its name honours Horace Waller, a British missionary, and its ripe seed pods burst open to fling out seeds. Breeder Claude Hope in Costa Rica turned the wild East African plant into one of the world's favourite bedding plants.",
+      "funFact": "Its name honours Horace Waller, a British missionary, and its ripe seed pods burst open to fling out seeds. Breeder Claude Hope in Costa Rica turned the wild East African plant into one of the world's favorite bedding plants.",
       "funFactSource": "https://en.wikipedia.org/wiki/Impatiens_walleriana"
     },
     "Q13217438": {
@@ -2402,7 +2402,7 @@
     },
     "Q332469": {
       "profile": "sun-shrub",
-      "funFact": "Its flowers change colour once pollinated, usually from yellow towards orange, pink or red, which is thought to tell insects which blooms still hold a reward. They smell of tutti frutti with a peppery edge.",
+      "funFact": "Its flowers change color once pollinated, usually from yellow towards orange, pink or red, which is thought to tell insects which blooms still hold a reward. They smell of tutti frutti with a peppery edge.",
       "funFactSource": "https://en.wikipedia.org/wiki/Lantana_camara"
     },
     "Q26006": {
@@ -2510,7 +2510,7 @@
     "Q10475339": {
       "profile": "semi-succulent",
       "careNotes": "Keep it in one place once buds form: moving it drops them. It likes cool winters (about 13 °C) and more humidity than hoyas.",
-      "funFact": "A favourite of bridal bouquets, hence the name Hawaiian wedding flower, it is not a jasmine at all but a climber from Madagascar. As its waxy flowers age they turn yellow and their rich scent goes sour.",
+      "funFact": "A favorite of bridal bouquets, hence the name Hawaiian wedding flower, it is not a jasmine at all but a climber from Madagascar. As its waxy flowers age they turn yellow and their rich scent goes sour.",
       "funFactSource": "https://en.wikipedia.org/wiki/Stephanotis_floribunda"
     },
     "Q148396": {
@@ -2571,7 +2571,7 @@
     "Q132970": {
       "profile": "indoor-tree",
       "careNotes": "Thirsty and hungry: keep the soil moist while it's growing, and feed it at full strength. Its big leaves tear in draughts, which is harmless.",
-      "funFact": "It was one of the first plants people domesticated, possibly at first for its fibre or edible male bud rather than its fruit. Wild fruits are packed with hard seeds, which in the dessert bananas bred from it have shrunk to tiny black specks.",
+      "funFact": "It was one of the first plants people domesticated, possibly at first for its fiber or edible male bud rather than its fruit. Wild fruits are packed with hard seeds, which in the dessert bananas bred from it have shrunk to tiny black specks.",
       "funFactSource": "https://en.wikipedia.org/wiki/Musa_acuminata"
     },
     "Q159562": {
@@ -2634,7 +2634,7 @@
     },
     "Q16986427": {
       "profile": "fern",
-      "funFact": "Its genus, Nephrolepis, also includes the Boston fern, and one species from Borneo grows long, narrow fronds that can reach nine metres.",
+      "funFact": "Its genus, Nephrolepis, also includes the Boston fern, and one species from Borneo grows long, narrow fronds that can reach nine meters.",
       "funFactSource": "https://en.wikipedia.org/wiki/Nephrolepis"
     },
     "Q155833": {
@@ -2746,7 +2746,7 @@
     "Q160925": {
       "profile": "balcony-annual",
       "careNotes": "Unlike most balcony flowers, it likes to dry out a little between waterings. Overwinter it in a cool, bright, frost-free room, kept nearly dry.",
-      "funFact": "Peltatum means shield-bearing, because the leaf stalk joins near the centre of the blade, making each leaf shield-like. The governor of the Cape Colony sent it to the Netherlands in 1700.",
+      "funFact": "Peltatum means shield-bearing, because the leaf stalk joins near the center of the blade, making each leaf shield-like. The governor of the Cape Colony sent it to the Netherlands in 1700.",
       "funFactSource": "https://en.wikipedia.org/wiki/Pelargonium_peltatum"
     },
     "Q6566235": {
@@ -2833,7 +2833,7 @@
     },
     "Q15605793": {
       "profile": "semi-succulent",
-      "funFact": "Its leaves grow in whorls of five, grey-green above and red underneath. In its Caribbean home it often grows perched on other plants as an epiphyte.",
+      "funFact": "Its leaves grow in whorls of five, gray-green above and red underneath. In its Caribbean home it often grows perched on other plants as an epiphyte.",
       "funFactSource": "https://en.wikipedia.org/wiki/Peperomia_verticillata"
     },
     "Q37153": {
@@ -3008,7 +3008,7 @@
     },
     "Q7226925": {
       "profile": "indoor-tree",
-      "funFact": "Sometimes called wild coffee, it is not closely related to real coffee plants at all. Left to grow, the shrub can reach over 7 metres, with leaves often edged in white or pale yellow.",
+      "funFact": "Sometimes called wild coffee, it is not closely related to real coffee plants at all. Left to grow, the shrub can reach over 7 meters, with leaves often edged in white or pale yellow.",
       "funFactSource": "https://en.wikipedia.org/wiki/Polyscias_guilfoylei"
     },
     "Q3024559": {
@@ -3049,7 +3049,7 @@
     },
     "Q623263": {
       "profile": "palm",
-      "funFact": "In the wild it huddles along riverbanks, lagoons and shallow swamps, damp pockets in the hot, dry south-west of Madagascar, and it can reach 30 metres, far taller than any pot plant.",
+      "funFact": "In the wild it huddles along riverbanks, lagoons and shallow swamps, damp pockets in the hot, dry south-west of Madagascar, and it can reach 30 meters, far taller than any pot plant.",
       "funFactSource": "https://en.wikipedia.org/wiki/Ravenea_rivularis"
     },
     "Q344764": {
@@ -3107,7 +3107,7 @@
     },
     "Q1111359": {
       "profile": "mediterranean-herb",
-      "funFact": "Officinalis refers to the officina, the monastery storeroom where healing herbs were kept, and the grey-green colour called sage is named after its leaves. The Romans called it the holy herb.",
+      "funFact": "Officinalis refers to the officina, the monastery storeroom where healing herbs were kept, and the gray-green color called sage is named after its leaves. The Romans called it the holy herb.",
       "funFactSource": "https://en.wikipedia.org/wiki/Salvia_officinalis"
     },
     "Q102240169": {
@@ -3117,7 +3117,7 @@
     },
     "Q161080": {
       "profile": "balcony-annual",
-      "funFact": "The compact bedding plants seen in parks and shopping centres are a far cry from the wild form, which stands up to 1.3 m tall in the warm, humid mountains of Brazil and is rarely grown.",
+      "funFact": "The compact bedding plants seen in parks and shopping centers are a far cry from the wild form, which stands up to 1.3 m tall in the warm, humid mountains of Brazil and is rarely grown.",
       "funFactSource": "https://en.wikipedia.org/wiki/Salvia_splendens"
     },
     "Q161174": {
@@ -3169,7 +3169,7 @@
     },
     "Q3477641": {
       "profile": "succulent",
-      "funFact": "Named after the plant collector Edward Palmer, it is a windowsill favourite in Mediterranean towns, where it roots so easily from cuttings that neighbours pass it from one to another.",
+      "funFact": "Named after the plant collector Edward Palmer, it is a windowsill favorite in Mediterranean towns, where it roots so easily from cuttings that neighbors pass it from one to another.",
       "funFactSource": "https://en.wikipedia.org/wiki/Sedum_palmeri"
     },
     "Q2706112": {
@@ -3245,7 +3245,7 @@
     "Q287520": {
       "profile": "succulent",
       "careNotes": "Keep it drier and cooler in winter. It scorches in hot midday sun more than most succulents.",
-      "funFact": "Its star-shaped flowers can be 40 cm across and smell of rotting meat. The stench, along with their size and colour, fools the flies that pollinate them into treating the flower like a carcass.",
+      "funFact": "Its star-shaped flowers can be 40 cm across and smell of rotting meat. The stench, along with their size and color, fools the flies that pollinate them into treating the flower like a carcass.",
       "funFactSource": "https://en.wikipedia.org/wiki/Stapelia_gigantea"
     },
     "Q149601": {
@@ -3359,7 +3359,7 @@
     },
     "Q1563504": {
       "profile": "leafy-tropical",
-      "funFact": "Oddly for such a vivid plant, its name pallida means pale, after the washed-out grey-green look of wild specimens. The purple garden form is a cultivar, and its small three-petalled flowers open only in the morning.",
+      "funFact": "Oddly for such a vivid plant, its name pallida means pale, after the washed-out gray-green look of wild specimens. The purple garden form is a cultivar, and its small three-petalled flowers open only in the morning.",
       "funFactSource": "https://en.wikipedia.org/wiki/Tradescantia_pallida"
     },
     "Q4461763": {
@@ -3392,7 +3392,7 @@
     "Q286061": {
       "profile": "orchid",
       "careNotes": "Usually grown bare-root in a basket or vase: soak the roots until they turn green, and give it bright light with some sun.",
-      "funFact": "The name comes from the Sanskrit name for one of its species. Its best-known member, Vanda coerulea, has blue flowers, a colour that is very unusual in the plant world.",
+      "funFact": "The name comes from the Sanskrit name for one of its species. Its best-known member, Vanda coerulea, has blue flowers, a color that is very unusual in the plant world.",
       "funFactSource": "https://en.wikipedia.org/wiki/Vanda"
     },
     "Q64683022": {

@@ -51,10 +51,10 @@ describe('the bundled care-guides.json (ADR-0008)', () => {
     expect(texts.filter((text) => interval.test(text))).toEqual([]);
   });
 
-  test('every fertiliser names its N-P-K, which the Fertiliser card explains', () => {
+  test('every fertilizer names its N-P-K, which the Fertilizer card explains', () => {
     const types = guides.profiles.map(({ fertilizer }) => fertilizer.type);
     const named = (type: string) =>
-      /\(N-P-K roughly \d-\d-\d/.test(type) || type === 'No fertiliser';
+      /\(N-P-K roughly \d-\d-\d/.test(type) || type === 'No fertilizer';
     expect(types.filter((type) => !named(type))).toEqual([]);
   });
 

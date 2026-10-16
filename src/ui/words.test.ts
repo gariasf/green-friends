@@ -176,19 +176,19 @@ describe('Care Guide lines', () => {
     );
   });
 
-  it('explains N-P-K beneath a fertiliser that names it', () => {
-    expect(npkNote('Balanced liquid fertiliser (N-P-K roughly 1-1-1)')).toMatch(/nitrogen/);
-    expect(npkNote('No fertiliser')).toBeNull();
+  it('explains N-P-K beneath a fertilizer that names it', () => {
+    expect(npkNote('Balanced liquid fertilizer (N-P-K roughly 1-1-1)')).toMatch(/nitrogen/);
+    expect(npkNote('No fertilizer')).toBeNull();
   });
 
-  it('leaves the ratio to the Fertiliser card, which explains it', () => {
+  it('leaves the ratio to the Fertilizer card, which explains it', () => {
     const profile = {
       fertilizer: {
-        type: 'Balanced liquid fertiliser (N-P-K roughly 3-1-2)',
+        type: 'Balanced liquid fertilizer (N-P-K roughly 3-1-2)',
         dormant: 'Stop feeding.',
       },
     } as Parameters<typeof feedLine>[0];
-    expect(feedLine(profile, 'growing')).toBe('Balanced liquid fertiliser');
+    expect(feedLine(profile, 'growing')).toBe('Balanced liquid fertilizer');
     expect(feedLine(profile, 'dormant')).toBe('Stop feeding.');
   });
 });

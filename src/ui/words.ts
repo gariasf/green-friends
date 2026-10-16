@@ -307,7 +307,7 @@ export function lightLabel(light: Pick<CareProfile['light'], 'level' | 'directSu
     .join(', ')}`;
 }
 
-/** Beneath a fertiliser's name, what its ratio's three numbers are; none for "No fertiliser". */
+/** Beneath a fertilizer's name, what its ratio's three numbers are; none for "No fertilizer". */
 export function npkNote(type: string): string | null {
   return type.includes('N-P-K')
     ? 'N-P-K: the three numbers on the label, for nitrogen, phosphorus and potassium.'
@@ -336,7 +336,7 @@ export const NO_CARE_GUIDE = {
 export const SYMPTOMS_TITLE = 'What do you see?';
 
 /**
- * The Care group's Feed row: the fertiliser while Growing, without its ratio, which the Fertiliser
+ * The Care group's Feed row: the fertilizer while Growing, without its ratio, which the Fertilizer
  * card explains; the Dormant advice (usually stop) while Dormant.
  */
 export function feedLine(profile: CareProfile, season: SeasonOn['season']): string {
@@ -344,7 +344,7 @@ export function feedLine(profile: CareProfile, season: SeasonOn['season']): stri
   return profile.fertilizer.type.replace(/ \(N-P-K [^)]*\)/, '');
 }
 
-/** Under Watering and Fertiliser: "Your schedule: every 7 days, every 14 days in the Dormant season". */
+/** Under Watering and Fertilizer: "Your schedule: every 7 days, every 14 days in the Dormant season". */
 export function yourSchedule(schedule: SeasonalSchedule, allYear = false): string {
   return `Your schedule: ${scheduleLine(schedule, allYear)}`;
 }

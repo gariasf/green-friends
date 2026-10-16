@@ -140,7 +140,7 @@ export function GuideSection({
         <section>
           <h3>
             <CareIcon type="fertilize" />
-            Fertiliser
+            Fertilizer
           </h3>
           <p>{profile.fertilizer.type}</p>
           {npk && <p className="quiet">{npk}</p>}
