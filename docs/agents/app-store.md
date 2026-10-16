@@ -38,6 +38,8 @@ Each step ends where its check passes.
    ```
 
    `ExportOptions.plist` is a plist dict with `method` `app-store-connect`, `destination` `upload` and `teamID` `<team id>`; write it to the scratchpad when needed. With `destination` `export` instead, the same command only writes the `.ipa`.
+
+   **The agreement.** An export that fails with `PLA Update available`, followed by `No signing certificate "iOS Distribution" found`, means Apple has a newer Program License Agreement than the account holder accepted. It stops Xcode from creating the distribution certificate. The owner accepts it at developer.apple.com, under Account, and then the export goes through (seen 2026-10-16).
 7. **TestFlight.** The build shows in App Store Connect's TestFlight once processed; install it from TestFlight on the owner's iPhone to check it. Then put the owner's own build back on: a store or TestFlight build hides Sync there, though the key and status stay.
 
 ## App Store Connect state
