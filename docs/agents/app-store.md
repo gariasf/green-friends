@@ -52,4 +52,4 @@ These are the choices behind the listing (spec #106), so a change to the app kee
   - Northern-hemisphere storefronts only, while the growing-month range defaults to March–October.
   - No Mac and no Apple Vision Pro, since neither is tested.
   - iPhone only (`supportsTablet: false`) on iOS 26 or later (`ios.deploymentTarget`).
-- **Releases** are manual, with phased release on. Crash reports come from Xcode Organizer.
+- **Releases** are manual. Phased release only applies to updates (1.0 reaches everyone at once), so each update after 1.0 turns it on. Crash reports come from Xcode Organizer.
