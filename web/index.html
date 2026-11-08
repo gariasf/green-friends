@@ -2,14 +2,350 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Pairing links and Web view routes made before /app/ point at this page. -->
+    <script>
+      function openOldLinkInWebView() {
+        if (/^#(k=|\/)/.test(location.hash)) location.replace('/app/' + location.hash);
+      }
+      openOldLinkInWebView();
+      addEventListener('hashchange', openOldLinkInWebView);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <!-- The key arrives after the #, which the browser never sends; no referrer leaks the path either. -->
     <meta name="referrer" content="no-referrer" />
-    <title>Green Friends</title>
+    <title>Green Friends: Houseplant Care and Watering Reminders</title>
+    <meta
+      name="description"
+      content="Green Friends tells you what your houseplants need, and when: watering reminders, care guides for 458 species and pet safety notes. Free for iPhone, no account."
+    />
+    <link rel="canonical" href="https://your-green-friends.com/" />
+    <meta name="apple-itunes-app" content="app-id=6823550934" />
+    <meta name="theme-color" content="#f5f2e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1713" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Green Friends" />
+    <meta property="og:url" content="https://your-green-friends.com/" />
+    <meta property="og:title" content="Green Friends: what your houseplants need, and when" />
+    <meta
+      property="og:description"
+      content="Watering reminders and care guides for 458 houseplant species. Free for iPhone, with no account, no ads and no tracking."
+    />
+    <meta property="og:image" content="https://your-green-friends.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Green Friends on an iPhone, showing the three plants that need care today."
+    />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://your-green-friends.com/#website",
+            "url": "https://your-green-friends.com/",
+            "name": "Green Friends",
+            "inLanguage": "en"
+          },
+          {
+            "@type": "MobileApplication",
+            "@id": "https://your-green-friends.com/#app",
+            "name": "Green Friends",
+            "description": "Green Friends tells you what your houseplants need, and when: watering, fertilizing and repotting schedules for 458 houseplant species, Care Guides, Symptoms and a Daily Digest.",
+            "url": "https://your-green-friends.com/",
+            "installUrl": "https://apps.apple.com/app/id6823550934",
+            "sameAs": "https://apps.apple.com/app/id6823550934",
+            "image": "https://your-green-friends.com/icon-512.png",
+            "screenshot": [
+              "https://your-green-friends.com/screens/today.webp",
+              "https://your-green-friends.com/screens/plant.webp",
+              "https://your-green-friends.com/screens/guide.webp"
+            ],
+            "operatingSystem": "iOS 26.0 or later",
+            "applicationCategory": "LifestyleApplication",
+            "inLanguage": "en",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "author": { "@type": "Person", "name": "Guillem Arias" }
+          }
+        ]
+      }
+    </script>
+
+    <link rel="stylesheet" href="/src/landing.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <header class="wrap site-header">
+      <a class="brand" href="/">
+        <img src="/favicon.svg" alt="" width="36" height="36" />
+        Green Friends
+      </a>
+      <a class="pill" href="https://apps.apple.com/app/id6823550934">Get the app</a>
+    </header>
+
+    <main>
+      <section class="wrap hero">
+        <div class="hero-text">
+          <p class="eyebrow">Plant care app for iPhone</p>
+          <h1>What your houseplants need, and when.</h1>
+          <p class="lede">
+            Add your plants, and Green Friends keeps track of when each one needs water, fertilizer
+            or a bigger pot. Every day it shows you the few that need you, and nothing else.
+          </p>
+          <a class="badge" href="https://apps.apple.com/app/id6823550934">
+            <img
+              src="/app-store-badge.svg"
+              alt="Download on the App Store"
+              width="162"
+              height="54"
+            />
+          </a>
+          <p class="fine">Free · iPhone with iOS 26 or later</p>
+        </div>
+        <div class="phones">
+          <div class="phone back">
+            <img
+              src="/screens/garden.webp"
+              srcset="/screens/garden-600.webp 600w, /screens/garden.webp 800w"
+              sizes="(max-width: 33rem) calc((100vw - 2.5rem) * 0.58), 17.5rem"
+              alt="The Garden: a grid of plant photos, each with its name."
+              width="800"
+              height="1740"
+              decoding="async"
+            />
+          </div>
+          <div class="phone front">
+            <img
+              src="/screens/today.webp"
+              srcset="/screens/today-600.webp 600w, /screens/today.webp 800w"
+              sizes="(max-width: 33rem) calc((100vw - 2.5rem) * 0.58), 17.5rem"
+              alt="Today: three plants need you. A Prayer plant's watering is a day overdue, and Benji and Monty are due today."
+              width="800"
+              height="1740"
+              fetchpriority="high"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap" aria-label="At a glance">
+        <ul class="facts">
+          <li>
+            <strong>458</strong>
+            houseplant species, each with its own schedule and Care Guide
+          </li>
+          <li>
+            <strong>1</strong>
+            notification a day, and only when a plant needs you
+          </li>
+          <li>
+            <strong>0</strong>
+            accounts, ads or trackers
+          </li>
+        </ul>
+      </section>
+
+      <section class="wrap feature">
+        <div class="feature-text">
+          <p class="eyebrow">Schedules</p>
+          <h2>Every plant on its own schedule</h2>
+          <p>
+            Choose the species from a catalog of 458 houseplants, and its watering, fertilizing and
+            repotting intervals come with it. Change any of them for one plant, or give a plant a
+            schedule all its own.
+          </p>
+          <ul class="checks">
+            <li>
+              Watering and fertilizing follow the seasons. You set the growing months, and care
+              slows down or pauses for the rest of the year.
+            </li>
+            <li>Toxic or non-toxic to pets, wherever a published reference settles it.</li>
+          </ul>
+        </div>
+        <figure class="stage">
+          <picture class="phone">
+            <source
+              srcset="/screens/plant-dark-600.webp 600w, /screens/plant-dark.webp 800w"
+              sizes="17rem"
+              media="(prefers-color-scheme: dark)"
+            />
+            <img
+              src="/screens/plant.webp"
+              srcset="/screens/plant-600.webp 600w, /screens/plant.webp 800w"
+              sizes="17rem"
+              alt="Monty, a Monstera: water today, fertilize in 4 days, repot in 18 months, and a Toxic to pets badge."
+              width="800"
+              height="1740"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
+        </figure>
+      </section>
+
+      <section class="wrap feature flip">
+        <div class="feature-text">
+          <p class="eyebrow">Care Guides</p>
+          <h2>Know how, not just when</h2>
+          <p>
+            Every species has a Care Guide: how to water, feed, place and pot it in the growing
+            season and the dormant one, with a fun fact at the end.
+          </p>
+          <ul class="checks">
+            <li>
+              Brown tips, webbing, yellow leaves? Symptoms list the likely causes, how to tell them
+              apart, and what to do.
+            </li>
+          </ul>
+        </div>
+        <figure class="stage">
+          <div class="phone">
+            <img
+              src="/screens/guide.webp"
+              srcset="/screens/guide-600.webp 600w, /screens/guide.webp 800w"
+              sizes="17rem"
+              alt="The Care Guide for a tropical aroid: when and how to water, and which fertilizer to use, in the growing season."
+              width="800"
+              height="1740"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </figure>
+      </section>
+
+      <section class="wrap feature">
+        <div class="feature-text">
+          <p class="eyebrow">Care Log</p>
+          <h2>Remember what you did, and when</h2>
+          <p>
+            Log a watering, a feed, a repot or a note, today or on an earlier day, and it goes in
+            that plant's Care Log, beside its photo.
+          </p>
+          <ul class="checks">
+            <li>
+              Soil still damp? Tap Not dry yet, and watering comes round again a little later.
+            </li>
+          </ul>
+        </div>
+        <figure class="stage">
+          <div class="phone">
+            <img
+              src="/screens/log.webp"
+              srcset="/screens/log-600.webp 600w, /screens/log.webp 800w"
+              sizes="17rem"
+              alt="Logging care for Monty: water, fertilize, repot or a note, today, yesterday or earlier, with Mark as watered and Not dry yet."
+              width="800"
+              height="1740"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </figure>
+      </section>
+
+      <section class="privacy">
+        <div class="wrap privacy-inner">
+          <h2>Your Garden stays on your iPhone</h2>
+          <p>
+            There's nothing to sign up for. Your plants, photos and notes live on your phone, and
+            come along in your iPhone backup. Export the whole Garden as one file whenever you like,
+            and Import it on another iPhone.
+          </p>
+          <ul class="chips">
+            <li>No account</li>
+            <li>No ads</li>
+            <li>No tracking</li>
+            <li>Export any time</li>
+          </ul>
+          <p><a href="/privacy">Read the privacy policy</a></p>
+        </div>
+      </section>
+
+      <section class="wrap faq" aria-labelledby="questions">
+        <div>
+          <h2 id="questions">Questions</h2>
+          <p class="quiet">
+            Anything else? Write to
+            <a href="mailto:greenfriends@gariasf.com">greenfriends@gariasf.com</a>.
+          </p>
+        </div>
+        <div>
+          <details>
+            <summary><h3>Is Green Friends free?</h3></summary>
+            <p>Yes. There are no ads, no subscription and nothing to unlock.</p>
+          </details>
+          <details>
+            <summary><h3>Which devices does it run on?</h3></summary>
+            <p>iPhone, with iOS 26 or later. There's no iPad, Mac or Android version.</p>
+          </details>
+          <details>
+            <summary><h3>How does it know when to water?</h3></summary>
+            <p>
+              Each species comes with watering, fertilizing and repotting intervals for the growing
+              and the dormant season. Green Friends counts from the last time you logged that care,
+              and you can change any interval for one plant.
+            </p>
+          </details>
+          <details>
+            <summary><h3>What if my plant isn't in the catalog?</h3></summary>
+            <p>Add it anyway: give it a name and a care schedule of its own.</p>
+          </details>
+          <details>
+            <summary><h3>Will it tell me if a plant is toxic to my cat or dog?</h3></summary>
+            <p>
+              Where a published reference such as the ASPCA's plant lists settles it, a plant shows
+              Toxic to pets or Non-toxic to pets. Where none does, it says nothing. It's no
+              substitute for a vet: if a pet has eaten a plant, call your vet or an animal poison
+              line.
+            </p>
+          </details>
+          <details>
+            <summary><h3>How do I move my plants to a new iPhone?</h3></summary>
+            <p>
+              Restore your iPhone backup and your Garden comes with it. You can also Export on the
+              old iPhone and Import on the new one.
+            </p>
+          </details>
+          <details>
+            <summary><h3>Does it work in the Southern Hemisphere?</h3></summary>
+            <p>
+              The growing season starts out as March to October, and you can set your own months in
+              Settings. For now, the App Store offers Green Friends in northern-hemisphere
+              countries.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section class="wrap closing">
+        <img src="/favicon.svg" alt="" width="88" height="88" loading="lazy" />
+        <h2>Start with the plant on your windowsill.</h2>
+        <p class="quiet">Free on the App Store, for iPhone.</p>
+        <a class="badge" href="https://apps.apple.com/app/id6823550934">
+          <img src="/app-store-badge.svg" alt="Download on the App Store" width="162" height="54" />
+        </a>
+      </section>
+    </main>
+
+    <footer class="wrap site-footer">
+      <nav aria-label="Site">
+        <a href="/privacy">Privacy policy</a>
+        <a href="/support">Support</a>
+        <a href="mailto:greenfriends@gariasf.com">Contact</a>
+      </nav>
+      <p>© 2026 Guillem Arias</p>
+      <p class="legal">
+        Apple, the Apple logo and iPhone are trademarks of Apple Inc., registered in the U.S. and
+        other countries and regions. App Store is a service mark of Apple Inc.
+      </p>
+    </footer>
   </body>
 </html>

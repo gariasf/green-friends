@@ -16,4 +16,5 @@ export default defineConfig({
   plugins: [react(), sqlAsText],
   // The Web view runs the app's own src/core, drizzle/ and assets/, one level up.
   server: { fs: { allow: ['..'] } },
+  build: { rolldownOptions: { input: ['index.html', 'app/index.html'] } },
 });

@@ -1,6 +1,6 @@
 # Web view
 
-`web/` is Sync's read-only Web view (ADR-0006, spec #35): a Vite + React single-page app that opens the latest Snapshot in the browser. It's its own npm package, like `relay/`: root `npm test` and `npm run typecheck` leave it out (`tsconfig.json` excludes it), root `npm run lint` covers it.
+`web/` is Sync's read-only Web view (ADR-0006, spec #35): a Vite + React single-page app at `/app/` (`web/app/index.html`) that opens the latest Snapshot in the browser. The same package serves the site around it: the landing page at `/`, and the privacy and support pages. It's its own npm package, like `relay/`: root `npm test` and `npm run typecheck` leave it out (`tsconfig.json` excludes it), root `npm run lint` covers it.
 
 ## How it works
 
@@ -12,22 +12,30 @@
 - Open in Green Friends (hidden where the pointer can hover) hands the key to the app as `greenfriends://pair#k=…`, so a new phone pairs and restores from the Web view. After Reset sync the old key's garden is gone, and the page says No Garden found.
 - A Pairing link pasted into an open tab changes only the fragment, which reloads nothing, so the page loads again on a `hashchange` carrying a key.
 
+## The landing page
+
+`web/index.html` is the public landing page at `/`, built by Vite as the second input in `vite.config.ts`, beside `app/index.html`. It's static HTML with no JavaScript but the redirect above, and `web/src/landing.css`, which bundles the same Nunito Sans and Young Serif as the Web view and repeats `src/ui/theme.ts`'s colours.
+
+- **Its words** repeat the App Store listing's claims: 458 Species, the Daily Digest, Care Guides and Symptoms, and no account, ads or tracking. It never mentions Sync, the Web view or Identify, which the App Store build doesn't have (ADR-0012). Change it when the listing or the catalog's count changes, and before a release that sends anything off the phone (ADR-0013).
+- **Its images** live in `web/public/`: the App Store screenshots as WebP in `screens/` (600 and 800 px wide, `srcset`), `og.png` (1200 × 630, the social card), `favicon.svg` (`assets/icon.svg` on a rounded ground), `apple-touch-icon.png`, `icon-512.png` and Apple's own `app-store-badge.svg`, unaltered as Apple's badge rules require.
+- **Search:** each page names its canonical `your-green-friends.com` address, since workers.dev serves the same files. `robots.txt` points at `sitemap.xml`, which lists `/`, `/privacy` and `/support`. The Web view is `noindex`. The App Store ID, `6823550934`, is in the Smart App Banner meta, the JSON-LD and every Download link.
+
 ## Commands
 
 ```bash
 npm --prefix web ci          # the Web view's own dependencies (root npm install doesn't reach them)
 npm run web:test             # vitest in Node: the smoke test (a phone's Export opened through sql.js), Coming up's plan, the Care Guide rendered to markup, and the Snapshot's opening
 npm --prefix web run typecheck
-npm --prefix web run dev     # vite; it reads the deployed relay, whose CORS allows only the deployed origin
+npm --prefix web run dev     # vite: the landing page at /, the Web view at /app/; it reads the deployed relay, whose CORS allows only the deployed origin
 npm run web:deploy           # vite build, then wrangler deploy, by hand (no CI deploys)
 ```
 
-It lives at `https://your-green-friends.com`: static assets on a Worker (`web/wrangler.toml`), first deployed 2026-09-26.
+It lives at `https://your-green-friends.com/app/`: static assets on a Worker (`web/wrangler.toml`), first deployed 2026-09-26.
 - **The domain** is a Cloudflare Registrar zone on the same account. Since 2026-10-16 it's a custom domain on that Worker, declared in `routes`.
 - **The workers.dev address stays on** (`workers_dev = true`): `https://green-friends.gariasf.workers.dev` serves the same files. Build 1.0.0 (2)'s About link and every Pairing link made before the move point there.
 - **Why workers.dev at all:** spec #35 planned `*.pages.dev`, but Cloudflare now backs a new Pages project with Workers static assets on the account's `workers.dev` subdomain.
 
-The origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`). Change all three together, then deploy the relay. A browser paired at the old origin has to open a new Pairing link: the key is kept per origin, and the relay answers only one.
+The origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`). A Pairing link still points at `/#k=…`, as every one made before the Web view moved to `/app/` does: the landing page's inline script sends a fragment that starts `#k=` or `#/` on to `/app/`, on load and on `hashchange`, so it must stay. A browser paired before the move that opens `/` with no fragment now gets the landing page; `/app/` finds its kept key. Change all three together, then deploy the relay. A browser paired at the old origin has to open a new Pairing link: the key is kept per origin, and the relay answers only one.
 
 The same origin serves the App Store's privacy policy (`/privacy`) and support page (`/support`), spec #106.
 - **The files:** plain HTML in `web/public/` with `pages.css`, copied into `dist/` as they are. Workers static assets answer `/privacy` with `privacy.html`.

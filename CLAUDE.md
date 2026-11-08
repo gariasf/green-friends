@@ -24,7 +24,7 @@ Sync's Cloudflare Worker in `relay/`: routes, commands, deploys and never commit
 
 ### Web view
 
-Sync's read-only Web view in `web/`: how it runs `src/core` over sql.js, commands, deploys. See `docs/agents/web.md`.
+Sync's read-only Web view at `/app/` and the public landing page at `/`, both in `web/`: how the Web view runs `src/core` over sql.js, the landing page's words and search setup, commands, deploys. See `docs/agents/web.md`.
 
 ### App Store
 
