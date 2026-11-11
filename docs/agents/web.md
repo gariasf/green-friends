@@ -14,7 +14,7 @@
 
 ## The landing page
 
-`web/index.html` is the public landing page at `/`, built by Vite as the second input in `vite.config.ts`, beside `app/index.html`. It's static HTML with no JavaScript but the redirect above, and `web/src/landing.css`, which bundles the same Nunito Sans and Young Serif as the Web view and repeats `src/ui/theme.ts`'s colours.
+`web/index.html` is the public landing page at `/`, built by Vite as the second input in `vite.config.ts`, beside `app/index.html`. It's static HTML with no JavaScript but the redirect above and `contact.js`, and `web/src/landing.css`, which bundles the same Nunito Sans and Young Serif as the Web view and repeats `src/ui/theme.ts`'s colours.
 
 - **Its words** repeat the App Store listing's claims: 458 Species, the Daily Digest, Care Guides and Symptoms, and no account, ads or tracking. It never mentions Sync, the Web view or Identify, which the App Store build doesn't have (ADR-0012). Change it when the listing or the catalog's count changes, and before a release that sends anything off the phone (ADR-0013).
 - **Its images** live in `web/public/`: the App Store screenshots as WebP in `screens/` (600 and 800 px wide, `srcset`), `og.png` (1200 × 630, the social card), `favicon.svg` (`assets/icon.svg` on a rounded ground), `apple-touch-icon.png`, `icon-512.png` and Apple's own `app-store-badge.svg`, unaltered as Apple's badge rules require.
@@ -38,7 +38,8 @@ It lives at `https://your-green-friends.com/app/`: static assets on a Worker (`w
 The origin is the relay's `ALLOWED_ORIGIN` and the base of the phone's Pairing link (`WEB_VIEW`, `src/ui/useSync.ts`). A Pairing link still points at `/#k=…`, as every one made before the Web view moved to `/app/` does: the landing page's inline script sends a fragment that starts `#k=` or `#/` on to `/app/`, on load and on `hashchange`, so it must stay. A browser paired before the move that opens `/` with no fragment now gets the landing page; `/app/` finds its kept key. Change all three together, then deploy the relay. A browser paired at the old origin has to open a new Pairing link: the key is kept per origin, and the relay answers only one.
 
 The same origin serves the App Store's privacy policy (`/privacy`) and support page (`/support`), spec #106.
-- **The files:** plain HTML in `web/public/` with `pages.css`, copied into `dist/` as they are. Workers static assets answer `/privacy` with `privacy.html`.
+- **The files:** plain HTML in `web/public/` with `pages.css`, copied into `dist/` as they are.
+- **The contact address** is never in the HTML: each link carries `data-user` and `data-domain`, and `web/public/contact.js`, loaded by all three pages, joins them into its `mailto:` (and its text, where that reads "… at … dot com"). Cloudflare's Email Address Obfuscation doesn't rewrite what a Worker serves, so this is the site's own. The footer's Contact falls back to `/support` without JavaScript. Workers static assets answer `/privacy` with `privacy.html`.
 - **The links:** About links to `/privacy` through `WEB_VIEW`, and App Store Connect holds both addresses, so a new origin means new URLs there too.
 - **Old addresses:** every app version keeps its link, so the old origin's pages stay up.
 
