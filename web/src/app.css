@@ -880,12 +880,14 @@ kbd {
   font-size: var(--text-xs);
 }
 
-.care-rows .status {
-  text-align: right;
+.care-rows .grow {
+  min-width: max-content;
 }
 
-.care-rows .status > :first-child {
-  white-space: nowrap;
+.care-rows .status {
+  min-width: 0;
+  text-align: right;
+  text-wrap: balance;
 }
 
 @container (min-width: 40rem) {
