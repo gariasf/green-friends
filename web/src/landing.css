@@ -16,7 +16,6 @@
   --phone-shadow: 0 2px 4px rgb(70 56 24 / 0.1), 0 32px 64px -24px rgb(70 56 24 / 0.45);
   --band: #417777;
   --band-ink: #ffffff;
-  --band-chip: rgb(255 255 255 / 0.5);
   --font-text: 'Nunito Sans Variable', system-ui, sans-serif;
   --font-title: 'Young Serif', Georgia, serif;
 }
@@ -36,7 +35,6 @@
     --phone-shadow: 0 32px 64px -24px rgb(0 0 0 / 0.7);
     --band: #1d3332;
     --band-ink: #efe9dc;
-    --band-chip: rgb(127 184 184 / 0.45);
   }
 }
 
@@ -148,21 +146,22 @@ a {
 }
 
 .hero h1 {
-  font-size: clamp(2.6rem, 1.5rem + 4.4vw, 4.5rem);
-  line-height: 1.04;
+  font-size: clamp(2.5rem, 1.5rem + 3.4vw, 3.875rem);
+  line-height: 1.06;
   letter-spacing: -0.015em;
 }
 
 .lede {
   max-width: 33rem;
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
   color: var(--ink-quiet);
   font-size: 1.1875rem;
 }
 
 .badge {
   display: inline-block;
-  margin-top: 2rem;
+  margin-top: 1.75rem;
+  vertical-align: top;
   border-radius: 10px;
 }
 
@@ -173,7 +172,7 @@ a {
 }
 
 .fine {
-  margin-top: 0.75rem;
+  margin-top: 0.625rem;
   font-size: 0.9375rem;
 }
 
@@ -186,13 +185,15 @@ a {
   width: 100%;
   max-width: 30rem;
   margin-inline: auto;
+  padding-inline: 6%;
 }
 
 .phones::before {
   content: '';
   position: absolute;
   z-index: -1;
-  inset: 12% -4% auto;
+  inset: 50% 0 auto;
+  translate: 0 -50%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--stage);
@@ -203,11 +204,11 @@ a {
 }
 
 .phones .back {
-  grid-column: 6 / span 7;
+  grid-column: 1 / span 7;
 }
 
 .phones .front {
-  grid-column: 1 / span 7;
+  grid-column: 6 / span 7;
   margin-top: 14%;
 }
 
@@ -286,7 +287,8 @@ a {
   padding-left: 2rem;
 }
 
-.checks li::before {
+.checks li::before,
+.chips li::before {
   content: '';
   position: absolute;
   top: 0.2em;
@@ -309,6 +311,21 @@ a {
 
 .stage .phone {
   width: min(17rem, 100%);
+}
+
+.stage.bleed-top {
+  overflow: hidden;
+  padding-top: 0;
+}
+
+.stage.bleed-top .phone {
+  padding-top: 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.stage.bleed-top .phone img {
+  margin-top: -125%;
 }
 
 .privacy {
@@ -342,17 +359,20 @@ a {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.75rem 1.75rem;
   margin: 2rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .chips li {
-  padding: 0.45rem 1rem;
-  border: 1px solid var(--band-chip);
-  border-radius: 999px;
+  position: relative;
+  padding-left: 1.75rem;
   font-weight: 700;
+}
+
+.chips li::before {
+  background: currentColor;
 }
 
 .faq {
@@ -420,11 +440,11 @@ a {
 .closing {
   display: grid;
   justify-items: center;
-  padding-block: 5rem 6rem;
+  padding-block: 5rem 4.5rem;
   text-align: center;
 }
 
-.closing img {
+.closing > img {
   margin-bottom: 1.75rem;
 }
 
@@ -476,7 +496,15 @@ a {
   font-size: 0.8125rem;
 }
 
+.lede-more {
+  display: none;
+}
+
 @media (min-width: 48rem) {
+  .lede-more {
+    display: inline;
+  }
+
   .facts {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -493,11 +521,19 @@ a {
 }
 
 @media (min-width: 60rem) {
+  .phones {
+    padding-inline: 0;
+  }
+
+  .phones::before {
+    inset-inline: -4%;
+  }
+
   .hero {
     grid-template-columns: 1.1fr 0.9fr;
     align-items: center;
     gap: 4rem;
-    padding-block: 3.5rem 6rem;
+    padding-block: 1.5rem 5rem;
   }
 
   .feature {
