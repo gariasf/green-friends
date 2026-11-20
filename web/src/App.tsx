@@ -294,6 +294,17 @@ function GardenView({
     else scrollTo(0, 0);
   }, [screen]);
 
+  // Two copies, one shown: the sidebar's foot, or below 60rem the page's (app.css).
+  const synced = (place: 'in-sidebar' | 'at-foot') =>
+    takenAt && (
+      <p className={`synced ${place}`}>
+        Synced{' '}
+        <time dateTime={takenAt.toISOString()} title={SYNCED.format(takenAt)}>
+          {syncedAgo(takenAt, now)}
+        </time>
+        {failed && " · couldn't check for changes"}
+      </p>
+    );
   return (
     <div className="shell">
       <header className="sidebar">
@@ -323,15 +334,7 @@ function GardenView({
         <a className="open-app" href={`${APP_PAIRING_LINK}#k=${toBase64url(pairKey)}`}>
           Open in Green Friends
         </a>
-        {takenAt && (
-          <p className="synced">
-            Synced{' '}
-            <time dateTime={takenAt.toISOString()} title={SYNCED.format(takenAt)}>
-              {syncedAgo(takenAt, now)}
-            </time>
-            {failed && " · couldn't check for changes"}
-          </p>
-        )}
+        {synced('in-sidebar')}
       </header>
       <main className="page">
         {screen.tab === 'today' && <Today garden={garden} photoUrl={photoUrl} />}
@@ -340,6 +343,7 @@ function GardenView({
           <PlantDetail garden={garden} id={screen.id} view={screen.view} photoUrl={photoUrl} />
         )}
       </main>
+      {synced('at-foot')}
     </div>
   );
 }

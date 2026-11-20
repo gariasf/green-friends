@@ -368,6 +368,10 @@ a {
   font-size: 0.8125rem;
 }
 
+.synced.at-foot {
+  display: none;
+}
+
 @media (max-width: 60rem) {
   .shell {
     display: block;
@@ -402,10 +406,14 @@ a {
     padding: 0.5rem;
   }
 
-  .synced {
-    flex-basis: 100%;
-    margin: 0.25rem 0 0;
-    padding: 0;
+  .synced.in-sidebar {
+    display: none;
+  }
+
+  .synced.at-foot {
+    display: block;
+    margin: 0;
+    padding: 0 1rem 1.5rem;
   }
 
   main {
@@ -680,7 +688,7 @@ kbd {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -1320,7 +1328,7 @@ th {
 }
 
 .calendar td {
-  height: 9rem;
+  height: 5.5rem;
   padding: 0.5rem 0.5rem 0.75rem;
   vertical-align: top;
 }
@@ -1475,6 +1483,22 @@ th {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
+}
+
+@container (max-width: 40rem) {
+  .legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  .legend > span {
+    align-items: baseline;
+  }
+
+  .legend > span[aria-hidden='true'] {
+    display: none;
+  }
 }
 
 .message-page {

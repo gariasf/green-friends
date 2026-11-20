@@ -9,7 +9,8 @@ import type { PhotoUrl } from './screens';
 /**
  * Coming up's calendar (spec #72): two weeks of seven days as a table, past days with what was
  * done, today raised with what's Due or Overdue, later days with what comes Due; below 40rem, a
- * list of the days that hold something instead (app.css shows one or the other).
+ * list of the days that hold something instead (app.css shows one or the other), leaving out
+ * today, whose cards sit just above.
  */
 export function Calendar({
   plan,
@@ -60,7 +61,7 @@ export function Calendar({
       </table>
       <ol className="calendar-list">
         {plan
-          .filter(({ items }) => items.length > 0)
+          .filter(({ day, items }) => items.length > 0 && day !== today)
           .map(({ day, items }) => (
             <li key={day} className={day < today ? 'past' : undefined}>
               <h3>{dayLabel(day, today)}</h3>
