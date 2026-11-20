@@ -24,6 +24,8 @@ type State =
       /** Which upload the shown Snapshot is (snapshotVersion), to tell a newer one. */
       version: string | null;
       pairKey: Uint8Array;
+      /** The made-up Garden (`?sample`, dev only), which no relay follows. */
+      sample?: true;
     };
 
 const UNPAIRED = {
@@ -65,17 +67,21 @@ async function pairingKey(): Promise<Uint8Array | undefined> {
   return fromLink;
 }
 
-/** The latest Snapshot under `key`, opened; throws as loadSnapshot and openGarden do. */
-async function open(key: Uint8Array): Promise<State> {
-  const snapshot = await loadSnapshot(key);
-  if (!snapshot) return NO_GARDEN;
+function loadSqlJs(): Promise<SqlJsStatic> {
   sqlJs ??= initSqlJs({ locateFile: () => wasmUrl }).catch((error) => {
     sqlJs = undefined;
     throw error;
   });
+  return sqlJs;
+}
+
+/** The latest Snapshot under `key`, opened; throws as loadSnapshot and openGarden do. */
+async function open(key: Uint8Array): Promise<State> {
+  const snapshot = await loadSnapshot(key);
+  if (!snapshot) return NO_GARDEN;
   return {
     kind: 'garden',
-    garden: openGarden(await sqlJs, snapshot.zip),
+    garden: openGarden(await loadSqlJs(), snapshot.zip),
     takenAt: snapshot.takenAt,
     version: snapshot.version,
     pairKey: key,
@@ -96,6 +102,17 @@ function cantOpen(error: unknown): State {
 }
 
 async function load(): Promise<State> {
+  if (import.meta.env.DEV && new URLSearchParams(location.search).has('sample')) {
+    const { loadSamplePhotos, openSampleGarden } = await import('./sample');
+    return {
+      kind: 'garden',
+      garden: openSampleGarden(await loadSqlJs(), await loadSamplePhotos()),
+      takenAt: new Date(),
+      version: null,
+      pairKey: new Uint8Array(32),
+      sample: true,
+    };
+  }
   const key = await pairingKey();
   if (!key) return UNPAIRED;
   return open(key).catch(cantOpen);
@@ -115,7 +132,7 @@ function useFollow(state: State, setState: (state: State) => void) {
   const [failed, setFailed] = useState(false);
   const shown = state.kind === 'garden' ? state : null;
   useEffect(() => {
-    if (!shown) return;
+    if (!shown || shown.sample) return;
     let busy = false;
     let left = false;
     const check = async () => {

@@ -30,6 +30,8 @@ npm --prefix web run dev     # vite: the landing page at /, the Web view at /app
 npm run web:deploy           # vite build, then wrangler deploy, by hand (no CI deploys)
 ```
 
+`/app/?sample` on the dev server opens a made-up Garden instead (`web/src/sample.ts`): 12 catalog plants, six with photos cropped from the App Store screenshots (`web/src/sample-photos/`), Care Logs laid out from today so 4 need care in either Season, and no relay asked. `import.meta.env.DEV` keeps it and its photos out of the deployed build.
+
 It lives at `https://your-green-friends.com/app/`: static assets on a Worker (`web/wrangler.toml`), first deployed 2026-09-26.
 - **The domain** is a Cloudflare Registrar zone on the same account. Since 2026-10-16 it's a custom domain on that Worker, declared in `routes`.
 - **The workers.dev address stays on** (`workers_dev = true`): `https://green-friends.gariasf.workers.dev` serves the same files. Build 1.0.0 (2)'s About link and every Pairing link made before the move point there.

@@ -21,10 +21,7 @@ export type Garden = { db: Db; photo(filename: string): Uint8Array | undefined; 
  * held in memory. Throws importExport's errors, NewerExportError for a newer phone's.
  */
 export function openGarden(SQL: SqlJsStatic, zip: Uint8Array): Garden {
-  const database = new SQL.Database();
-  const db = drizzle(database, { schema });
-  migrate(db);
-  seedSpecies(db, species as SpeciesDataset);
+  const { database, db } = newGardenDatabase(SQL);
   const photos = new Map<string, Uint8Array>();
   const files: PhotoFiles = {
     store: () => {
@@ -46,4 +43,13 @@ export function openGarden(SQL: SqlJsStatic, zip: Uint8Array): Garden {
     scratch.close();
   }
   return { db, photo: (filename) => photos.get(filename), close: () => database.close() };
+}
+
+/** An empty in-memory Garden database: migrated and seeded with the bundled catalog. */
+export function newGardenDatabase(SQL: SqlJsStatic) {
+  const database = new SQL.Database();
+  const db = drizzle(database, { schema });
+  migrate(db);
+  seedSpecies(db, species as SpeciesDataset);
+  return { database, db };
 }
