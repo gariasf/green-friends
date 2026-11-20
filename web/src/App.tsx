@@ -16,7 +16,7 @@ import { loadSnapshot, snapshotVersion, storeKey, storedKey } from './snapshot';
 
 type State =
   | { kind: 'loading' }
-  | { kind: 'message'; title: string; line: string }
+  | { kind: 'message'; title: string; line: string; steps?: readonly string[] }
   | {
       kind: 'garden';
       garden: Garden;
@@ -29,7 +29,12 @@ type State =
 const UNPAIRED = {
   kind: 'message',
   title: 'Not paired yet',
-  line: "Open the Pairing link from Green Friends' Settings on your phone.",
+  line: 'Your Garden opens here once you open its Pairing link in this browser.',
+  steps: [
+    'In Green Friends on your iPhone, open Settings and turn on Sync.',
+    'Tap Share Pairing link and send it to this computer.',
+    'Open the link here. This browser keeps it, so next time your Garden opens straight away.',
+  ],
 } as const;
 
 const NO_GARDEN = {
@@ -198,10 +203,23 @@ export function App() {
   if (state.kind === 'loading') return <main aria-busy="true" />;
   if (state.kind === 'message') {
     return (
-      <main className="message">
-        <h1>{state.title}</h1>
-        <p>{state.line}</p>
-      </main>
+      <div className="message-page">
+        <a className="message-brand" href="/">
+          <AppMark />
+          Green Friends
+        </a>
+        <main className="message">
+          <h1>{state.title}</h1>
+          <p>{state.line}</p>
+          {state.steps && (
+            <ol className="pair-steps">
+              {state.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          )}
+        </main>
+      </div>
     );
   }
   return (
