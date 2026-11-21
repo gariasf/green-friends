@@ -99,3 +99,7 @@ More detail:
 ## Stack
 
 Expo SDK 57 · React Native · expo-router · expo-sqlite + Drizzle · TypeScript · Cloudflare Workers (relay and site) · Vite + sql.js (Web view)
+
+## License
+
+[MIT](LICENSE)
